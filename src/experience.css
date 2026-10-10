@@ -1,0 +1,94 @@
+.journey-guide { position: relative; overflow: hidden; border: 1px solid #536448; border-radius: 8px; padding: 20px 22px; background: radial-gradient(ellipse at top right, #31412b 0%, transparent 70%), #192e25; }
+.journey-guide::before { content: ''; position: absolute; width: 120px; height: 120px; right: -54px; top: -60px; border-radius: 50%; border: 1px solid #a4b88a30; box-shadow: 0 0 0 14px #a4b88a0b, 0 0 0 28px #a4b88a08; pointer-events: none; }
+.guide-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+.guide-topline > span { display: flex; align-items: center; gap: 8px; color: #d0c594; font-size: 13px; }
+.guide-topline > small { color: #a5b7a1; font-size: 12px; }
+.route-focus { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 19px; }
+.route-focus button { padding: 7px 10px; min-height: 44px; border: 1px solid #65745a5c; background: #12251d66; border-radius: 4px; font-size: 13px; color: #aabcaa; }
+.route-focus button:hover { border-color: #a1aa7e; color: #dedbc2; }
+.route-focus button[aria-pressed='true'] { background: #46543a; border-color: #a8a375; color: #eee1b9; }
+.guide-advice { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center; }
+.guide-advice h2 { font-family: var(--serif); color: #e3dcb7; font-size: 19px; line-height: 1.6; }
+.guide-advice p { font-size: 14px; line-height: 1.9; margin-top: 7px; color: #b0c0a9; }
+.guide-cta { display: grid; gap: 7px; text-align: center; }
+.guide-cta > small { color: #b9c2a0; font-size: 12px; line-height: 1.6; max-width: 165px; }
+.guide-care { border-color: #71644b; }
+.guide-rest { border-color: #536566; background: radial-gradient(ellipse at top right, #2e443e, transparent 70%), #182d28; }
+.first-steps { border-top: 1px solid #aab99420; margin-top: 17px; padding-top: 11px; }
+.first-steps > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: #a1b39b; }
+.first-steps ol { display: flex; flex-wrap: wrap; gap: 9px 18px; margin-top: 7px; }
+.first-steps li { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.8; color: #98ab97; }
+.first-steps li.is-done { color: #d2d3a7; }
+.game-main { scroll-margin-top: 18px; }
+.exploration-preview { display: flex; align-items: flex-start; gap: 11px; border: 1px solid #516046; border-radius: 5px; background: #263524; padding: 13px 15px; margin-bottom: 18px; }
+.exploration-preview > svg { color: #c4b583; margin-top: 4px; }
+.exploration-preview > div { min-width: 0; }
+.exploration-preview small { display: block; color: #a5b29b; font-size: 12px; margin-bottom: 5px; }
+.exploration-preview strong { display: block; color: #d9d6b4; font-family: var(--serif); font-size: 16px; line-height: 1.7; overflow-wrap: anywhere; font-weight: 500; }
+.action-receipt { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-height: 38px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.action-receipt > span { color: #91a98f; font-size: 12px; }
+.receipt-content { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.receipt-content > span { color: #a8b99f; font-size: 12px; }
+.action-receipt .effect { font-size: 12px; }
+.action-receipt > .muted { color: #a0b09a; }
+.enemy-portrait { display: block; width: 240px; max-width: 100%; height: 200px; margin: -18px auto -8px; filter: drop-shadow(0 10px 20px #07170d99); }
+.combat-forecast { display: flex; gap: 11px; align-items: flex-start; padding: 15px; margin-top: 17px; border: 1px solid #4d6348; border-radius: 6px; background: #223728; color: #acc69b; }
+.combat-forecast > svg { margin-top: 3px; }
+.combat-forecast strong { font-size: 14px; font-weight: 500; color: #d9d9b4; }
+.combat-forecast p { color: #b4c3a7; line-height: 1.9; font-size: 14px; margin-top: 4px; }
+.combat-forecast p b { color: #efe0b6; font-weight: 600; padding-inline: 2px; }
+.combat-forecast small { display: block; color: #a4b599; font-size: 12px; line-height: 1.8; margin-top: 4px; }
+.combat-forecast.is-danger { border-color: #946752; background: #42372a; }
+.combat-forecast.is-danger > svg, .combat-forecast.is-danger strong { color: #ebbea0; }
+.guard-counts { flex-wrap: wrap; gap: 8px 18px; }
+.battle-gu { grid-template-columns: 49px minmax(0, 1fr); }
+.battle-gu-art { width: 49px; height: 54px; grid-column: 1; grid-row: 1 / 3; }
+.battle-gu > strong { grid-column: 2; }
+.battle-gu > span { grid-column: 2; }
+.passive-support { display: grid; gap: 7px; margin-top: 13px; }
+.passive-support > span { display: grid; grid-template-columns: 14px auto minmax(0, 1fr); gap: 8px; color: #a7bb95; background: #233627; border-radius: 4px; padding: 9px 11px; align-items: start; }
+.passive-support svg { margin-top: 3px; }
+.passive-support strong { font-size: 12px; font-weight: 500; line-height: 1.7; }
+.passive-support small { font-size: 13px; color: #a6b49b; line-height: 1.8; }
+.passive-support .is-asleep { color: #c5a68e; opacity: .75; }
+.combat-supplies { margin-top: 21px; border-top: 1px solid var(--line); padding-top: 17px; }
+.combat-supplies > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.combat-supplies > div:first-child > span { display: flex; align-items: center; gap: 7px; color: #c3c4a1; font-size: 14px; }
+.combat-supplies > div:first-child > small { color: #a7b69b; font-size: 12px; }
+.supply-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.supply-actions .action-detail, .supply-actions .action-reason { font-size: 12px; }
+
+@media (max-width: 1250px) {
+  .guide-advice { grid-template-columns: 1fr; gap: 13px; }
+  .guide-cta { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; text-align: left; }
+}
+@media (max-width: 760px) {
+  .journey-guide { padding: 18px; }
+  .guide-advice h2 { font-size: 19px; }
+  .route-focus { gap: 6px; }
+  .route-focus button { padding: 7px 11px; }
+  .first-steps li { font-size: 12px; }
+  .combat-forecast strong { font-size: 14px; }
+  .battle-gu { grid-template-columns: 44px minmax(0, 1fr); }
+  .battle-gu-art { width: 44px; height: 49px; }
+}
+@media (max-width: 450px) {
+  .journey-guide { padding: 16px; }
+  .guide-topline { gap: 7px; }
+  .route-focus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .guide-cta { grid-template-columns: 1fr; text-align: left; gap: 5px; }
+  .guide-cta > small { max-width: none; }
+  .guide-advice h2 { font-size: 18px; }
+  .first-steps ol { display: grid; gap: 5px; }
+  .exploration-preview { padding: 12px; }
+  .enemy-portrait { width: 210px; height: 175px; }
+  .combat-forecast { padding: 12px; }
+  .combat-forecast > svg { width: 15px; }
+  .battle-gu-grid { grid-template-columns: 1fr; }
+  .battle-gu { grid-template-columns: 50px minmax(0, 1fr); }
+  .battle-gu-art { width: 50px; height: 55px; }
+  .passive-support > span { grid-template-columns: 14px minmax(0, 1fr); }
+  .passive-support small { grid-column: 2; }
+  .supply-actions { grid-template-columns: 1fr; }
+  .action-receipt { padding: 10px 0; }
+}

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tsbuildinfo
+playwright-report/
+test-results/
+.DS_Store
+.vite/
+*.log
+.npm-cache/
+.env
+.env.*
+!.env.example
