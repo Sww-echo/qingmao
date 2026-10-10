@@ -4,13 +4,14 @@ import {
   getCampaignLocations, getCampaignNpcs, getCampaignShop, getLocationError, isFangYuan, MAX_FANG_DAY,
 } from './campaign';
 import type { CampaignContext } from './campaign';
-import { FANG_STEPS } from './fang-content';
-import type { CombatState, Effects, GameState, JournalEntry, MetaProgress, Resources, RunEnding, SaveData } from './types';
+import { FANG_FAILURE_ENDINGS, FANG_STEPS } from './fang-content';
+import { WORLD_EVENTS } from './world-clock';
+import type { CombatState, Effects, EndingId, GameState, JournalEntry, MetaProgress, Resources, RunEnding, SaveData } from './types';
 
-const DATABASE_NAME = 'qingmao-game-v1';
+const DATABASE_NAME = 'qingmao-game-v2';
 const STORE_NAME = 'saves';
 const SAVE_KEY = 'current';
-const BACKUP_KEY = 'qingmao-game:save:v1';
+const BACKUP_KEY = 'qingmao-game:save:v2';
 const MAX_BYTES = 1024 * 1024;
 const RESOURCE_KEYS = ['stones', 'herbs', 'ore', 'wine'] as const;
 const EFFECT_STATS = ['hp', 'qi', 'cultivation', 'clues', 'trust', 'suspicion'] as const;
@@ -63,8 +64,8 @@ function strings(value: unknown, path: string, maxItems: number, maxLength: numb
 function campaignFlags(value: unknown, path: string, context: CampaignContext): string[] {
   const result = strings(value, path, 256, 100);
   if (isFangYuan(context)) {
-    if (result.some(flag => !flag.startsWith('fy-') && !flag.startsWith('milestone-'))) invalid(path, '混入了其他篇章的记录');
-  } else if (result.some(flag => flag.startsWith('fy-'))) invalid(path, '缺少方源篇的篇章信息');
+    if (result.some(flag => !flag.startsWith('fy-') && !flag.startsWith('milestone-') && !flag.startsWith('missed-'))) invalid(path, '混入了其他篇章的记录');
+  } else if (result.some(flag => flag.startsWith('fy-') || flag.startsWith('missed-'))) invalid(path, '缺少方源篇的篇章信息');
   return result;
 }
 
@@ -121,13 +122,21 @@ function combat(value: unknown, context: CampaignContext): CombatState | null {
 function ending(value: unknown, context: CampaignContext): RunEnding | null {
   if (value === null) return null;
   const source = object(value, '结局', ['id', 'reason', 'outcome']);
+  const allowed: EndingId[] = [...getCampaignEndings(context).map(item => item.id), 'departure', ...(isFangYuan(context) ? FANG_FAILURE_ENDINGS.map(item => item.id) : [])];
   const result: RunEnding = {
-    id: member(source.id, [...getCampaignEndings(context).map(item => item.id), 'departure'], '结局.id'),
+    id: member(source.id, allowed, '结局.id'),
     reason: text(source.reason, '结局.reason', 4000, 1),
     outcome: member(source.outcome, ['success', 'survived', 'defeat'] as const, '结局.outcome'),
   };
-  if (result.id !== 'departure' && result.outcome !== 'success') invalid('结局', '的类别与结果不一致');
-  if (isFangYuan(context) && result.id === 'departure' && result.outcome !== 'defeat') invalid('结局', '不能将方源篇结算为商队离山');
+  if (!isFangYuan(context) && result.id !== 'departure' && result.outcome !== 'success') invalid('结局', '的类别与结果不一致');
+  if (isFangYuan(context)) {
+    const expected: Record<string, RunEnding['outcome']> = {
+      'fy-wolf-tide-stood': 'success', 'fy-wolf-tide-survived': 'survived', 'fy-wolf-tide-death': 'defeat',
+      'fy-missed-awakening': 'defeat', departure: 'defeat',
+    };
+    if (result.id === 'fy-first-gu') invalid('结局', '首次报验是里程碑，不是终局');
+    if (expected[result.id] !== result.outcome) invalid('结局', '的类别与结果不一致');
+  }
   return result;
 }
 
@@ -150,7 +159,7 @@ function game(value: unknown): GameState {
   const source = object(value, '旅途', [
     'version', 'campaign', 'runId', 'seed', 'rng', 'name', 'origin', 'day', 'actions', 'location', 'hp', 'maxHp', 'qi', 'maxQi',
     'rank', 'cultivation', 'resources', 'clues', 'trust', 'suspicion', 'inventory', 'equipped', 'hungry', 'usedToday',
-    'flags', 'relations', 'seenEvents', 'activeEvent', 'purchases', 'combat', 'ending', 'journal', 'nextLogId',
+    'flags', 'relations', 'seenEvents', 'activeEvent', 'purchases', 'combat', 'ending', 'journal', 'nextLogId', 'worldEvents',
   ]);
   const campaign = source.campaign === undefined ? undefined : member(source.campaign, ['fang-yuan'] as const, '篇章');
   const context: CampaignContext = { campaign };
@@ -169,7 +178,7 @@ function game(value: unknown): GameState {
   const events = getCampaignEvents(context);
   const shop = getCampaignShop(context);
   const result: GameState = {
-    version: member(source.version, [1] as const, '旅途版本'),
+    version: member(source.version, [2] as const, '旅途版本'),
     ...(campaign ? { campaign } : {}),
     runId: text(source.runId, '旅途编号', 200, 1), seed: integer(source.seed, '随机种子', 0, 0xFFFFFFFF), rng: integer(source.rng, '随机进度', 0, 0xFFFFFFFF),
     name, origin: member(source.origin, ORIGINS.map(origin => origin.id), '出身'), day,
@@ -184,6 +193,7 @@ function game(value: unknown): GameState {
     activeEvent: source.activeEvent === null ? null : member(source.activeEvent, events.map(event => event.id), '当前事件'),
     purchases: numberMap(source.purchases, '购买记录', shop.map(item => item.id), 0, 10_000),
     combat: combat(source.combat, context), ending: ending(source.ending, context), journal: journal(source.journal, day, nextLogId), nextLogId,
+    worldEvents: source.worldEvents === undefined ? [] : references(source.worldEvents, WORLD_EVENTS.map(event => event.id), '世界事件'),
   };
   if ([result.activeEvent, result.combat, result.ending].filter(Boolean).length > 1) invalid('当前阶段', '不能同时存在事件、战斗或结局');
   if (result.hp === 0 && result.ending?.outcome !== 'defeat') invalid('生命', '归零后必须已经按败退结算');
@@ -204,20 +214,27 @@ function game(value: unknown): GameState {
   }
   if (fang) {
     if (result.name !== '古月方源' || result.origin !== 'disciple') invalid('主角', '必须是固定身份的古月方源');
+    if (!result.worldEvents.every((id, index) => WORLD_EVENTS.findIndex(event => event.id === id) >= index)) invalid('世界事件', '顺序与世界时钟不一致');
+    for (const id of result.worldEvents) {
+      const event = WORLD_EVENTS.find(item => item.id === id)!;
+      if (day < event.opens) invalid('世界事件', '早于其开放日触发');
+    }
     if ((rank === 1) !== result.flags.includes('fy-awakened')) invalid('境界', '与开窍记录不一致');
-    for (let index = 0; index < FANG_STEPS.length; index += 1) {
-      const step = FANG_STEPS[index]!;
+    // Only genuine causal dependencies are checked; the order of unrelated steps is free.
+    for (const step of FANG_STEPS) {
       if (!result.flags.includes(step.flag)) continue;
-      if (!result.seenEvents.includes(step.eventId) || (index > 0 && !result.flags.includes(FANG_STEPS[index - 1]!.flag))) invalid('章节进度', '缺少前置经历或已完成事件的记录');
+      if (!result.seenEvents.includes(step.eventId)) invalid('章节进度', '缺少已完成事件的记录');
+      const after: readonly string[] = 'after' in step ? step.after : [];
+      if (after.some(flag => !result.flags.includes(flag))) invalid('章节进度', '缺少因果前置经历');
+      if (result.flags.includes(`missed-${step.eventId}`)) invalid('章节进度', '不能同时完成并错失同一机遇');
     }
     const refined = result.flags.includes('fy-cicada-revealed');
     if (refined !== result.flags.includes('fy-liquor-refined') || refined !== result.flags.includes('fy-moonlight-refined')) invalid('炼化记录', '与春秋蝉显形的经历不一致');
     for (const id of guIds) {
-      if ((result.inventory[id] ?? 0) !== (refined ? 1 : 0)) invalid('蛊囊', '与本章的唯一蛊虫及炼化记录不一致');
+      if ((result.inventory[id] ?? 0) > 0 && !refined) invalid('蛊囊', '春秋蝉显形前不应持有已炼化的蛊');
     }
-    if (result.ending?.id === 'fy-first-gu' && !result.flags.includes('fy-first-gu-complete')) invalid('结局', '缺少报验完成记录');
-    if (result.flags.includes('fy-first-gu-complete') && result.ending?.id !== 'fy-first-gu') invalid('章节进度', '报验后必须进入本章结算');
-    if (getLocationError(result, result.location)) invalid('地点', '尚未随剧情开放');
+    if (result.flags.includes('fy-first-gu-complete') !== result.flags.includes('milestone-first-gu')) invalid('章节进度', '报验完成与里程碑记录不一致');
+    if (getLocationError(result, result.location)) invalid('地点', '尚未开放');
     if (result.activeEvent) {
       const active = events.find(event => event.id === result.activeEvent)!;
       for (const requirement of active.requirements ?? []) {
@@ -255,7 +272,7 @@ export function parseSave(serialized: string): SaveData {
     throw new Error('存档不是有效的 JSON 文件。');
   }
   const source = object(value, '存档', ['version', 'savedAt', 'game', 'meta']);
-  const version = member(source.version, [1] as const, '存档版本');
+  const version = member(source.version, [2] as const, '存档版本');
   const savedAt = text(source.savedAt, '保存时间', 32, 1);
   const timestamp = Date.parse(savedAt);
   if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString() !== savedAt) invalid('保存时间', '必须是有效的 ISO 时间');
@@ -273,7 +290,7 @@ let latestTimestamp = 0;
 export function createSave(currentGame: GameState, progress: MetaProgress): SaveData {
   // Distinct revisions must remain ordered even when two UI updates happen in one millisecond.
   latestTimestamp = Math.max(Date.now(), latestTimestamp + 1);
-  return { version: 1, savedAt: new Date(latestTimestamp).toISOString(), game: structuredClone(currentGame), meta: structuredClone(progress) };
+  return { version: 2, savedAt: new Date(latestTimestamp).toISOString(), game: structuredClone(currentGame), meta: structuredClone(progress) };
 }
 
 export function updateMeta(progress: MetaProgress, currentGame: GameState): MetaProgress {

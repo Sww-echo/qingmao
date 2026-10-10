@@ -88,13 +88,13 @@ const finalChoices = [
 describe('chapter engine gates and saves', () => {
   it('opens the first scene automatically and resumes it from the existing version-one save format', () => {
     const initial = createGame({ name: '开场读档', origin: 'trader', seed: 33, chapter: true });
-    expect(initial).toMatchObject({ version: 1, location: 'academy', actions: 3, activeEvent: 'chapter-arrival' });
+    expect(initial).toMatchObject({ version: 2, location: 'academy', actions: 3, activeEvent: 'chapter-arrival' });
     expect(initial.flags).toEqual(['chapter-one']);
     reject(initial, { type: 'TRAVEL', location: 'market' });
     const saved = createSave(initial, updateMeta(EMPTY_META, initial));
     const restored = parseSave(serializeSave(saved));
     expect(restored).toEqual(saved);
-    expect(restored.version).toBe(1);
+    expect(restored.version).toBe(2);
     expect(restored.game).not.toBe(initial);
     expect(restored.game.resources).not.toBe(initial.resources);
     const resumed = act(restored.game, { type: 'CHOOSE', choiceId: 'seek-long-road' });

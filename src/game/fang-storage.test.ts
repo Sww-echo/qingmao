@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { getCampaignEndings, getCampaignEvents } from './campaign';
+import { getCampaignEndings, getCampaignEvents, getLocationError } from './campaign';
 import { createGame, gameReducer, getActionError, getEventActionCost } from './engine';
 import { createSave, EMPTY_META, parseSave, serializeSave, updateMeta } from './storage';
+import { WOLF_TIDE_DAY } from './world-clock';
 import type { GameAction, GameState, MetaProgress } from './types';
 
 const ROUTE = [
@@ -31,6 +32,7 @@ function act(game: GameState, action: GameAction): GameState {
 function openEvent(game: GameState, eventId: string): GameState {
   if (game.activeEvent === eventId) return game;
   const event = getCampaignEvents(game).find(entry => entry.id === eventId)!;
+  while ((event.dayMin !== undefined && game.day < event.dayMin) || getLocationError(game, event.location)) game = act(game, { type: 'END_DAY' });
   if (game.actions < getEventActionCost(event)) game = act(game, { type: 'END_DAY' });
   if (game.location !== event.location) game = act(game, { type: 'TRAVEL', location: event.location });
   return act(game, { type: 'EXPLORE', eventId });
@@ -60,13 +62,26 @@ function tamper(game: GameState, changes: Record<string, unknown>): string {
   return JSON.stringify({ ...save, game: { ...save.game, ...changes } });
 }
 
+function settleAtWolfTide(game: GameState): GameState {
+  game = act(game, { type: 'EQUIP', guId: 'liquor-worm' });
+  game = act(game, { type: 'EQUIP', guId: 'moonlight' });
+  while (game.day < WOLF_TIDE_DAY) {
+    while (game.actions > 0 && game.resources.stones < 200) {
+      if (game.location !== 'clan') game = act(game, { type: 'TRAVEL', location: 'clan' });
+      game = act(game, { type: 'ACTIVITY' });
+    }
+    game = act(game, { type: 'END_DAY' });
+  }
+  return act(game, { type: 'END_DAY' });
+}
+
 describe('Fang Yuan save compatibility', () => {
-  it('roundtrips the rank-zero opening in the version-one envelope', () => {
+  it('roundtrips the rank-zero opening in the version-two envelope', () => {
     const restored = roundTrip(createGame({ campaign: 'fang-yuan', seed: 12185 }));
-    expect(restored.version).toBe(1);
+    expect(restored.version).toBe(2);
     expect(restored.game).toMatchObject({
       campaign: 'fang-yuan', name: '古月方源', rank: 0,
-      maxHp: 28, hp: 28, qi: 0, maxQi: 0, activeEvent: 'fy-rebirth',
+      maxHp: 28, hp: 28, qi: 0, maxQi: 0, activeEvent: 'fy-rebirth', worldEvents: [],
     });
   });
 
@@ -80,6 +95,13 @@ describe('Fang Yuan save compatibility', () => {
     expect(restored.inventory['liquor-worm']).toBe(1);
   });
 
+  it('rejects the retired version-one envelope outright', () => {
+    const game = createGame({ campaign: 'fang-yuan', seed: 12185 });
+    const save = createSave(game, EMPTY_META);
+    expect(() => parseSave(JSON.stringify({ ...save, version: 1 }))).toThrow('存档版本');
+    expect(() => parseSave(JSON.stringify({ ...save, game: { ...save.game, version: 1 } }))).toThrow('旅途版本');
+  });
+
   it.each([
     ['unknown campaign', { campaign: 'other-novel' }],
     ['null campaign', { campaign: null }],
@@ -88,12 +110,14 @@ describe('Fang Yuan save compatibility', () => {
     ['unawakened primeval essence', { qi: 12, maxQi: 12 }],
     ['a first-rank protagonist before awakening', { rank: 1, qi: 12, maxQi: 12 }],
     ['a legacy chapter marker', { flags: ['chapter-one'] }],
+    ['a world event fired before its day', { worldEvents: ['fy-merchant-window'] }],
+    ['an unknown world event', { worldEvents: ['fy-dragon'] }],
   ])('rejects %s rather than reinterpreting the opening', (_label, changes) => {
     const game = createGame({ campaign: 'fang-yuan', seed: 12185 });
     expect(() => parseSave(tamper(game, changes))).toThrow();
   });
 
-  it('resumes each pending and resolved scene, including rank zero, unrefined Gu, and the real conclusion', () => {
+  it('resumes each pending and resolved opportunity, including rank zero, unrefined Gu, and the milestone', () => {
     let game = createGame({ campaign: 'fang-yuan', seed: 12185 });
     for (const [eventId, choiceId] of ROUTE) {
       game = openEvent(game, eventId);
@@ -103,21 +127,21 @@ describe('Fang Yuan save compatibility', () => {
       game = roundTrip(game).game;
       expect(game.seenEvents).toContain(eventId);
     }
-    expect(game.ending).toMatchObject({ id: 'fy-first-gu', outcome: 'success' });
+    expect(game.ending).toBeNull();
+    expect(game.flags).toContain('milestone-first-gu');
     expect(game.resources.stones).toBe(37);
     expect(game.inventory).toEqual({ moonlight: 1, 'liquor-worm': 1 });
   });
 
-  it('accepts day eleven and restores a main scene there without creating an expiration ending', () => {
+  it('restores a long-paused run with its fired world events and rejects days past the wolf tide', () => {
     let game = playThrough('fy-awakening');
-    while (game.day < 11) game = act(game, { type: 'END_DAY' });
-    game = openEvent(game, 'fy-claim-moonlight');
+    while (game.day < 40) game = act(game, { type: 'END_DAY' });
     const restored = roundTrip(game).game;
-    expect(restored).toMatchObject({ day: 11, rank: 1, qi: 12, ending: null, activeEvent: 'fy-claim-moonlight' });
-    const continued = act(restored, { type: 'CHOOSE', choiceId: 'keep-a-reserve' });
-    expect(continued.flags).toContain('fy-moonlight-claimed');
-    expect(continued.ending).toBeNull();
-    expect(() => parseSave(tamper(continued, { day: 10_001 }))).toThrow();
+    expect(restored).toMatchObject({ day: 40, rank: 1, qi: 12, ending: null });
+    expect(restored.worldEvents).toEqual(expect.arrayContaining(['fy-awakening-fair', 'fy-merchant-window']));
+    expect(restored.flags).toContain('missed-fy-claim-moonlight');
+    expect(() => parseSave(tamper(restored, { day: WOLF_TIDE_DAY + 1 }))).toThrow();
+    expect(() => parseSave(tamper(restored, { worldEvents: ['fy-merchant-window', 'fy-awakening-fair'] }))).toThrow('世界事件');
     const legacy = createGame({ name: '旧档行者', origin: 'disciple' });
     expect(() => parseSave(tamper(legacy, { day: 11 }))).toThrow();
   });
@@ -130,6 +154,7 @@ describe('Fang Yuan save compatibility', () => {
     game = roundTrip(game).game;
     expect(game.seenEvents).toContain('fy-bamboo-wine');
     expect(game.flags).not.toContain('fy-wine-bought');
+    if (game.location !== 'clan') game = act(game, { type: 'TRAVEL', location: 'clan' });
     game = act(game, { type: 'ACTIVITY' });
     game = act(openEvent(game, 'fy-bamboo-wine'), { type: 'CHOOSE', choiceId: 'buy-after-dispute' });
     expect(roundTrip(game).game.flags).toContain('fy-wine-bought');
@@ -147,10 +172,12 @@ describe('Fang Yuan save compatibility', () => {
     ['a forced caravan timeout', () => ({ ending: { id: 'departure', outcome: 'survived', reason: '十日已到' } })],
     ['a forced caravan success', () => ({ ending: { id: 'departure', outcome: 'success', reason: '支付路费' } })],
     ['second-rank stats', () => ({ rank: 2, maxHp: 36, hp: 36, maxQi: 16, qi: 16 })],
-    ['a premature success conclusion', () => ({ ending: { id: 'fy-first-gu', outcome: 'success', reason: '未报验的奖励' } })],
+    ['the report milestone written as an ending', () => ({ ending: { id: 'fy-first-gu', outcome: 'success', reason: '未报验的奖励' } })],
+    ['a wolf-tide standing with the wrong outcome', () => ({ ending: { id: 'fy-wolf-tide-stood', outcome: 'defeat', reason: '错配' } })],
     ['a mainline flag without its event', (game: GameState) => ({ flags: [...game.flags, 'fy-family-settled'] })],
+    ['a flag both completed and missed', (game: GameState) => ({ flags: [...game.flags, 'missed-fy-awakening'] })],
     ['a locked map location', () => ({ location: 'cave' })],
-    ['a main scene without its prerequisite', () => ({ activeEvent: 'fy-report' })],
+    ['a main scene without its causal prerequisite', () => ({ activeEvent: 'fy-report' })],
   ])('rejects %s in a protagonist save', (_label, changes) => {
     const game = playThrough('fy-awakening');
     expect(() => parseSave(tamper(game, changes(game)))).toThrow();
@@ -172,38 +199,48 @@ describe('Fang Yuan save compatibility', () => {
     const legacy = createGame({ name: '古月方源', origin: 'disciple', chapter: true });
     expect(() => parseSave(tamper(legacy, { campaign: 'fang-yuan' }))).toThrow();
     expect(() => parseSave(tamper(legacy, { activeEvent: null, seenEvents: ['fy-rebirth'] }))).toThrow();
-    expect(() => parseSave(tamper(legacy, { activeEvent: null, ending: { id: 'fy-first-gu', outcome: 'success', reason: '混入的章节成果' } }))).toThrow();
+    expect(() => parseSave(tamper(legacy, { activeEvent: null, ending: { id: 'fy-wolf-tide-stood', outcome: 'success', reason: '混入的成果' } }))).toThrow();
+    expect(() => parseSave(tamper(legacy, { flags: ['missed-fy-awakening'] }))).toThrow();
   });
 
-  it('requires consistent earned refinement records and unique copies of both Gu', () => {
+  it('requires consistent earned refinement records and rejects forged copies', () => {
     const refined = playThrough('fy-cicada');
     roundTrip(refined);
     for (const changes of [
-      { inventory: { moonlight: 2, 'liquor-worm': 1 } },
-      { inventory: { moonlight: 1 } },
       { flags: refined.flags.filter(flag => flag !== 'fy-liquor-refined') },
       { flags: refined.flags.filter(flag => flag !== 'fy-cicada-revealed') },
       { seenEvents: refined.seenEvents.filter(eventId => eventId !== 'fy-refine-liquor') },
       { activeEvent: 'fy-cicada' },
     ]) expect(() => parseSave(tamper(refined, changes))).toThrow();
     const completed = playThrough('fy-report');
-    expect(() => parseSave(tamper(completed, { ending: null }))).toThrow();
+    expect(completed.ending).toBeNull();
+    expect(() => parseSave(tamper(completed, { flags: completed.flags.filter(flag => flag !== 'milestone-first-gu') }))).toThrow('里程碑');
   });
 
-  it('keeps legacy achievements while recording the new chapter once and displaying only its own conclusion', () => {
+  it('roundtrips the wolf-tide settlement and rejects it in a run that has not reached the deadline', () => {
+    const settled = settleAtWolfTide(playThrough('fy-report'));
+    expect(settled.ending?.id).toMatch(/^fy-wolf-tide-/);
+    const restored = roundTrip(settled).game;
+    expect(restored.ending).toEqual(settled.ending);
+    expect(restored.day).toBe(WOLF_TIDE_DAY);
+    expect(() => parseSave(tamper(settled, { day: 10 }))).toThrow();
+  });
+
+  it('keeps legacy achievements while recording only successful wolf-tide standings', () => {
     const prior: MetaProgress = {
       completedRuns: 1, endings: ['clan'], discoveredGu: ['jade-skin'],
       lastRecordedRun: 'legacy-completed-run', recordedRunIds: ['legacy-completed-run'],
     };
-    const game = playThrough('fy-report');
-    const combined = updateMeta(prior, game);
+    const settled = settleAtWolfTide(playThrough('fy-report'));
+    const combined = updateMeta(prior, settled);
     expect(combined.completedRuns).toBe(2);
-    expect(combined.endings).toEqual(['clan', 'fy-first-gu']);
     expect(combined.discoveredGu).toEqual(expect.arrayContaining(['jade-skin', 'moonlight', 'liquor-worm']));
-    expect(updateMeta(combined, game)).toEqual(combined);
-    const restored = parseSave(serializeSave(createSave(game, combined)));
+    expect(updateMeta(combined, settled)).toEqual(combined);
+    const restored = parseSave(serializeSave(createSave(settled, combined)));
     expect(restored.meta).toEqual(combined);
-    expect(getCampaignEndings(restored.game).filter(ending => restored.meta.endings.includes(ending.id)).map(ending => ending.id)).toEqual(['fy-first-gu']);
+    // Only a success standing joins the unlocked list; survival and death are shown, not unlocked.
+    const unlocked = getCampaignEndings(restored.game).filter(ending => restored.meta.endings.includes(ending.id)).map(ending => ending.id);
+    expect(unlocked).toEqual(settled.ending?.outcome === 'success' ? [settled.ending.id] : []);
     const legacy = createGame({ name: '旧档行者', origin: 'disciple' });
     expect(getCampaignEndings(legacy).filter(ending => combined.endings.includes(ending.id)).map(ending => ending.id)).toEqual(['clan']);
   });

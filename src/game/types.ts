@@ -3,7 +3,8 @@ export type Resources = Record<ResourceKey, number>;
 export type LocationId = 'academy' | 'market' | 'bamboo' | 'stream' | 'cave' | 'clan';
 export type OriginId = 'disciple' | 'scout' | 'trader';
 export type LegacyEndingId = 'inheritance' | 'clan' | 'departure';
-export type EndingId = LegacyEndingId | 'fy-first-gu';
+export type FangEndingId = 'fy-first-gu' | 'fy-missed-awakening' | 'fy-wolf-tide-death' | 'fy-wolf-tide-survived' | 'fy-wolf-tide-stood';
+export type EndingId = LegacyEndingId | FangEndingId;
 export type GuRole = 'attack' | 'defense' | 'support' | 'scouting' | 'economy' | 'movement';
 export type GuAbility = 'strike' | 'guard' | 'heal' | 'restore' | 'power' | 'scout' | 'storage' | 'escape' | 'purify';
 export type StatKey = 'hp' | 'qi' | 'cultivation' | 'clues' | 'trust' | 'suspicion' | 'rank' | 'day';
@@ -175,7 +176,7 @@ export interface RunEnding {
 }
 
 export interface GameState {
-  version: 1;
+  version: 2;
   campaign?: 'fang-yuan';
   runId: string;
   seed: number;
@@ -208,6 +209,8 @@ export interface GameState {
   ending: RunEnding | null;
   journal: JournalEntry[];
   nextLogId: number;
+  /** 已触发的世界事件（方源篇）。由 endDay 按世界时钟写入，不可手动添加。 */
+  worldEvents: string[];
 }
 
 export type GameAction =
@@ -244,7 +247,7 @@ export interface MetaProgress {
 }
 
 export interface SaveData {
-  version: 1;
+  version: 2;
   savedAt: string;
   game: GameState;
   meta: MetaProgress;

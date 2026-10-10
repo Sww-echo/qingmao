@@ -4,7 +4,7 @@ import { createGame, gameReducer } from './engine';
 import { createSave, EMPTY_META, loadSave, parseSave, serializeSave, updateMeta, writeSave } from './storage';
 import type { GameState, SaveData } from './types';
 
-const BACKUP_KEY = 'qingmao-game:save:v1';
+const BACKUP_KEY = 'qingmao-game:save:v2';
 
 function save(seed = 1): SaveData {
   const game = createGame({ name: '山客', origin: 'disciple', seed });
@@ -76,7 +76,7 @@ function controlledDatabase(initial?: unknown) {
   };
   const api = {
     open: vi.fn((name: string, version: number) => {
-      expect(name).toBe('qingmao-game-v1');
+      expect(name).toBe('qingmao-game-v2');
       expect(version).toBe(1);
       const request = {
         result: database, error: null, onsuccess: null as (() => void) | null,
@@ -193,7 +193,7 @@ describe('save-file validation', () => {
 
   it('rejects malformed JSON, unsupported versions, bad dates, and oversized UTF-8 data', () => {
     expect(() => parseSave('{')).toThrow('JSON');
-    expect(() => parseSave(JSON.stringify({ ...save(), version: 2 }))).toThrow('版本');
+    expect(() => parseSave(JSON.stringify({ ...save(), version: 1 }))).toThrow('版本');
     expect(() => parseSave(JSON.stringify({ ...save(), savedAt: 'yesterday' }))).toThrow('保存时间');
     expect(() => parseSave('中'.repeat(400_000))).toThrow('1 MB');
   });

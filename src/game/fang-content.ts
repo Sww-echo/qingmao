@@ -3,23 +3,27 @@ import type {
   NpcDef, RecipeDef, Requirement, ShopItem,
 } from './types';
 
-/** The playable opening follows sections 1–20, not the later, deeper inheritance. */
+/**
+ * 方源篇的主线机遇。它们不再是必经的顺序链，而是有开放窗口的高收益路线：
+ * `after` 只记录真实因果（没拿到酒虫就不能炼酒虫），不记录流程顺序。
+ * `closes` 为错失日；过期后该机遇永久关闭，并写入 `missed-<eventId>`。
+ */
 export const FANG_STEPS = [
-  { eventId: 'fy-rebirth', flag: 'fy-reborn', title: '夜雨重生', act: 1 },
-  { eventId: 'fy-awakening', flag: 'fy-awakened', title: '开窍大典', act: 1 },
-  { eventId: 'fy-claim-moonlight', flag: 'fy-moonlight-claimed', title: '领下月光', act: 2 },
-  { eventId: 'fy-family', flag: 'fy-family-settled', title: '家宅交涉', act: 2 },
-  { eventId: 'fy-rain-refining', flag: 'fy-rain-prepared', title: '雨中试炼', act: 2 },
-  { eventId: 'fy-inn', flag: 'fy-lodged', title: '客栈避人', act: 2 },
-  { eventId: 'fy-bamboo-wine', flag: 'fy-wine-bought', title: '青竹酒香', act: 3 },
-  { eventId: 'fy-lure', flag: 'fy-liquor-lured', title: '月下诱虫', act: 3 },
-  { eventId: 'fy-follow', flag: 'fy-trail-found', title: '不捕而随', act: 3 },
-  { eventId: 'fy-cave', flag: 'fy-cave-found', title: '山缝遗骸', act: 3 },
-  { eventId: 'fy-recording', flag: 'fy-recording-seen', title: '影壁真相', act: 3 },
-  { eventId: 'fy-refine-liquor', flag: 'fy-refining-attempted', title: '酒虫难炼', act: 4 },
-  { eventId: 'fy-cicada', flag: 'fy-cicada-revealed', title: '六转本命', act: 4 },
-  { eventId: 'fy-report', flag: 'fy-first-gu-complete', title: '月光报验', act: 4 },
-] as const satisfies ReadonlyArray<{ eventId: string; flag: string; title: string; act: 1 | 2 | 3 | 4 }>;
+  { eventId: 'fy-rebirth', flag: 'fy-reborn', title: '夜雨重生', act: 1, opens: 1 },
+  { eventId: 'fy-awakening', flag: 'fy-awakened', title: '开窍大典', act: 1, after: ['fy-reborn'], opens: 2, closes: 5 },
+  { eventId: 'fy-claim-moonlight', flag: 'fy-moonlight-claimed', title: '领下月光', act: 2, after: ['fy-awakened'], closes: 20 },
+  { eventId: 'fy-family', flag: 'fy-family-settled', title: '家宅交涉', act: 2, after: ['fy-awakened'], closes: 30 },
+  { eventId: 'fy-rain-refining', flag: 'fy-rain-prepared', title: '雨中试炼', act: 2, after: ['fy-moonlight-claimed'], closes: 30 },
+  { eventId: 'fy-inn', flag: 'fy-lodged', title: '客栈避人', act: 2, after: ['fy-awakened'], opens: 3 },
+  { eventId: 'fy-bamboo-wine', flag: 'fy-wine-bought', title: '青竹酒香', act: 3, after: ['fy-awakened'], opens: 3 },
+  { eventId: 'fy-lure', flag: 'fy-liquor-lured', title: '月下诱虫', act: 3, after: ['fy-wine-bought'], opens: 6 },
+  { eventId: 'fy-follow', flag: 'fy-trail-found', title: '不捕而随', act: 3, after: ['fy-liquor-lured'] },
+  { eventId: 'fy-cave', flag: 'fy-cave-found', title: '山缝遗骸', act: 3, after: ['fy-trail-found'] },
+  { eventId: 'fy-recording', flag: 'fy-recording-seen', title: '影壁真相', act: 3, after: ['fy-cave-found'] },
+  { eventId: 'fy-refine-liquor', flag: 'fy-refining-attempted', title: '酒虫难炼', act: 4, after: ['fy-cave-found'] },
+  { eventId: 'fy-cicada', flag: 'fy-cicada-revealed', title: '六转本命', act: 4, after: ['fy-refining-attempted'] },
+  { eventId: 'fy-report', flag: 'fy-first-gu-complete', title: '月光报验', act: 4, after: ['fy-cicada-revealed'], closes: 40 },
+] as const satisfies ReadonlyArray<{ eventId: string; flag: string; title: string; act: 1 | 2 | 3 | 4; after?: readonly string[]; opens?: number; closes?: number }>;
 
 type FangEventId = typeof FANG_STEPS[number]['eventId'];
 type StepContent = Omit<EventDef, 'id' | 'requirements' | 'repeatable' | 'priority'> & { requirements?: Requirement[] };
@@ -31,13 +35,14 @@ const prepareLater = (outcome: string): EventChoice => ({
 });
 
 function stepEvent(id: FangEventId, content: StepContent): EventDef {
-  const index = FANG_STEPS.findIndex(step => step.eventId === id);
-  const step = FANG_STEPS[index];
-  const previous = FANG_STEPS[index - 1];
+  const step = FANG_STEPS.find(item => item.eventId === id)!;
+  const after: readonly string[] = 'after' in step ? step.after : [];
   return {
     ...content, id, priority: 400, repeatable: true,
+    ...('opens' in step ? { dayMin: step.opens } : {}),
+    ...('closes' in step ? { dayMax: step.closes } : {}),
     requirements: [
-      ...(previous ? [{ kind: 'flag' as const, key: previous.flag }] : []),
+      ...after.map(flag => ({ kind: 'flag' as const, key: flag })),
       { kind: 'flag', key: step.flag, value: false },
       ...(content.requirements ?? []),
     ],
@@ -302,23 +307,21 @@ export const FANG_EVENTS: EventDef[] = [
     ],
   }),
   stepEvent('fy-report', {
-    title: '只报月光，取下头名', location: 'academy', tag: '第四幕 · 本章收束', actionCost: 0,
+    title: '只报月光，取下头名', location: 'academy', tag: '第四幕 · 首次报验', actionCost: 0,
     requirements: [{ kind: 'gu', id: 'moonlight' }, { kind: 'gu', id: 'liquor-worm' }],
-    description: '春秋蝉已经隐去，酒虫也已被你妥善藏起，不向家老展示。你来到学堂，只展示已炼成的月光蛊。家老起初把你认作方正，听清名字才露出惊讶。丙等资质的方源先一步完成了报验，二十块元石的头名奖励就在眼前。',
+    description: '春秋蝉已经隐去，酒虫也已被你妥善藏起，不向家老展示。你来到学堂，只展示已炼成的月光蛊。家老起初把你认作方正，听清名字才露出惊讶。丙等资质的方源先一步完成了报验，二十块元石的头名奖励就在眼前。这只是起步，狼潮不会因此推迟。',
     choices: [
       {
         id: 'report-moonlight', label: '按规矩报验，领取二十块元石',
-        description: '元石 +20；学堂家老关系 +4、疑心 +2。完成本章，保留真实所得与选择记录。',
+        description: '元石 +20；学堂家老关系 +4、疑心 +2。头名的锋芒也会引来更多目光。',
         effects: { resources: { stones: 20 }, relations: { 'fy-academy-elder': 4 }, suspicion: 2, addFlags: ['fy-reported-directly'] },
-        ending: 'fy-first-gu',
-        outcome: '家老核验了月光蛊，将头名奖励交给你。资质没有改变，手中的资源与先机却已不同。酒虫、月光和十五块遗藏元石的来路，由你自己记着；花酒洞中更深的传承还没有开启。',
+        outcome: '家老核验了月光蛊，将头名奖励交给你。资质没有改变，手中的资源与先机却已不同。酒虫、月光和十五块遗藏元石的来路，由你自己记着；距狼潮的日子一天天近了。',
       },
       {
         id: 'answer-briefly', label: '简短答话，把炼蛊细节留在心里',
         description: '元石 +20；学堂家老关系 +1、疑心 -1。照常领取头名，不透露酒虫与春秋蝉。',
         effects: { resources: { stones: 20 }, relations: { 'fy-academy-elder': 1 }, suspicion: -1, addFlags: ['fy-reported-briefly'] },
-        ending: 'fy-first-gu',
-        outcome: '你回答了报验所需的问题，没有谈起洞中所得与空窍里的秘密。二十块元石到手，这只是重新起步。下一步仍要供养蛊虫、温养空窍，再探影壁之后的路。',
+        outcome: '你回答了报验所需的问题，没有谈起洞中所得与空窍里的秘密。二十块元石到手，这只是重新起步。供养蛊虫、温养空窍、再探影壁之后的路，都要在狼潮之前做完。',
       },
     ],
   }),
@@ -390,9 +393,29 @@ export const FANG_SHOP: ShopItem[] = [
 
 export const FANG_ENEMIES: EnemyDef[] = [];
 export const FANG_RECIPES: RecipeDef[] = [];
+/** 可记入成就的终局。死亡与错失开窍另有展示，不计为解锁路线。 */
 export const FANG_ENDINGS: EndingDef[] = [
   {
-    id: 'fy-first-gu', title: '月光在明，春秋在隐', subtitle: '第一章 · 初炼双蛊', color: '#91b6a5',
-    description: '你以月光蛊拿到学堂头名，酒虫与虚弱的春秋蝉仍藏在自己的安排之中。一转初阶、丙等四成四，起点没有改写；五百年经验换来的先机，已经落成手中的资源。花酒洞的更深传承与之后的学堂生活，尚待下一章。',
+    id: 'fy-wolf-tide-stood', title: '狼潮立足', subtitle: '青茅生存 · 站住了', color: '#91b6a5',
+    description: '狼潮冲来时，你的境界、蛊虫与元石足以在混乱中站住。青茅山的格局自此有你一席，但这只是开始：神捕、白凝冰、血湖，都还在前面。',
+  },
+  {
+    id: 'fy-wolf-tide-survived', title: '狼潮余生', subtitle: '青茅生存 · 活了下来', color: '#b8a67a',
+    description: '你在狼潮的第一夜活了下来，但本钱已尽。青茅山元气大伤，接下来每一步都比今天更难。',
+  },
+];
+/** 结算时用于说明的终局，不进入成就。 */
+export const FANG_FAILURE_ENDINGS: EndingDef[] = [
+  {
+    id: 'fy-wolf-tide-death', title: '狼潮之夜', subtitle: '青茅生存 · 没有活下来', color: '#9a5a52',
+    description: '狼潮冲破寨门。以此刻的境界、蛊虫与元石，你没能活过这一夜。',
+  },
+  {
+    id: 'fy-missed-awakening', title: '错失开窍', subtitle: '青茅生存 · 此生无路', color: '#9a5a52',
+    description: '你错过了开窍大典。没有空窍，此生与蛊师之路无缘；青茅山的一切威胁，你都只能以凡人之身面对。',
+  },
+  {
+    id: 'fy-first-gu', title: '月光在明，春秋在隐', subtitle: '里程碑 · 首次报验', color: '#91b6a5',
+    description: '你以月光蛊拿到学堂头名。这不是终点，狼潮仍在前面。',
   },
 ];

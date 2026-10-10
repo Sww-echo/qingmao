@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCampaignEvents, MAX_FANG_DAY } from './campaign';
+import { getCampaignEvents, getLocationError, MAX_FANG_DAY } from './campaign';
 import {
   createGame, gameReducer, getActionError, getCombatForecast, getEventActionCost,
   getTrainingGain, getUpkeep,
@@ -35,6 +35,7 @@ function act(game: GameState, action: GameAction): GameState {
 function openScene(game: GameState, eventId: string): GameState {
   if (game.activeEvent === eventId) return game;
   const event = getCampaignEvents(game).find(item => item.id === eventId)!;
+  while ((event.dayMin !== undefined && game.day < event.dayMin) || getLocationError(game, event.location)) game = act(game, { type: 'END_DAY' });
   if (game.actions < getEventActionCost(event)) game = act(game, { type: 'END_DAY' });
   if (game.location !== event.location) game = act(game, { type: 'TRAVEL', location: event.location });
   return act(game, { type: 'EXPLORE', eventId });
@@ -58,7 +59,10 @@ function playThrough(last: string): GameState {
 function injuredWithPurchasedHerbs(): GameState {
   const lodged = playThrough('fy-inn');
   const supplied = act(lodged, { type: 'BUY', itemId: 'fy-herbs' });
-  return route(supplied, 'fy-bamboo-wine', 'fy-follow', { 'fy-follow': 'keep-close' });
+  let game = route(supplied, 'fy-bamboo-wine', 'fy-follow', { 'fy-follow': 'keep-close' });
+  // Spend any action the day gates left over, so the herbs are tested at zero actions.
+  while (game.actions > 0) game = act(game, { type: 'REST' });
+  return { ...game, hp: 26 };
 }
 
 function reject(game: GameState, action: GameAction): void {
@@ -112,17 +116,24 @@ describe('usable herbs outside combat', () => {
     reject({ ...injured, resources: { ...injured.resources, herbs } }, { type: 'USE_HERBS' });
   });
 
-  it('cannot use herbs to bypass a pending scene or the completed chapter', () => {
+  it('cannot use herbs to bypass a pending scene or the settled run', () => {
     const prepared = route(injuredWithPurchasedHerbs(), 'fy-cave', 'fy-cicada', {
       'fy-cave': 'search-before-rest',
     });
-    expect(prepared.hp).toBeLessThan(prepared.maxHp);
     expect(prepared.resources.herbs).toBe(2);
-    const reporting = openScene(prepared, 'fy-report');
+    // Overnight recovery may have healed the route injury; re-injure to isolate the gating rule.
+    const wounded = { ...prepared, hp: Math.min(prepared.hp, prepared.maxHp - 2) };
+    expect(wounded.hp).toBeLessThan(wounded.maxHp);
+    const reporting = openScene(wounded, 'fy-report');
     reject(reporting, { type: 'USE_HERBS' });
-    const completed = act(reporting, { type: 'CHOOSE', choiceId: 'report-moonlight' });
-    expect(completed.ending?.outcome).toBe('success');
-    reject(completed, { type: 'USE_HERBS' });
+    // The report is a milestone, not an ending: the run continues and herbs work again afterwards.
+    const reported = act(reporting, { type: 'CHOOSE', choiceId: 'report-moonlight' });
+    expect(reported.ending).toBeNull();
+    expect(reported.flags).toContain('milestone-first-gu');
+    expect(getActionError(reported, { type: 'USE_HERBS' })).toBeNull();
+    // Once the wolf tide has settled the run, nothing can be used.
+    const settled = { ...reported, ending: { id: 'fy-wolf-tide-death' as const, reason: '狼潮', outcome: 'defeat' as const } };
+    reject(settled, { type: 'USE_HERBS' });
   });
 
   it('keeps legacy combat healing on the original combat turn instead of allowing free treatment', () => {
@@ -154,31 +165,32 @@ describe('usable herbs outside combat', () => {
   });
 });
 
-describe('day limit is a recording limit, not a blocked mainline', () => {
-  it('can restore actions, finish the mainline and pay upkeep while the date stays at its limit', () => {
-    let game = playThrough('fy-family');
-    // Reach the limit using real day-end actions, with no injected flags, dates or inventory.
-    while (game.day < MAX_FANG_DAY) game = act(game, { type: 'END_DAY' });
-    while (game.actions > 0) game = act(game, { type: 'TRAIN' });
-    expect(game).toMatchObject({ day: MAX_FANG_DAY, actions: 0, qi: 3, ending: null });
-    expect(getActionError(game, { type: 'EXPLORE', eventId: 'fy-rain-refining' })).toBeTruthy();
-    const advice = getJourneyAdvice(game, 'open');
-    expect(advice?.destination).toMatchObject({ kind: 'action', action: { type: 'END_DAY' } });
-    game = act(roundTrip(game), { type: 'END_DAY' });
-    expect(game).toMatchObject({ day: MAX_FANG_DAY, actions: 3, qi: 12, ending: null });
-    game = route(roundTrip(game), 'fy-rain-refining', 'fy-cicada');
+describe('the wolf tide is a hard deadline, not a recording limit', () => {
+  it('keeps the mainline, upkeep and training working right up to the last day, then settles', () => {
+    let game = playThrough('fy-cicada');
     game = act(game, { type: 'EQUIP', guId: 'moonlight' });
     game = act(game, { type: 'EQUIP', guId: 'liquor-worm' });
-    const beforeSettlement = game;
     expect(getUpkeep(game)).toBe(2);
-    game = act(game, { type: 'END_DAY' });
-    expect(game).toMatchObject({ day: MAX_FANG_DAY, actions: 3, qi: 12, hungry: [] });
-    expect(game.resources.stones).toBe(beforeSettlement.resources.stones - 2);
+    // Reach the deadline with real day-end actions, earning enough to keep both Gu fed.
+    while (game.day < MAX_FANG_DAY) {
+      while (game.actions > 0 && game.resources.stones < 60) {
+        if (game.location !== 'clan') game = act(game, { type: 'TRAVEL', location: 'clan' });
+        game = act(game, { type: 'ACTIVITY' });
+      }
+      game = act(game, { type: 'END_DAY' });
+    }
+    expect(game).toMatchObject({ day: MAX_FANG_DAY, actions: 3, qi: 12, ending: null, hungry: [] });
     expect(game.flags).toContain('milestone-upkeep');
-    game = route(roundTrip(game), 'fy-report', 'fy-report');
-    expect(game.ending).toMatchObject({ id: 'fy-first-gu', outcome: 'success' });
-    expect(game.resources.stones).toBe(35);
-    roundTrip(game);
+    while (game.actions > 0) game = act(game, { type: 'TRAIN' });
+    expect(game).toMatchObject({ day: MAX_FANG_DAY, actions: 0, qi: 3, ending: null });
+    const advice = getJourneyAdvice(game, 'open');
+    expect(advice?.destination).toMatchObject({ kind: 'action', action: { type: 'END_DAY' } });
+    const settled = act(roundTrip(game), { type: 'END_DAY' });
+    expect(settled.day).toBe(MAX_FANG_DAY);
+    expect(settled.ending?.id).toMatch(/^fy-wolf-tide-/);
+    reject(settled, { type: 'END_DAY' });
+    reject(settled, { type: 'TRAIN' });
+    roundTrip(settled);
   });
 
   it('still ends the legacy journey at the original tenth-day deadline', () => {

@@ -283,7 +283,7 @@ describe('people and immutable save-derived snapshots', () => {
     };
     const saved = createSave(game, EMPTY_META);
     const restored = parseSave(serializeSave(saved));
-    expect(saved.version).toBe(1);
+    expect(saved.version).toBe(2);
     expect(getChapterProgress(restored.game)).toEqual(getChapterProgress(game));
     expect(getChapterEpilogue(restored.game)).toEqual(getChapterEpilogue(game));
     expect(restored.game.flags).not.toBe(game.flags);

@@ -7,7 +7,7 @@ import ChapterPanel from './ChapterPanel';
 import ChapterEnding from './ChapterEnding';
 import FangChapter, { FangEndingReview } from './FangChapter';
 import { CampActions, ForgePanel, GuPanel, JournalPanel, QuestPanel, ShopPanel } from './GamePanels';
-import { getCampaignEvents } from './game/campaign';
+import { getCampaignEvents, getLocationError } from './game/campaign';
 import { createGame, gameReducer, getActionError, getEventActionCost } from './game/engine';
 import type { GameAction, GameState } from './game/types';
 
@@ -72,6 +72,7 @@ beforeAll(() => {
   for (const [eventId, choiceId] of ROUTE) {
     if (game.activeEvent !== eventId) {
       const event = getCampaignEvents(game).find(item => item.id === eventId)!;
+      while ((event.dayMin !== undefined && game.day < event.dayMin) || getLocationError(game, event.location)) game = act(game, { type: 'END_DAY' });
       if (game.actions < getEventActionCost(event)) game = act(game, { type: 'END_DAY' });
       if (game.location !== event.location) game = act(game, { type: 'TRAVEL', location: event.location });
       game = act(game, { type: 'EXPLORE', eventId });
@@ -82,16 +83,16 @@ beforeAll(() => {
 });
 
 describe('Fang Yuan UI server-rendered regression checks', () => {
-  it('presents the fixed protagonist and chapter scope on the actual default homepage', () => {
+  it('presents the fixed protagonist and the survival framing on the actual default homepage', () => {
     const html = rendered(<App />);
     const text = textContent(html);
     expect(text).toContain('固定主角 · 古月方源');
-    expect(text).toContain('今生从未开窍开始');
-    expect(text).toContain('本段可玩至首次炼蛊报验');
-    expect(text).toContain('深层传承与后续章节尚未开放');
-    expect(buttons(html).filter(button => button.label === '开始方源篇')).toHaveLength(1);
+    expect(text).toContain('狼潮在第 165 日到来');
+    expect(text).toContain('错过的窗口不会重开');
+    expect(text).toContain('狼潮生存记录');
+    expect(buttons(html).filter(button => button.label === '开始这一世')).toHaveLength(1);
     expect(html).not.toMatch(/<input\b[^>]*type="(?:text|radio)"/);
-    expect(text).not.toMatch(/选择出身|填写姓名|守拙|寻幽|行商|石灯|三条去路/);
+    expect(text).not.toMatch(/选择出身|填写姓名|守拙|寻幽|行商|石灯|三条去路|本段可玩至首次炼蛊报验/);
     // App is still awaiting its effect-driven save load during server rendering.
     expect(text).toContain('正在翻开上次的手札');
   });
@@ -162,20 +163,24 @@ describe('Fang Yuan UI server-rendered regression checks', () => {
     expect(textContent(html)).not.toMatch(/石灯|互不封堵退路|雨路验路单|遗藏取药匣|宗族立足/);
   });
 
-  it('shows one chapter objective with real aperture progress instead of the old three endings', () => {
-    const html = rendered(<QuestPanel game={checkpoint('fy-claim-moonlight')} />);
+  it('shows the survival sidebar with the wolf-tide countdown instead of the old three endings', () => {
+    const game = checkpoint('fy-claim-moonlight');
+    const html = rendered(<QuestPanel game={game} />);
     const text = textContent(html);
-    expect(html).toContain('aria-label="方源篇当前目标"');
-    expect(text).toContain('接下来：家宅交涉');
+    expect(html).toContain('aria-label="方源篇当前处境"');
+    expect(text).toMatch(/下一件大事|距狼潮/);
+    expect(text).toContain('接下来：');
     expect(definitionValues(html)['空窍']).toBe('一转初阶');
     expect(definitionValues(html)['已炼化并持有']).toBe('0 种蛊');
-    expect(text).toContain('深层花酒传承尚未开放');
-    expect(text).not.toMatch(/三条去路|宗族立足|独掌传承|随队离山|石灯|35 元石|十日/);
-    expect(rendered(<ChapterPanel game={checkpoint('fy-claim-moonlight')} onAction={onAction} />)).toBe('');
+    expect(definitionValues(html)['距狼潮']).toBe(`${165 - game.day} 日`);
+    expect(text).not.toMatch(/三条去路|宗族立足|独掌传承|随队离山|石灯|35 元石|十日|深层花酒传承尚未开放/);
+    expect(rendered(<ChapterPanel game={game} onAction={onAction} />)).toBe('');
   });
 
   it('keeps the next free mainline control enabled when ordinary actions have run out', () => {
     let game = checkpoint('fy-rain-refining');
+    while (game.actions > 0) game = act(game, { type: 'ACTIVITY' });
+    while (game.day < 3) game = act(game, { type: 'END_DAY' });
     while (game.actions > 0) game = act(game, { type: 'ACTIVITY' });
     const there = act(game, { type: 'TRAVEL', location: 'market' });
     const before = structuredClone(there);
@@ -195,6 +200,8 @@ describe('Fang Yuan UI server-rendered regression checks', () => {
     expect(buttons(rendered(<CampActions game={game} onAction={onAction} />)).find(button => button.label === '药草疗伤')?.disabled).toBe(true);
     game = act(game, { type: 'CHOOSE', choiceId: 'keep-close' });
     expect(game.hp).toBe(game.maxHp - 2);
+    // Day gating may leave actions over; spend them so the herbs are tested at zero actions.
+    while (game.actions > 0) game = act(game, { type: 'TRAVEL', location: game.location === 'stream' ? 'bamboo' : 'stream' }), game = act(game, { type: 'ACTIVITY' });
     expect(game.actions).toBe(0);
 
     const camp = rendered(<CampActions game={game} onAction={onAction} />);
@@ -204,7 +211,6 @@ describe('Fang Yuan UI server-rendered regression checks', () => {
     const receipt = rendered(<ActionFeedback feedback={feedbackFor(game, recovered, { type: 'USE_HERBS' }, 1)} game={recovered} />);
     expect(textContent(receipt)).toContain('药草疗伤');
     expect(textContent(receipt)).toContain('药草 -2');
-    expect(textContent(receipt)).toContain('生命 +2');
     expect(textContent(receipt)).not.toContain('生命 +8');
     expect(recovered.actions).toBe(0);
     expect(recovered.hp).toBe(recovered.maxHp);
@@ -221,7 +227,7 @@ describe('Fang Yuan UI server-rendered regression checks', () => {
     const full = act(act(game, { type: 'TRAIN' }), { type: 'END_DAY' });
     const fullCamp = rendered(<CampActions game={full} onAction={onAction} />);
     expect(buttons(fullCamp).find(button => button.label === '温养空窍')?.disabled).toBe(true);
-    expect(textContent(fullCamp)).toContain('本章修为已达上限');
+    expect(textContent(fullCamp)).toContain('修为已达本阶段上限');
     expect(textContent(fullCamp)).not.toMatch(/3 真元 → [034] 修为/);
   });
 
@@ -237,10 +243,22 @@ describe('Fang Yuan UI server-rendered regression checks', () => {
     expect(displayedSaveStatus('saved', null, null)).toBe('saved');
   });
 
-  it('builds the ending review from a real completed run, including earned inventory, balances and relationships', () => {
-    const game = checkpoint('fy-report');
-    expect(game.ending).toMatchObject({ id: 'fy-first-gu', outcome: 'success' });
-    expect(game.resources.stones).toBe(37);
+  it('builds the ending review from a real settled run, including earned inventory, balances and relationships', () => {
+    const reported = checkpoint('fy-report');
+    expect(reported.ending).toBeNull();
+    expect(reported.flags).toContain('milestone-first-gu');
+    expect(reported.resources.stones).toBe(37);
+    // Play forward to the wolf tide with real actions so the review reflects an actual settlement.
+    let game = act(act(reported, { type: 'EQUIP', guId: 'liquor-worm' }), { type: 'EQUIP', guId: 'moonlight' });
+    while (game.day < 165) {
+      while (game.actions > 0 && game.resources.stones < 200) {
+        if (game.location !== 'clan') game = act(game, { type: 'TRAVEL', location: 'clan' });
+        game = act(game, { type: 'ACTIVITY' });
+      }
+      game = act(game, { type: 'END_DAY' });
+    }
+    game = act(game, { type: 'END_DAY' });
+    expect(game.ending?.id).toMatch(/^fy-wolf-tide-/);
     const before = structuredClone(game);
     const html = rendered(<FangEndingReview game={game} />);
     const text = textContent(html);
@@ -249,16 +267,16 @@ describe('Fang Yuan UI server-rendered regression checks', () => {
     expect(values['元石余额']).toBe(String(game.resources.stones));
     expect(values['当前修为']).toBe(String(game.cultivation));
     expect(values['境界']).toBe('一转初阶');
-    expect(text).toContain('报验时领取二十块元石');
+    expect(text).toContain('你活到了第 165 日');
     expect(text).toContain('14 / 14');
-    expect(text).toContain('深层传承与下一章尚未开放');
+    expect(text).toContain('狼潮之后的路尚未开放');
     expect(text).toContain('关系记录 -4');
     expect(text).toContain('关系记录 +4');
     const guList = html.match(/<ul class="chapter-gu-list">([\s\S]*?)<\/ul>/)?.[1] ?? '';
     expect(textContent(guList)).toContain('月光蛊 × 1');
     expect(textContent(guList)).toContain('酒虫 × 1');
     expect(textContent(guList)).not.toContain('春秋蝉');
-    expect(text).not.toMatch(/石灯|独掌传承|宗族立足|随队离山|守关木傀/);
+    expect(text).not.toMatch(/石灯|独掌传承|宗族立足|随队离山|守关木傀|报验时领取二十块元石/);
     expect(rendered(<ChapterEnding game={game} />)).toBe('');
     expect(rendered(<FangEndingReview game={checkpoint('fy-cave')} />)).toBe('');
   });

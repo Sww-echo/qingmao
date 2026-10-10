@@ -207,8 +207,8 @@ function peopleNotes(game: GameState): ChapterEpilogue['people'] {
 /** Build a fresh ending snapshot from saved facts; no source arrays or objects escape. */
 export function getChapterEpilogue(game: GameState): ChapterEpilogue | null {
   const { ending } = game;
-  if (game.campaign === 'fang-yuan' || !ending || ending.id === 'fy-first-gu') return null;
-  const endingId = ending.id;
+  if (game.campaign === 'fang-yuan' || !ending || ending.id.startsWith('fy-')) return null;
+  const endingId = ending.id as LegacyEndingId;
   const success = ending.outcome === 'success';
   const heading = success
     ? `${ENDINGS.find(item => item.id === ending.id)?.title ?? '旅途结束'} · 本章完成`

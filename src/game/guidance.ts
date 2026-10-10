@@ -169,8 +169,25 @@ export function getJourneyAdvice(game: GameState, focus: JourneyFocus): JourneyA
 }
 
 function getFangAdvice(game: GameState): JourneyAdvice | null {
-  const step = FANG_STEPS.find(item => !game.flags.includes(item.flag));
-  if (!step) return null;
+  // Prefer the opportunity whose window closes soonest; unrelated steps are not ordered.
+  const open = FANG_STEPS.filter(step => {
+    if (game.flags.includes(step.flag) || game.flags.includes(`missed-${step.eventId}`)) return false;
+    const after: readonly string[] = 'after' in step ? step.after : [];
+    return after.every(flag => game.flags.includes(flag));
+  });
+  const step = [...open].sort((a, b) => (('closes' in a ? a.closes : Infinity) - ('closes' in b ? b.closes : Infinity)))[0];
+  if (!step) {
+    // Nothing left to pursue; the remaining days are for stakes, then the wolf tide.
+    if (game.actions === 0) {
+      return {
+        kind: 'rest', title: '安排下一日的筹备',
+        description: `今晚供养折合 ${getUpkeep(game)} 元石。确认结算后恢复行动与真元；狼潮不等人。`,
+        destination: actionDestination({ type: 'END_DAY' }, '查看日暮结算'),
+      };
+    }
+    if (!getActionError(game, { type: 'TRAIN' })) return { kind: 'care', title: '把剩下的日子换成修为', description: '主线机遇都已处理或错过。温养空窍、攒下元石与蛊虫，是狼潮前仅剩的本钱。', destination: actionDestination({ type: 'TRAIN' }, '温养一次空窍') };
+    return null;
+  }
   const event = getCampaignEvents(game).find(item => item.id === step.eventId);
   if (!event || getLocationError(game, event.location)) return null;
   const there = { ...game, location: event.location };
@@ -178,15 +195,18 @@ function getFangAdvice(game: GameState): JourneyAdvice | null {
   const advancing = event.choices.filter(choice => choice.effects.addFlags?.includes(step.flag));
   const affordable = advancing.some(choice => !getChoiceError(there, choice));
   const cost = event.actionCost ?? 1;
+  const closes = 'closes' in step ? step.closes : undefined;
+  const daysLeft = closes === undefined ? undefined : closes - game.day;
+  const urgency = daysLeft !== undefined && daysLeft <= 3 ? `只剩 ${daysLeft} 日，过期不再开放。` : '';
   if (affordable && (cost === 0 || game.actions > 0)) {
-    return eventAdvice(game, event, step.title, cost === 0
+    return eventAdvice(game, event, step.title, `${urgency}${cost === 0
       ? '这段主线不消耗行动。按眼前处境作出选择，资源与人物态度会留在行记中。'
-      : '这段探索消耗一次行动。先看清代价，再决定如何运用记忆与手中资源。', 'route');
+      : '这段探索消耗一次行动。先看清代价，再决定如何运用记忆与手中资源。'}`, 'route');
   }
   if (game.actions === 0) {
     return {
       kind: 'rest', title: '安排下一日的筹备',
-      description: `今晚供养折合 ${getUpkeep(game)} 元石。方源篇没有十日离山期限；确认结算后恢复行动与真元。`,
+      description: `今晚供养折合 ${getUpkeep(game)} 元石。确认结算后恢复行动与真元；狼潮不等人。`,
       destination: actionDestination({ type: 'END_DAY' }, '查看日暮结算'),
     };
   }

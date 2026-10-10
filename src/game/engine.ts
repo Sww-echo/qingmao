@@ -3,6 +3,8 @@ import {
   getCampaignEnemies, getCampaignEndings, getCampaignEvents, getCampaignGu, getCampaignLocations,
   getCampaignRecipes, getCampaignShop, getLocationError, isFangYuan, MAX_FANG_DAY,
 } from './campaign';
+import { FANG_FAILURE_ENDINGS, FANG_STEPS } from './fang-content';
+import { WOLF_TIDE_DAY, WORLD_EVENTS, judgeWolfTide } from './world-clock';
 import type {
   EffectiveStats, Effects, EndingId, EnemyMove, EventChoice, EventDef, GameAction, GameState,
   GuDef, OriginId, RecipeDef, Requirement, ResourceKey, Resources,
@@ -54,6 +56,7 @@ function cloneGame(state: GameState): GameState {
     equipped: [...state.equipped], hungry: [...state.hungry], usedToday: [...state.usedToday],
     flags: [...state.flags], relations: { ...state.relations }, seenEvents: [...state.seenEvents],
     purchases: { ...state.purchases }, journal: [...state.journal], ending: state.ending && { ...state.ending },
+    worldEvents: [...state.worldEvents],
     combat: state.combat && { ...state.combat, victoryEffects: cloneEffects(state.combat.victoryEffects), defeatEffects: cloneEffects(state.combat.defeatEffects), log: [...state.combat.log] },
   };
 }
@@ -83,6 +86,7 @@ function normalize(state: GameState): void {
   state.usedToday = unique(state.usedToday).filter(id => !!guById(state, id));
   state.flags = unique(state.flags);
   state.seenEvents = unique(state.seenEvents);
+  state.worldEvents = unique(state.worldEvents);
   for (const id of Object.keys(state.relations)) state.relations[id] = clamp(state.relations[id], -100, 100);
 }
 
@@ -97,16 +101,20 @@ function applyEffects(state: GameState, effects: Effects): void {
   normalize(state);
 }
 
+function endingTitle(state: GameState, id: EndingId): string {
+  return [...getCampaignEndings(state), ...(isFangYuan(state) ? FANG_FAILURE_ENDINGS : [])].find(ending => ending.id === id)?.title ?? '旅途结束';
+}
+
 function finish(state: GameState, id: EndingId, reason: string, outcome: 'success' | 'survived' | 'defeat'): void {
   state.ending = { id, reason, outcome };
   state.combat = null;
   state.activeEvent = null;
-  log(state, `${getCampaignEndings(state).find(ending => ending.id === id)?.title ?? '旅途结束'}：${reason}`, outcome === 'success' ? 'good' : outcome === 'defeat' ? 'bad' : 'story');
+  log(state, `${endingTitle(state, id)}：${reason}`, outcome === 'success' ? 'good' : outcome === 'defeat' ? 'bad' : 'story');
 }
 
 function checkLife(state: GameState): void {
   if (state.hp <= 0 && !state.ending) finish(state, 'departure', isFangYuan(state)
-    ? '伤势过重，这次重生初炼的尝试中断。没有完成本章，也没有获得后续剧情成果。'
+    ? '伤势过重，你倒在了狼潮到来之前。这一世的筹划到此为止。'
     : '伤势过重，你的青茅山之行止步于此。此次按败退结算。', 'defeat');
 }
 
@@ -243,11 +251,7 @@ export function getChoiceError(state: GameState, choice: EventChoice): string | 
   if ((choice.ending || choice.victoryEnding) && !isFangYuan(state) && state.flags.includes('chapter-one') && !state.flags.includes('chapter-ready')) {
     return '先完成章节交涉，再回学堂听取「临行前的交代」，然后决定最终去路。';
   }
-  if (isFangYuan(state) && (choice.ending || choice.victoryEnding)) {
-    if ((choice.ending ?? choice.victoryEnding) !== 'fy-first-gu') return '这不是方源篇的章节收束。';
-    if (!state.flags.includes('fy-cicada-revealed') || !state.flags.includes('fy-liquor-refined') || !state.flags.includes('fy-moonlight-refined')
-      || owned(state, 'moonlight') < 1 || owned(state, 'liquor-worm') < 1) return '先完成酒虫与月光蛊的炼化，再去学堂报验。';
-  }
+  if (isFangYuan(state) && (choice.ending || choice.victoryEnding)) return '方源篇的终局由狼潮与生死结算，不由剧情选项直接写入。';
   return requirementsError(state, choice.requirements) ?? effectsError(state, choice.effects);
 }
 
@@ -257,10 +261,9 @@ export function getActionError(state: GameState, action: GameAction): string | n
   if (state.activeEvent && action.type !== 'CHOOSE') return '请先为当前事件作出选择。';
   if (isFangYuan(state)) {
     if (state.rank === 0 && ['TRAIN', 'EQUIP', 'FEED', 'CRAFT', 'BREAKTHROUGH'].includes(action.type)) return '尚未开窍，先到学堂参加开窍大典。';
-    if (action.type === 'BREAKTHROUGH') return '本章停留在一转初阶；后续境界随原著章节开放。';
-    if (action.type === 'CRAFT') return '本章通过剧情初炼酒虫与月光蛊，合炼配方在后续章节开放。';
-    if (action.type === 'ACTIVITY' && !state.flags.includes('fy-family-settled')) return '先处理开窍、取蛊与家宅交涉，再自行筹备资源。';
-    if (action.type === 'BUY' && !state.flags.includes('fy-lodged')) return '先完成入住客栈的交涉，再补购物资。';
+    if (action.type === 'BREAKTHROUGH') return '本阶段停留在一转初阶；二转突破在后续阶段开放。';
+    if (action.type === 'CRAFT') return '本阶段通过剧情初炼酒虫与月光蛊，合炼配方在后续阶段开放。';
+    if (action.type === 'ACTIVITY' && state.rank === 0) return '开窍之前，先把眼前的大典与家中处境处理清楚。';
     if (action.type === 'EQUIP' && !state.flags.includes(action.guId === 'moonlight' ? 'fy-moonlight-refined' : 'fy-liquor-refined')) return '这只蛊尚未完成炼化，不能装备。';
   }
   const timed = ['ACTIVITY', 'TRAIN', 'REST', 'BREAKTHROUGH', 'CRAFT'];
@@ -283,7 +286,7 @@ export function getActionError(state: GameState, action: GameAction): string | n
       return location ? effectsError(state, location.activity.effects) : '地点资料缺失。';
     }
     case 'TRAIN':
-      if (isFangYuan(state) && getTrainingGain(state) === 0) return '本章修为已达上限，请继续当前主线。';
+      if (isFangYuan(state) && getTrainingGain(state) === 0) return '修为已达本阶段上限，先把元石与蛊虫准备起来。';
       return state.qi < 3 ? '修炼需要 3 点真元，先休息或结束当日。' : null;
     case 'USE_HERBS':
       if (state.hp >= state.maxHp) return '生命已满，无需消耗药草。';
@@ -378,19 +381,54 @@ export function createGame({ name = '', origin = 'disciple', seed = 20261010, ch
   for (const id of startingGu) inventory[id] = (inventory[id] ?? 0) + 1;
   const equipped = unique(startingGu).filter(id => getCampaignGu({ campaign }).find(gu => gu.id === id)?.rank === 1).slice(0, EQUIPMENT_LIMIT);
   const state: GameState = {
-    version: 1, ...(fang ? { campaign: 'fang-yuan' as const } : {}),
+    version: 2, ...(fang ? { campaign: 'fang-yuan' as const } : {}),
     runId: fang ? `${initialSeed.toString(36)}-fang-yuan-${displayName}` : `${initialSeed.toString(36)}-${origin}-${displayName}`, seed: initialSeed, rng: initialSeed,
     name: displayName, origin: background.id, day: 1, actions: DAILY_ACTIONS, location: fang ? 'clan' : 'academy',
     hp: 28, maxHp: 28, qi: fang ? 0 : 12, maxQi: fang ? 0 : 12, rank: fang ? 0 : 1, cultivation: fang ? 0 : background.cultivation,
     resources: fang ? { stones: 0, herbs: 0, ore: 0, wine: 0 } : { ...background.resources }, clues: 0, trust: fang ? 0 : background.trust, suspicion: 0,
     inventory, equipped, hungry: [], usedToday: [...equipped], flags: !fang && chapter ? ['chapter-one'] : [], relations: {}, seenEvents: [],
     activeEvent: fang ? 'fy-rebirth' : chapter ? 'chapter-arrival' : null, purchases: {}, combat: null, ending: null, journal: [], nextLogId: 1,
+    worldEvents: [],
   };
   normalize(state);
   log(state, fang
-    ? '夜雨中，你醒在十五岁时的旧屋。五百年经历仍在心中，身体却尚未开窍。你是古月方源，此番仍以长生为志。'
+    ? `夜雨中，你醒在十五岁时的旧屋。五百年经历仍在心中，身体却尚未开窍。你是古月方源，此番仍以长生为志。距狼潮尚有 ${WOLF_TIDE_DAY - 1} 日。`
     : `${displayName}以「${background.name}」的身份来到青茅山。山中遗藏的风声已起，你有十日决定自己的去路。`, 'story');
   return state;
+}
+
+/** 主线机遇窗口关闭时记下错失；结算页据此说明玩家少了哪些本钱。 */
+function closeMissedWindows(state: GameState): void {
+  for (const step of FANG_STEPS) {
+    if (!('closes' in step) || state.day <= step.closes) continue;
+    if (state.flags.includes(step.flag) || state.flags.includes(`missed-${step.eventId}`)) continue;
+    state.flags = unique([...state.flags, `missed-${step.eventId}`]);
+    log(state, `错失：「${step.title}」的时机已经过去，这条路不会再开。`, 'bad');
+  }
+}
+
+/** 到日即发的世界事件。开窍大典过期而未开窍，这一世便到此为止。 */
+function fireWorldEvents(state: GameState): void {
+  for (const event of WORLD_EVENTS) {
+    if (state.worldEvents.includes(event.id)) continue;
+    if (state.day >= event.opens) {
+      state.worldEvents = unique([...state.worldEvents, event.id]);
+      log(state, `${event.name}：${event.firedNote}`, 'story');
+    }
+  }
+  const fair = WORLD_EVENTS.find(event => event.id === 'fy-awakening-fair')!;
+  if (fair.closes !== undefined && state.day > fair.closes && state.rank === 0 && !state.ending) {
+    finish(state, 'fy-missed-awakening', fair.missedNote, 'defeat');
+  }
+}
+
+function settleWolfTide(state: GameState): void {
+  const guKinds = getCampaignGu(state).filter(gu => owned(state, gu.id) > 0).length;
+  const verdict = judgeWolfTide({
+    rank: state.rank, guKinds, stones: state.resources.stones, suspicion: state.suspicion,
+    hasLiquorWorm: state.flags.includes('fy-liquor-refined'), sawInheritance: state.flags.includes('fy-recording-seen'),
+  });
+  finish(state, verdict.id, verdict.reason, verdict.outcome);
 }
 
 function endDay(state: GameState): void {
@@ -409,15 +447,26 @@ function endDay(state: GameState): void {
     finish(state, 'departure', '十日期限已到，你没有取得此前约定的成果，随最后一批离山人结束旅途。此次按存活离山结算。', 'survived');
     return;
   }
+  if (isFangYuan(state) && state.day >= WOLF_TIDE_DAY) {
+    settleWolfTide(state);
+    return;
+  }
   state.day = isFangYuan(state) ? Math.min(MAX_FANG_DAY, state.day + 1) : state.day + 1;
   state.actions = DAILY_ACTIONS;
   state.hp = Math.min(state.maxHp, state.hp + 4);
   state.qi = state.maxQi;
   state.suspicion = Math.max(0, state.suspicion - 3);
   state.usedToday = [...state.equipped];
-  log(state, state.rank === 0
-    ? `第 ${state.day} 行动日。生命恢复最多 4 点，尚未开窍，获得 3 次行动。`
-    : `第 ${state.day} 日。生命恢复 4 点，真元已回满，获得 3 次行动。`, 'info');
+  if (isFangYuan(state)) {
+    const left = WOLF_TIDE_DAY - state.day;
+    log(state, state.rank === 0
+      ? `第 ${state.day} 日。生命恢复最多 4 点，尚未开窍，获得 3 次行动。距狼潮 ${left} 日。`
+      : `第 ${state.day} 日。生命恢复 4 点，真元已回满，获得 3 次行动。距狼潮 ${left} 日。`, 'info');
+    closeMissedWindows(state);
+    fireWorldEvents(state);
+    return;
+  }
+  log(state, `第 ${state.day} 日。生命恢复 4 点，真元已回满，获得 3 次行动。`, 'info');
 }
 
 function combatLog(state: GameState, text: string): void {
@@ -615,6 +664,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         next.rank = 1;
         next.maxQi = 12;
         next.qi = 12;
+      }
+      if (isFangYuan(next) && event.id === 'fy-report' && next.flags.includes('fy-first-gu-complete')) {
+        chapterMilestone(next, 'milestone-first-gu');
+        log(next, '里程碑：首次报验完成。头名到手，这不是终点，狼潮仍在前面。', 'good');
       }
       log(next, `${event.title} · ${choice.label}：${choice.outcome}`, 'story');
       checkLife(next);
