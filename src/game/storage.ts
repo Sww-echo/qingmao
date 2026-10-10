@@ -1,4 +1,10 @@
-import { ENEMIES, ENDINGS, EVENTS, GU, LOCATIONS, NPCS, ORIGINS, SHOP } from './content';
+import { ORIGINS } from './content';
+import {
+  ALL_ENDINGS, ALL_GU, getCampaignEnemies, getCampaignEndings, getCampaignEvents, getCampaignGu,
+  getCampaignLocations, getCampaignNpcs, getCampaignShop, getLocationError, isFangYuan, MAX_FANG_DAY,
+} from './campaign';
+import type { CampaignContext } from './campaign';
+import { FANG_STEPS } from './fang-content';
 import type { CombatState, Effects, GameState, JournalEntry, MetaProgress, Resources, RunEnding, SaveData } from './types';
 
 const DATABASE_NAME = 'qingmao-game-v1';
@@ -54,6 +60,14 @@ function strings(value: unknown, path: string, maxItems: number, maxLength: numb
   return result;
 }
 
+function campaignFlags(value: unknown, path: string, context: CampaignContext): string[] {
+  const result = strings(value, path, 256, 100);
+  if (isFangYuan(context)) {
+    if (result.some(flag => !flag.startsWith('fy-') && !flag.startsWith('milestone-'))) invalid(path, '混入了其他篇章的记录');
+  } else if (result.some(flag => flag.startsWith('fy-'))) invalid(path, '缺少方源篇的篇章信息');
+  return result;
+}
+
 function references<T extends string>(value: unknown, allowed: readonly T[], path: string, max = allowed.length): T[] {
   const result = array(value, path, max).map((item, index) => member(item, allowed, `${path}[${index}]`));
   if (new Set(result).size !== result.length) invalid(path, '含有重复引用');
@@ -73,46 +87,47 @@ function resources(value: unknown, path: string): Resources {
   };
 }
 
-function effects(value: unknown, path: string): Effects {
+function effects(value: unknown, path: string, context: CampaignContext): Effects {
   const source = object(value, path, ['resources', ...EFFECT_STATS, 'addFlags', 'removeFlags', 'gu', 'relations']);
   const result: Effects = {};
   if (source.resources !== undefined) result.resources = numberMap(source.resources, `${path}.resources`, RESOURCE_KEYS, -1_000_000, 1_000_000);
   for (const key of EFFECT_STATS) if (source[key] !== undefined) result[key] = integer(source[key], `${path}.${key}`, -10_000, 10_000);
-  if (source.addFlags !== undefined) result.addFlags = strings(source.addFlags, `${path}.addFlags`, 256, 100);
-  if (source.removeFlags !== undefined) result.removeFlags = strings(source.removeFlags, `${path}.removeFlags`, 256, 100);
-  if (source.gu !== undefined) result.gu = numberMap(source.gu, `${path}.gu`, GU.map(gu => gu.id), -10_000, 10_000);
-  if (source.relations !== undefined) result.relations = numberMap(source.relations, `${path}.relations`, NPCS.map(npc => npc.id), -100, 100);
+  if (source.addFlags !== undefined) result.addFlags = campaignFlags(source.addFlags, `${path}.addFlags`, context);
+  if (source.removeFlags !== undefined) result.removeFlags = campaignFlags(source.removeFlags, `${path}.removeFlags`, context);
+  if (source.gu !== undefined) result.gu = numberMap(source.gu, `${path}.gu`, getCampaignGu(context).map(gu => gu.id), -10_000, 10_000);
+  if (source.relations !== undefined) result.relations = numberMap(source.relations, `${path}.relations`, getCampaignNpcs(context).map(npc => npc.id), -100, 100);
   return result;
 }
 
-function combat(value: unknown): CombatState | null {
+function combat(value: unknown, context: CampaignContext): CombatState | null {
   if (value === null) return null;
   const source = object(value, '战斗', ['enemyId', 'enemyHp', 'enemyGuard', 'playerGuard', 'turn', 'victoryEffects', 'victoryText', 'victoryEnding', 'defeatEffects', 'log']);
-  const enemyId = member(source.enemyId, ENEMIES.map(enemy => enemy.id), '战斗.enemyId');
-  const enemy = ENEMIES.find(item => item.id === enemyId)!;
+  const enemyId = member(source.enemyId, getCampaignEnemies(context).map(enemy => enemy.id), '战斗.enemyId');
+  const enemy = getCampaignEnemies(context).find(item => item.id === enemyId)!;
   const result: CombatState = {
     enemyId, enemyHp: integer(source.enemyHp, '战斗.enemyHp', 1, enemy.hp),
     enemyGuard: integer(source.enemyGuard, '战斗.enemyGuard', 0, 1000),
     playerGuard: integer(source.playerGuard, '战斗.playerGuard', 0, 1000),
     turn: integer(source.turn, '战斗.turn', 0, 1_000_000),
-    victoryEffects: effects(source.victoryEffects, '战斗.victoryEffects'),
+    victoryEffects: effects(source.victoryEffects, '战斗.victoryEffects', context),
     victoryText: text(source.victoryText, '战斗.victoryText'),
-    defeatEffects: effects(source.defeatEffects, '战斗.defeatEffects'),
+    defeatEffects: effects(source.defeatEffects, '战斗.defeatEffects', context),
     log: strings(source.log, '战斗.log', 12, 4000, false),
   };
-  if (source.victoryEnding !== undefined) result.victoryEnding = member(source.victoryEnding, ENDINGS.map(ending => ending.id), '战斗.victoryEnding');
+  if (source.victoryEnding !== undefined) result.victoryEnding = member(source.victoryEnding, getCampaignEndings(context).map(ending => ending.id), '战斗.victoryEnding');
   return result;
 }
 
-function ending(value: unknown): RunEnding | null {
+function ending(value: unknown, context: CampaignContext): RunEnding | null {
   if (value === null) return null;
   const source = object(value, '结局', ['id', 'reason', 'outcome']);
   const result: RunEnding = {
-    id: member(source.id, ENDINGS.map(item => item.id), '结局.id'),
+    id: member(source.id, [...getCampaignEndings(context).map(item => item.id), 'departure'], '结局.id'),
     reason: text(source.reason, '结局.reason', 4000, 1),
     outcome: member(source.outcome, ['success', 'survived', 'defeat'] as const, '结局.outcome'),
   };
   if (result.id !== 'departure' && result.outcome !== 'success') invalid('结局', '的类别与结果不一致');
+  if (isFangYuan(context) && result.id === 'departure' && result.outcome !== 'defeat') invalid('结局', '不能将方源篇结算为商队离山');
   return result;
 }
 
@@ -133,50 +148,82 @@ function journal(value: unknown, day: number, nextLogId: number): JournalEntry[]
 
 function game(value: unknown): GameState {
   const source = object(value, '旅途', [
-    'version', 'runId', 'seed', 'rng', 'name', 'origin', 'day', 'actions', 'location', 'hp', 'maxHp', 'qi', 'maxQi',
+    'version', 'campaign', 'runId', 'seed', 'rng', 'name', 'origin', 'day', 'actions', 'location', 'hp', 'maxHp', 'qi', 'maxQi',
     'rank', 'cultivation', 'resources', 'clues', 'trust', 'suspicion', 'inventory', 'equipped', 'hungry', 'usedToday',
     'flags', 'relations', 'seenEvents', 'activeEvent', 'purchases', 'combat', 'ending', 'journal', 'nextLogId',
   ]);
-  const rank = member(source.rank, [1, 2] as const, '境界');
-  const maxHp = integer(source.maxHp, '生命上限', rank === 1 ? 28 : 36, rank === 1 ? 28 : 36);
-  const maxQi = integer(source.maxQi, '真元上限', rank === 1 ? 12 : 16, rank === 1 ? 12 : 16);
-  const day = integer(source.day, '日期', 1, 10);
+  const campaign = source.campaign === undefined ? undefined : member(source.campaign, ['fang-yuan'] as const, '篇章');
+  const context: CampaignContext = { campaign };
+  const fang = isFangYuan(context);
+  const rank = member(source.rank, fang ? [0, 1] as const : [1, 2] as const, '境界');
+  const expectedHp = rank === 2 ? 36 : 28;
+  const expectedQi = rank === 0 ? 0 : rank === 1 ? 12 : 16;
+  const maxHp = integer(source.maxHp, '生命上限', expectedHp, expectedHp);
+  const maxQi = integer(source.maxQi, '真元上限', expectedQi, expectedQi);
+  const maxDay = fang ? MAX_FANG_DAY : 10;
+  const day = integer(source.day, '日期', 1, maxDay);
   const nextLogId = integer(source.nextLogId, '下一条行记编号', 1);
   const name = text(source.name, '角色名', 18, 1);
   if (!name.trim()) invalid('角色名', '不能全部为空白');
-  const guIds = GU.map(gu => gu.id);
+  const guIds = getCampaignGu(context).map(gu => gu.id);
+  const events = getCampaignEvents(context);
+  const shop = getCampaignShop(context);
   const result: GameState = {
     version: member(source.version, [1] as const, '旅途版本'),
+    ...(campaign ? { campaign } : {}),
     runId: text(source.runId, '旅途编号', 200, 1), seed: integer(source.seed, '随机种子', 0, 0xFFFFFFFF), rng: integer(source.rng, '随机进度', 0, 0xFFFFFFFF),
     name, origin: member(source.origin, ORIGINS.map(origin => origin.id), '出身'), day,
-    actions: integer(source.actions, '剩余行动', 0, 3), location: member(source.location, LOCATIONS.map(location => location.id), '地点'),
+    actions: integer(source.actions, '剩余行动', 0, 3), location: member(source.location, getCampaignLocations(context).map(location => location.id), '地点'),
     hp: integer(source.hp, '生命', 0, maxHp), maxHp, qi: integer(source.qi, '真元', 0, maxQi), maxQi, rank,
     cultivation: integer(source.cultivation, '修为', 0, 10_000), resources: resources(source.resources, '资源'),
     clues: integer(source.clues, '情报', 0, 10_000), trust: integer(source.trust, '宗族信任', 0, 100), suspicion: integer(source.suspicion, '疑心', 0, 100),
     inventory: numberMap(source.inventory, '蛊囊', guIds, 1, 10_000), equipped: references(source.equipped, guIds, '装备', 4),
     hungry: references(source.hungry, guIds, '休眠蛊'), usedToday: references(source.usedToday, guIds, '当日携带记录'),
-    flags: strings(source.flags, '剧情标记', 256, 100), relations: numberMap(source.relations, '人物关系', NPCS.map(npc => npc.id), -100, 100),
-    seenEvents: references(source.seenEvents, EVENTS.map(event => event.id), '事件历史'),
-    activeEvent: source.activeEvent === null ? null : member(source.activeEvent, EVENTS.map(event => event.id), '当前事件'),
-    purchases: numberMap(source.purchases, '购买记录', SHOP.map(item => item.id), 0, 10_000),
-    combat: combat(source.combat), ending: ending(source.ending), journal: journal(source.journal, day, nextLogId), nextLogId,
+    flags: campaignFlags(source.flags, '剧情标记', context), relations: numberMap(source.relations, '人物关系', getCampaignNpcs(context).map(npc => npc.id), -100, 100),
+    seenEvents: references(source.seenEvents, events.map(event => event.id), '事件历史'),
+    activeEvent: source.activeEvent === null ? null : member(source.activeEvent, events.map(event => event.id), '当前事件'),
+    purchases: numberMap(source.purchases, '购买记录', shop.map(item => item.id), 0, 10_000),
+    combat: combat(source.combat, context), ending: ending(source.ending, context), journal: journal(source.journal, day, nextLogId), nextLogId,
   };
   if ([result.activeEvent, result.combat, result.ending].filter(Boolean).length > 1) invalid('当前阶段', '不能同时存在事件、战斗或结局');
   if (result.hp === 0 && result.ending?.outcome !== 'defeat') invalid('生命', '归零后必须已经按败退结算');
   for (const id of result.equipped) {
     if (!result.inventory[id]) invalid('装备', '引用了未持有的蛊');
-    if (GU.find(gu => gu.id === id)!.rank > rank) invalid('装备', '包含超出当前境界的蛊');
+    if (getCampaignGu(context).find(gu => gu.id === id)!.rank > rank) invalid('装备', '包含超出当前境界的蛊');
     if (!result.usedToday.includes(id)) invalid('当日携带记录', '遗漏了正在装备的蛊');
   }
   for (const id of result.hungry) if (!result.inventory[id]) invalid('休眠蛊', '引用了未持有的蛊');
   // usedToday may include ingredients already consumed by successful refinement.
   for (const [id, amount] of Object.entries(result.purchases)) {
-    if (amount > SHOP.find(item => item.id === id)!.stock) invalid('购买记录', '超出了商店总库存');
+    if (amount > shop.find(item => item.id === id)!.stock) invalid('购买记录', '超出了商店总库存');
   }
   if (result.activeEvent) {
-    const active = EVENTS.find(event => event.id === result.activeEvent)!;
-    if (active.location !== result.location || day < (active.dayMin ?? 1) || day > (active.dayMax ?? 10)) invalid('当前事件', '与地点或日期不一致');
+    const active = events.find(event => event.id === result.activeEvent)!;
+    if (active.location !== result.location || day < (active.dayMin ?? 1) || day > (active.dayMax ?? maxDay)) invalid('当前事件', '与地点或日期不一致');
     if (!active.repeatable && result.seenEvents.includes(active.id)) invalid('当前事件', '已经结束且不能重复触发');
+  }
+  if (fang) {
+    if (result.name !== '古月方源' || result.origin !== 'disciple') invalid('主角', '必须是固定身份的古月方源');
+    if ((rank === 1) !== result.flags.includes('fy-awakened')) invalid('境界', '与开窍记录不一致');
+    for (let index = 0; index < FANG_STEPS.length; index += 1) {
+      const step = FANG_STEPS[index]!;
+      if (!result.flags.includes(step.flag)) continue;
+      if (!result.seenEvents.includes(step.eventId) || (index > 0 && !result.flags.includes(FANG_STEPS[index - 1]!.flag))) invalid('章节进度', '缺少前置经历或已完成事件的记录');
+    }
+    const refined = result.flags.includes('fy-cicada-revealed');
+    if (refined !== result.flags.includes('fy-liquor-refined') || refined !== result.flags.includes('fy-moonlight-refined')) invalid('炼化记录', '与春秋蝉显形的经历不一致');
+    for (const id of guIds) {
+      if ((result.inventory[id] ?? 0) !== (refined ? 1 : 0)) invalid('蛊囊', '与本章的唯一蛊虫及炼化记录不一致');
+    }
+    if (result.ending?.id === 'fy-first-gu' && !result.flags.includes('fy-first-gu-complete')) invalid('结局', '缺少报验完成记录');
+    if (result.flags.includes('fy-first-gu-complete') && result.ending?.id !== 'fy-first-gu') invalid('章节进度', '报验后必须进入本章结算');
+    if (getLocationError(result, result.location)) invalid('地点', '尚未随剧情开放');
+    if (result.activeEvent) {
+      const active = events.find(event => event.id === result.activeEvent)!;
+      for (const requirement of active.requirements ?? []) {
+        if (requirement.kind === 'flag' && result.flags.includes(requirement.key) !== (requirement.value ?? true)) invalid('当前事件', '与主线前置记录不一致');
+      }
+    }
   }
   return result;
 }
@@ -192,8 +239,8 @@ function meta(value: unknown): MetaProgress {
   if (recordedRunIds.length > completedRuns) invalid('完成次数', '小于已结算旅途的数量');
   return {
     completedRuns, lastRecordedRun, recordedRunIds,
-    endings: references(source.endings, ENDINGS.map(ending => ending.id), '已解锁结局'),
-    discoveredGu: references(source.discoveredGu, GU.map(gu => gu.id), '已发现的蛊'),
+    endings: references(source.endings, ALL_ENDINGS.map(ending => ending.id), '已解锁结局'),
+    discoveredGu: references(source.discoveredGu, ALL_GU.map(gu => gu.id), '已发现的蛊'),
   };
 }
 
@@ -232,7 +279,7 @@ export function createSave(currentGame: GameState, progress: MetaProgress): Save
 export function updateMeta(progress: MetaProgress, currentGame: GameState): MetaProgress {
   const recordedRunIds = [...new Set([...(progress.recordedRunIds ?? []), ...(progress.lastRecordedRun ? [progress.lastRecordedRun] : [])])];
   const endings = [...new Set(progress.endings)];
-  const knownGu = new Set(GU.map(gu => gu.id));
+  const knownGu = new Set(ALL_GU.map(gu => gu.id));
   const discoveredGu = [...new Set([
     ...progress.discoveredGu,
     ...Object.entries(currentGame.inventory).filter(([, amount]) => amount > 0).map(([id]) => id),

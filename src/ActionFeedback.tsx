@@ -10,7 +10,7 @@ export interface ActionFeedbackData {
 const LABELS: Partial<Record<GameAction['type'], string>> = {
   EXPLORE: '开始探查', CHOOSE: '选择已记下', ACTIVITY: '劳作所得', TRAIN: '修炼所得',
   REST: '调息恢复', END_DAY: '日暮结算', BREAKTHROUGH: '境界突破', CRAFT: '合炼结果',
-  FEED: '供养结算', BUY: '交易完成', EQUIP: '已调整随身蛊', UNEQUIP: '已调整随身蛊',
+  FEED: '供养结算', USE_HERBS: '药草疗伤', BUY: '交易完成', EQUIP: '已调整随身蛊', UNEQUIP: '已调整随身蛊',
 };
 
 export function feedbackFor(before: GameState, after: GameState, action: GameAction, id: number): ActionFeedbackData | null {
@@ -28,8 +28,8 @@ export function feedbackFor(before: GameState, after: GameState, action: GameAct
   return { id, label: LABELS[action.type] ?? '已记入手札', effects };
 }
 
-export default function ActionFeedback({ feedback }: { feedback: ActionFeedbackData | null }) {
+export default function ActionFeedback({ feedback, game }: { feedback: ActionFeedbackData | null; game?: GameState }) {
   return <div className="action-receipt" role="status" aria-live="polite" aria-atomic="true">
-    {feedback ? <div className="receipt-content" key={feedback.id}><span>{feedback.label}</span>{effectLabels(feedback.effects).length ? <EffectList effects={feedback.effects} compact /> : <span className="muted">进度已记入行旅手记</span>}</div> : <span>行程随操作自动保存 · 每一步的得失会显示在这里</span>}
+    {feedback ? <div className="receipt-content" key={feedback.id}><span>{feedback.label}</span>{effectLabels(feedback.effects, game).length ? <EffectList effects={feedback.effects} compact game={game} /> : <span className="muted">进度已记入行旅手记</span>}</div> : <span>行程随操作自动保存 · 每一步的得失会显示在这里</span>}
   </div>;
 }

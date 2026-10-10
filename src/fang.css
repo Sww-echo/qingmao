@@ -1,0 +1,150 @@
+.fang-title-screen .title-form-wrap { max-width: 465px; }
+.fang-protagonist-card { display: grid; grid-template-columns: 47px minmax(0, 1fr); align-items: start; gap: 15px; margin: 24px 0 19px; padding: 18px; border: 1px solid #7e855850; border-radius: 7px; background: #26392a; }
+.fang-protagonist-seal { display: grid; place-items: center; width: 47px; height: 56px; border: 1px solid #a19564; color: #dcc99b; background: #37452d; font-family: var(--serif); font-size: 29px; }
+.fang-protagonist-card strong { color: #dfd5b0; font-size: 15px; font-weight: 500; }
+.fang-protagonist-card p { color: #b4c3a9; font-size: 14px; line-height: 1.9; margin-top: 5px; }
+.fang-title-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin: 20px 0 24px; }
+.fang-title-acts > li { display: flex; align-items: center; gap: 9px; font-size: 14px; color: #c2cdb3; }
+.fang-title-acts > li > span { color: #b1b18b; font-size: 12px; font-variant-numeric: tabular-nums; }
+.fang-title-scope { margin-top: 14px; font-size: 13px; line-height: 1.9; color: #b3c2a9; }
+.fang-title-completion { display: flex; align-items: center; gap: 12px; padding-top: 21px; margin-top: 24px; border-top: 1px solid var(--line); color: #c5c396; }
+.fang-title-completion > div { flex: 1; min-width: 0; }
+.fang-title-completion strong { display: block; font-size: 14px; font-weight: 500; }
+.fang-title-completion small { display: block; margin-top: 4px; color: #a8bca0; font-size: 12px; }
+.fang-title-completion > span { font-size: 14px; font-variant-numeric: tabular-nums; }
+
+.fang-player .rank-seal { padding-inline: 9px; letter-spacing: 1px; }
+.fang-player .player-identity { margin-bottom: 17px; }
+.fang-aptitude { color: #d4cfa8; font-size: 14px; line-height: 1.8; padding-bottom: 18px; }
+.fang-aptitude > small { display: block; color: #adbea6; font-size: 12px; line-height: 1.8; margin-top: 4px; }
+.fang-unawakened { display: flex; align-items: flex-start; gap: 9px; padding: 12px; color: #b3c4aa; background: #23382b; border-radius: 5px; }
+.fang-unawakened > svg { margin-top: 4px; color: #c7c39a; }
+.fang-unawakened p { font-size: 14px; line-height: 1.85; }
+
+.camp-actions-with-care { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.camp-actions-with-care > span { grid-column: 1 / -1; padding-top: 0; }
+.camp-actions-with-care > .action-wrap:nth-child(4) { grid-column: 1 / -1; }
+
+.fang-chapter { overflow-wrap: anywhere; }
+.fang-act-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 19px 0 20px; }
+.fang-act-list > li { display: flex; align-items: flex-start; gap: 8px; min-width: 0; color: #b9c4ac; border-top: 2px solid #54664e; padding-top: 12px; font-size: 14px; line-height: 1.65; }
+.fang-act-number { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; border: 1px solid #6c7c5b; color: #b9c5a7; font-size: 12px; font-variant-numeric: tabular-nums; }
+.fang-act-list small { display: block; color: #a8bba0; font-size: 12px; margin-top: 3px; }
+.fang-act-list > .fang-act-current { border-color: #d0bb84; color: #e4d9b3; }
+.fang-act-current .fang-act-number { border-color: #c3b17c; background: #454e34; color: #f1dfae; }
+.fang-act-current small { color: #d3c99f; }
+.fang-act-list > .fang-act-done { border-color: #91ad8a; color: #cbd9bc; }
+.fang-act-done .fang-act-number { background: #35503b; border-color: #829f76; color: #d3dfbf; }
+.fang-act-copy > h2 { font-family: var(--serif); color: #e2d9b4; font-size: 21px; line-height: 1.65; }
+.fang-act-copy > p { color: #b9c8ae; font-size: 14px; line-height: 1.9; margin-top: 7px; }
+.fang-next-event { display: grid; grid-template-columns: minmax(0, 1fr) minmax(170px, .65fr); gap: 15px 22px; align-items: center; margin: 17px 0 19px; padding: 15px; border: 1px solid #97a07a45; border-radius: 6px; background: #142a2199; }
+.fang-next-event > div { min-width: 0; }
+.fang-small-label { display: block; color: #aebd9e; font-size: 12px; line-height: 1.8; }
+.fang-next-event h3 { color: #dfd6b0; font-family: var(--serif); font-size: 17px; line-height: 1.8; margin-top: 3px; }
+.fang-next-cta { display: grid; gap: 7px; }
+.fang-next-cta > .button { min-height: 44px; white-space: normal; }
+.fang-next-cta > small { color: #b9c6a9; font-size: 12px; line-height: 1.75; }
+.fang-next-note { display: flex; align-items: flex-start; gap: 8px; color: #b4c3a6; font-size: 14px; line-height: 1.9; margin-block: 12px; }
+.fang-next-note > svg { margin-top: 5px; }
+.fang-next-event > .fang-next-note { margin-block: 0; }
+
+.fang-details { min-width: 0; border-top: 1px solid #a0af8340; }
+.fang-details > summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 48px; padding: 12px 0; font-size: 14px; line-height: 1.7; color: #d2cea7; cursor: pointer; list-style: none; }
+.fang-details > summary::-webkit-details-marker { display: none; }
+.fang-details > summary > span { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fang-details > summary > span:last-child { flex-shrink: 0; font-size: 12px; color: #b5c39f; }
+.fang-details > summary > span:last-child > svg { transition: transform .18s ease; }
+.fang-details[open] > summary > span:last-child > svg { transform: rotate(90deg); }
+.fang-details-body { padding: 2px 0 18px; }
+.fang-memory { color: #bdcbb0; font-size: 14px; line-height: 1.95; }
+.fang-gu-status { min-width: 0; margin: 17px 0; padding: 15px; border: 1px solid #7e947152; border-radius: 6px; background: #1d3327; overflow-wrap: anywhere; }
+.fang-gu-status > ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.fang-gu-status > ul > li { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
+.fang-gu-state-mark { color: #9eb291; flex: 0 0 18px; margin-top: 2px; }
+.fang-gu-status li > div { min-width: 0; }
+.fang-gu-status strong { font-size: 14px; line-height: 1.8; color: #d1d2ae; font-weight: 500; }
+.fang-gu-status strong > small { color: #a8bd95; font-size: 12px; }
+.fang-gu-status li p { color: #adbfa3; font-size: 14px; line-height: 1.85; margin-top: 4px; }
+.fang-gu-refined .fang-gu-state-mark { color: #c4d7a6; }
+.fang-gu-unrefined .fang-gu-state-mark { color: #d7c28b; }
+.fang-status-note { color: #b3c2a4; font-size: 13px; line-height: 1.9; margin-top: 12px; }
+.fang-cicada-note { display: flex; align-items: flex-start; gap: 9px; margin-top: 14px; padding-top: 13px; border-top: 1px solid #8ea07038; color: #d2c38d; }
+.fang-cicada-note > svg { margin-top: 4px; }
+.fang-cicada-note > div { min-width: 0; }
+.fang-cicada-note p { color: #b6c4a5; font-size: 14px; line-height: 1.95; margin-top: 4px; }
+.fang-completed-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 18px; }
+.fang-completed-list > li { display: flex; align-items: flex-start; gap: 8px; color: #bdcbaa; font-size: 14px; line-height: 1.85; }
+.fang-completed-list > li > svg { color: #b7c697; margin-top: 5px; }
+
+.fang-preparation-list { display: grid; gap: 0; margin: 0; }
+.fang-preparation-list > div { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 0; border-bottom: 1px solid #81966e35; font-size: 14px; line-height: 1.8; }
+.fang-preparation-list dt { color: #acbf9f; }
+.fang-preparation-list dd { margin: 0; color: #ddcf9d; font-variant-numeric: tabular-nums; text-align: right; }
+.fang-sidebar-note { color: #b0c09f; font-size: 13px; line-height: 1.95; margin-top: 16px; }
+.fang-feature-note { display: flex; align-items: flex-start; gap: 14px; padding: 20px; color: #cdbb88; border: 1px solid #8d9a685c; border-radius: 6px; background: #243828; }
+.fang-feature-note > svg { margin-top: 4px; }
+.fang-feature-note > div { min-width: 0; }
+.fang-feature-note h3 { color: #d7d2ac; font-size: 17px; line-height: 1.75; }
+.fang-feature-note p { color: #b6c4a7; font-size: 14px; line-height: 1.95; margin-top: 7px; }
+.fang-import-campaign { color: #d7c493; background: #273b2a; border: 1px solid #7d92634d; border-radius: 5px; padding: 10px 13px; font-size: 14px; margin-bottom: 15px; }
+
+.fang-ending { overflow-wrap: anywhere; }
+.fang-ending-screen .ending-content h1 { font-size: clamp(28px, 4.4vw, 48px); line-height: 1.6; letter-spacing: 3px; overflow-wrap: anywhere; }
+.fang-ending-screen .ending-stats .fang-ending-realm { font-size: 20px; line-height: 1.6; }
+.fang-ending-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 4px 0 16px; }
+.fang-ending-stats > div { min-width: 0; padding: 12px; border: 1px solid #7f946343; border-radius: 4px; background: #263b28; }
+.fang-ending-stats dt { font-size: 12px; color: #b3c49e; }
+.fang-ending-stats dd { margin: 5px 0 0; font-size: 18px; line-height: 1.7; color: #e1d3a6; font-variant-numeric: tabular-nums; }
+.fang-review-subheading { color: #d3d3ae; font-size: 15px; line-height: 1.85; margin: 18px 0 11px; }
+.fang-relationship-review { display: grid; gap: 9px; margin-top: 16px; }
+.fang-relationship-review > li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; line-height: 1.85; padding-bottom: 9px; border-bottom: 1px solid #83976830; }
+.fang-relationship-review strong { color: #d0d0aa; font-size: 14px; font-weight: 500; }
+.fang-relationship-review span { color: #b0c19d; font-variant-numeric: tabular-nums; font-size: 12px; }
+.fang-game .map-location.is-locked .map-pin { background: #213629; color: #a0b398; border-style: dashed; }
+.fang-game .map-marker-tag { font-size: 12px; }
+.fang-map-locked { color: #c0c9ad; font-size: 12px; line-height: 1.5; background: #1d342b; border-radius: 3px; padding: 1px 5px; }
+
+@media (max-width: 1200px) {
+  .fang-next-event { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .fang-next-cta { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
+}
+@media (max-width: 760px) {
+  .fang-player { grid-template-columns: minmax(0, 1fr); }
+  .fang-player .player-identity,
+  .fang-player .fang-aptitude,
+  .fang-player .player-meters { grid-column: 1 / -1; grid-row: auto; min-width: 0; }
+  .fang-player .player-identity { margin: 0; }
+  .fang-player .fang-aptitude { padding-bottom: 0; }
+  .fang-player .fang-unawakened { grid-column: 1 / -1; }
+  .fang-game .map-footnote { flex-wrap: wrap; gap: 5px 10px; }
+  .fang-act-list { gap: 8px; }
+  .fang-act-list > li { display: block; }
+  .fang-act-number { margin-bottom: 7px; }
+  .fang-next-event { padding: 13px; }
+  .fang-ending-screen .ending-stats .fang-ending-realm { font-size: 18px; }
+}
+@media (max-width: 520px) {
+  .fang-title-acts { gap: 10px; }
+  .fang-protagonist-card { gap: 12px; padding: 15px; }
+  .fang-title-screen .title-footer { gap: 10px; flex-wrap: wrap; }
+  .fang-act-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+  .fang-act-list > li { display: flex; gap: 8px; }
+  .fang-act-number { margin-bottom: 0; }
+  .fang-act-copy > h2 { font-size: 20px; }
+  .fang-next-cta { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+  .fang-gu-status { padding: 13px; }
+  .fang-gu-status > ul { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .fang-details > summary { flex-wrap: wrap; gap: 5px 10px; }
+  .fang-details > summary > span:last-child { margin-left: auto; }
+  .fang-completed-list { grid-template-columns: minmax(0, 1fr); }
+  .fang-feature-note { padding: 15px; gap: 11px; }
+  .fang-ending-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fang-ending-screen .ending-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px 10px; padding-block: 20px; }
+  .fang-ending-screen .ending-stats > div { border-right: 0; }
+  .fang-relationship-review > li { flex-wrap: wrap; gap: 2px 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fang-details > summary > span:last-child > svg,
+  .fang-next-cta > .button { transition: none; }
+  .fang-next-cta > .button:active:not(:disabled) { transform: none; }
+}

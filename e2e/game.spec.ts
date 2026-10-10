@@ -1,73 +1,10 @@
-import { access, readFile } from 'node:fs/promises';
-import { extname, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { expect, test as base } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { expect } from '@playwright/test';
 import type { Page, TestInfo } from '@playwright/test';
 import type { SaveData } from '../src/game/types';
-
-const APP_ORIGIN = 'http://qingmao.test';
-const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
-const contentTypes: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-  '.ico': 'image/x-icon',
-  '.woff2': 'font/woff2',
-};
-
-// A real browser loads the actual Vite build through intercepted requests.
-// No listening socket, development server, internet request, or injected game state.
-const test = base.extend<{ compiledGame: void }>({
-  compiledGame: [async ({ context, page }, use) => {
-    try {
-      await access(resolve(DIST, 'index.html'));
-    } catch {
-      throw new Error('缺少 dist/index.html。请先运行 npm run build；浏览器测试只验收真实构建产物。');
-    }
-    const externalRequests: string[] = [];
-    const missingAssets: string[] = [];
-    const runtimeErrors: string[] = [];
-    page.on('pageerror', (error) => runtimeErrors.push(error.message));
-    await context.route('**/*', async (route) => {
-      const url = new URL(route.request().url());
-      if (url.origin !== APP_ORIGIN) {
-        externalRequests.push(url.toString());
-        await route.abort('blockedbyclient');
-        return;
-      }
-      const pathname = decodeURIComponent(url.pathname);
-      const target = resolve(DIST, pathname.replace(/^\/+/, '') || 'index.html');
-      if (target !== DIST && !target.startsWith(`${DIST.replace(/[\\/]$/, '')}${sep}`)) {
-        await route.fulfill({ status: 403, body: 'Forbidden' });
-        return;
-      }
-      try {
-        const body = await readFile(target);
-        await route.fulfill({
-          status: 200,
-          contentType: contentTypes[extname(target)] ?? 'application/octet-stream',
-          headers: { 'cache-control': 'no-store' },
-          body,
-        });
-      } catch {
-        if (pathname === '/favicon.ico') {
-          await route.fulfill({ status: 204, body: '' });
-          return;
-        }
-        missingAssets.push(pathname);
-        await route.fulfill({ status: 404, body: 'Build asset not found' });
-      }
-    });
-    await use();
-    expect(externalRequests, 'the single-player build must work without external services').toEqual([]);
-    expect(missingAssets, 'all requested application assets must be in dist').toEqual([]);
-    expect(runtimeErrors, 'the browser must not report uncaught application errors').toEqual([]);
-  }, { auto: true }],
-});
+import { createGame } from '../src/game/engine';
+import { createSave, EMPTY_META, serializeSave } from '../src/game/storage';
+import { test } from './fixtures';
 
 async function dismissNotice(page: Page) {
   const close = page.getByRole('button', { name: '关闭提示', exact: true });
@@ -77,8 +14,22 @@ async function dismissNotice(page: Page) {
 async function startJourney(page: Page, name: string) {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: '青茅山', level: 1, exact: true })).toBeVisible();
-  await page.getByLabel('留下你的名字', { exact: true }).fill(name);
-  await page.getByRole('button', { name: '踏入青茅山', exact: true }).click();
+  // Import a genuine legacy v1 new-game save through the public UI.
+  // New-game controls now create Fang Yuan; compatibility checks retain the old chapter.
+  const legacy = createSave(createGame({ name, origin: 'disciple', chapter: true, seed: 20261010 }), EMPTY_META);
+  await page.getByRole('button', { name: '管理存档', exact: true }).click();
+  await page.getByLabel('选择游戏存档', { exact: true }).setInputFiles({
+    name: 'legacy-chapter-v1.json', mimeType: 'application/json', buffer: Buffer.from(serializeSave(legacy)),
+  });
+  const confirmation = page.getByRole('dialog', { name: '从这页手札继续？', exact: true });
+  await expect(confirmation).toContainText(name);
+  await confirmation.getByRole('button', { name: '确认载入', exact: true }).click();
+  const arrival = page.getByRole('dialog', { name: '十日之内，一盏旧灯', exact: true });
+  await expect(arrival).toBeVisible();
+  if (page.viewportSize()?.width === 320) await expectNoHorizontalOverflow(page);
+  await arrival.locator('[data-choice-id="seek-own-path"]').click();
+  await expect(arrival).toBeHidden();
+  await dismissNotice(page);
   await expect(page.getByRole('heading', { name, level: 2, exact: true })).toBeVisible();
   await expect(page.getByLabel('今日剩余 3 次行动', { exact: true })).toBeVisible();
 }
@@ -90,14 +41,39 @@ async function visit(page: Page, location: string) {
   await expect(target).toHaveAttribute('aria-pressed', 'true');
 }
 
-async function resolveEvent(page: Page, location: string, title: string, choice: string) {
+async function openEvent(page: Page, location: string, title: string) {
   await visit(page, location);
-  await page.getByRole('button', { name: '在此探查', exact: true }).click();
+  const preview = page.locator('.exploration-preview strong');
+  if (await preview.innerText() === title) {
+    await page.getByRole('button', { name: '在此探查', exact: true }).click();
+  } else {
+    const alternatives = page.locator('details.other-events');
+    if (!await alternatives.evaluate(element => element.hasAttribute('open'))) await alternatives.locator('summary').click();
+    await alternatives.locator('.other-event-button').filter({ hasText: title }).click();
+  }
   const dialog = page.getByRole('dialog', { name: title, exact: true });
   await expect(dialog).toBeVisible();
+  return dialog;
+}
+
+async function resolveEvent(page: Page, location: string, title: string, choice: string) {
+  const dialog = await openEvent(page, location, title);
   await dialog.getByRole('button', { name: choice }).click();
   await expect(dialog).toBeHidden();
   await dismissNotice(page);
+}
+
+async function planChapterRoute(page: Page, route: 'inheritance' | 'clan' | 'departure') {
+  const actionsBefore = await page.locator('.action-dots').getAttribute('aria-label');
+  const council = await openEvent(page, '议事楼', '消息落在同一张桌上');
+  const stance = route === 'inheritance' ? 'keep-independent' : route === 'clan' ? 'consider-public' : 'consider-caravan';
+  await council.locator(`[data-choice-id="${stance}"]`).click();
+  await dismissNotice(page);
+  const resolution = await openEvent(page, '学堂', '临行前的交代');
+  await resolution.locator(`[data-choice-id="prepare-${route}"]`).click();
+  await dismissNotice(page);
+  await expect(page.locator('.action-dots')).toHaveAttribute('aria-label', actionsBefore!);
+  await expect(page.locator('.chapter-panel')).toContainText('决意去留');
 }
 
 async function endDay(page: Page) {
@@ -127,7 +103,7 @@ async function exportSave(page: Page, testInfo: TestInfo) {
 async function resumeAfterReload(page: Page, remainingActions: number) {
   await expect(page.getByRole('button', { name: '已存档', exact: true })).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: /继续山中行程/ }).click();
+  await page.getByRole('button', { name: /继续上次行程/ }).click();
   await expect(page.getByLabel(`今日剩余 ${remainingActions} 次行动`, { exact: true })).toBeVisible();
 }
 
@@ -144,14 +120,14 @@ async function expectNoHorizontalOverflow(page: Page) {
   }
 }
 
-test('starts a journey and preserves actual choices through reload, export, and confirmed import', async ({ page }, testInfo) => {
+test('continues a legacy v1 chapter and preserves actual choices through reload, export, and confirmed import', async ({ page }, testInfo) => {
   await startJourney(page, '验收行舟');
   await resolveEvent(page, '学堂', '巡山名册上的空位', '接下巡山差事');
   await resolveEvent(page, '青竹林', '朝向旧坡的两行足迹', '沿足迹辨清入口方向');
   await expect(page.getByRole('progressbar', { name: '已核实情报', exact: true })).toHaveAttribute('aria-valuenow', '1');
   const { raw, save } = await exportSave(page, testInfo);
   expect(save.game).toMatchObject({ name: '验收行舟', origin: 'disciple', day: 1, actions: 1, clues: 1, location: 'bamboo' });
-  expect(save.game.flags).toEqual(expect.arrayContaining(['patrol-order', 'bamboo-bearing']));
+  expect(save.game.flags).toEqual(expect.arrayContaining(['chapter-one', 'chapter-arrival-read', 'chapter-motive-inheritance', 'patrol-order', 'bamboo-bearing']));
 
   await page.getByRole('button', { name: '温养空窍', exact: true }).click();
   await expect(page.getByLabel('今日剩余 0 次行动', { exact: true })).toBeVisible();
@@ -187,6 +163,7 @@ test('buys and equips protection, follows enemy intent, and wins the inheritance
   await ownedCard.getByRole('button', { name: '装备', exact: true }).click();
   await expect(ownedCard.getByText('已携带', { exact: true })).toBeVisible();
   await endDay(page);
+  await planChapterRoute(page, 'inheritance');
   await resolveEvent(page, '石灯遗藏', '石灯第三次亮起', '进入灯室，挑战守关木傀');
 
   const arena = page.locator('.combat-panel');
@@ -205,6 +182,7 @@ test('buys and equips protection, follows enemy intent, and wins the inheritance
   await expect(page.getByRole('heading', { name: '独掌传承', level: 1, exact: true })).toBeVisible();
   await expect(page.getByText('达成结局', { exact: true })).toBeVisible();
   await expect(page.getByText('已走过 1 段旅途 · 已抵达 1 / 3 种结局', { exact: true })).toBeVisible();
+  await expect(page.locator('.chapter-ending')).toContainText('第二章尚未开放');
 });
 
 test.describe('a 320px phone', () => {
@@ -237,6 +215,7 @@ test.describe('a 320px phone', () => {
     await resolveEvent(page, '青竹林', '朝向旧坡的两行足迹', '沿足迹辨清入口方向');
     await resolveEvent(page, '听雨涧', '水线之下的刻字', '用药汁拓下水位刻痕');
     await endDay(page);
+    await planChapterRoute(page, 'clan');
     await resolveEvent(page, '议事楼', '有人肯为你的报告作证', '交上自己署名的简报');
     await page.getByRole('button', { name: '协助清点公仓', exact: true }).click();
     await resolveEvent(page, '议事楼', '宗族愿给你的位置', '签下约定，在宗族立足');
@@ -257,6 +236,7 @@ test('route guidance opens real events and keeps the day-end confirmation', asyn
   const event = page.getByRole('dialog', { name: '朝向旧坡的两行足迹', exact: true });
   await event.getByRole('button', { name: '沿足迹辨清入口方向' }).click();
   await dismissNotice(page);
+  await planChapterRoute(page, 'departure');
   await page.getByRole('button', { name: '温养空窍', exact: true }).click();
   await page.getByRole('button', { name: '温养空窍', exact: true }).click();
   await guide.getByRole('button', { name: '查看日暮结算', exact: true }).click();
@@ -303,4 +283,53 @@ test('combat supplies consume inventory, recover resources, and still allow the 
   await expect(hp).toHaveAttribute('aria-valuenow', '17');
   await expect(wine).toHaveText(String(wineBefore - 1));
   await expect(page.getByLabel('今日剩余 2 次行动', { exact: true })).toBeVisible();
+});
+
+test('chapter conversations stay free at zero actions and final choices require the chapter discussion', async ({ page }, testInfo) => {
+  await startJourney(page, '先问后行');
+  await resolveEvent(page, '青竹林', '朝向旧坡的两行足迹', '沿足迹辨清入口方向');
+  await resolveEvent(page, '听雨涧', '水线之下的刻字', '用药汁拓下水位刻痕');
+  await resolveEvent(page, '山寨市集', '被裁去一角的运货单', '花八块元石买下断页');
+  await endDay(page);
+  const gate = await openEvent(page, '石灯遗藏', '石灯第三次亮起');
+  await expect(gate.locator('[data-choice-id="challenge"]')).toBeDisabled();
+  await expect(gate).toContainText('临行前的交代');
+  await gate.locator('[data-choice-id="leave"]').click();
+  await dismissNotice(page);
+  await page.getByRole('button', { name: '温养空窍', exact: true }).click();
+  await page.getByRole('button', { name: '温养空窍', exact: true }).click();
+  await expect(page.getByLabel('今日剩余 0 次行动', { exact: true })).toBeVisible();
+  await planChapterRoute(page, 'inheritance');
+  const { save } = await exportSave(page, testInfo);
+  expect(save.game).toMatchObject({ day: 2, actions: 0, ending: null });
+  expect(save.game.flags).toEqual(expect.arrayContaining(['chapter-arrival-read', 'chapter-council-read', 'chapter-ready']));
+  await resumeAfterReload(page, 0);
+  await expect(page.getByRole('region', { name: '行路建议', exact: true }).getByRole('button', { name: '查看日暮结算', exact: true })).toBeVisible();
+});
+
+test('a stolen pouch can be repaid and remains part of the saved chapter ending', async ({ page }, testInfo) => {
+  await startJourney(page, '有欠有还');
+  await resolveEvent(page, '学堂', '巡山名册上的空位', '接下巡山差事');
+  await resolveEvent(page, '青竹林', '朝向旧坡的两行足迹', '沿足迹辨清入口方向');
+  await resolveEvent(page, '听雨涧', '水线之下的刻字', '用药汁拓下水位刻痕');
+  await endDay(page);
+  await resolveEvent(page, '听雨涧', '石缝里的包袱', '取走蛊与元石');
+  await planChapterRoute(page, 'clan');
+  const inquiry = await openEvent(page, '议事楼', '公仓来问那只包袱');
+  await inquiry.locator('[data-choice-id="return-pouch-goods"]').click();
+  await dismissNotice(page);
+  await resolveEvent(page, '议事楼', '有人肯为你的报告作证', '交上自己署名的简报');
+  await endDay(page);
+  await page.getByRole('button', { name: '协助清点公仓', exact: true }).click();
+  const { save } = await exportSave(page, testInfo);
+  expect(save.game.flags).toEqual(expect.arrayContaining(['kept-pouch', 'pouch-account-settled', 'pouch-repaid', 'chapter-ready']));
+  expect(save.game.flags).not.toContain('returned-pouch');
+  expect(save.game.inventory['jade-skin']).toBeUndefined();
+  await resolveEvent(page, '议事楼', '宗族愿给你的位置', '签下约定，在宗族立足');
+  await expect(page.getByRole('heading', { name: '宗族立足', level: 1, exact: true })).toBeVisible();
+  const recap = page.locator('.chapter-ending');
+  await recap.getByText('承诺与旧账', { exact: true }).click();
+  await expect(recap.getByRole('heading', { name: /包袱/ })).toBeVisible();
+  await expect(recap).toContainText(/偿|归还/);
+  await expect(recap).toContainText('第二章尚未开放');
 });

@@ -1,6 +1,6 @@
 import { useId } from 'react';
-import { LOCATIONS } from './game/content';
-import type { LocationId } from './game/types';
+import { getCampaignLocations, getLocationError, isFangYuan } from './game/campaign';
+import type { GameState, LocationId } from './game/types';
 import { Icon } from './ui';
 
 const MAP_CONNECTIONS: [LocationId, LocationId][] = [
@@ -11,11 +11,6 @@ const MAP_CONNECTIONS: [LocationId, LocationId][] = [
   ['bamboo', 'cave'],
   ['academy', 'cave'],
 ];
-const mapRoutes = MAP_CONNECTIONS.map(([fromId, toId]) => {
-  const from = LOCATIONS.find(place => place.id === fromId)!;
-  const to = LOCATIONS.find(place => place.id === toId)!;
-  return { fromId, toId, path: `M${from.x} ${from.y} Q${(from.x + to.x) / 2} ${from.y} ${to.x} ${to.y}` };
-});
 
 export function Landscape({ title = false }: { title?: boolean }) {
   return <svg className={`landscape${title ? ' landscape-title' : ''}`} viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -40,6 +35,7 @@ export function Landscape({ title = false }: { title?: boolean }) {
 }
 
 type WorldMapProps = {
+  game: GameState;
   location: LocationId;
   onTravel: (id: LocationId) => void;
   locked: boolean;
@@ -47,24 +43,32 @@ type WorldMapProps = {
   recommended?: LocationId;
 };
 
-export default function WorldMap({ location, onTravel, locked, eventCounts, recommended }: WorldMapProps) {
+export default function WorldMap({ game, location, onTravel, locked, eventCounts, recommended }: WorldMapProps) {
   const mapId = useId();
+  const places = getCampaignLocations(game);
+  const mapRoutes = MAP_CONNECTIONS.flatMap(([fromId, toId]) => {
+    const from = places.find(place => place.id === fromId);
+    const to = places.find(place => place.id === toId);
+    return from && to ? [{ fromId, toId, path: `M${from.x} ${from.y} Q${(from.x + to.x) / 2} ${from.y} ${to.x} ${to.y}` }] : [];
+  });
   return <div className="world-map" role="group" aria-label="青茅山六处地点">
     <Landscape />
-    <div className="map-caption"><span>南疆 · 青茅山</span><small>山雨将至，机缘不候</small></div>
+    <div className="map-caption"><span>南疆 · 青茅山</span><small>{isFangYuan(game) ? '旧事重临，暗流仍在' : '山雨将至，机缘不候'}</small></div>
     <div className="map-compass"><span>北</span><Icon name="compass" size={26} /></div>
     <div className="map-canvas">
       <svg className="map-paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{mapRoutes.map(route => <path key={`${route.fromId}-${route.toId}`} d={route.path} className={route.fromId === location || route.toId === location ? 'is-current-path' : undefined} />)}</svg>
-      {LOCATIONS.map(place => {
+      {places.map(place => {
         const selected = location === place.id;
         const suggested = recommended === place.id;
         const count = Math.max(0, Math.floor(eventCounts?.[place.id] ?? 0));
         const descriptionId = `${mapId}-${place.id}`;
-        return <button key={place.id} type="button" className={`map-location${selected ? ' selected' : ''}${suggested ? ' recommended' : ''} ${place.danger}`} style={{ left: `${place.x}%`, top: `${place.y}%` }} onClick={() => onTravel(place.id)} disabled={locked} aria-pressed={selected} aria-label={`前往${place.name}`} aria-describedby={descriptionId}>
-          {(selected || suggested) && <span className="map-marker-tag" aria-hidden="true">{suggested ? '推荐' : '当前'}</span>}
+        const locationError = getLocationError(game, place.id);
+        return <button key={place.id} type="button" className={`map-location${selected ? ' selected' : ''}${suggested && !locationError ? ' recommended' : ''}${locationError ? ' is-locked' : ''} ${place.danger}`} style={{ left: `${place.x}%`, top: `${place.y}%` }} onClick={() => onTravel(place.id)} disabled={locked || Boolean(locationError)} title={locationError ?? undefined} aria-pressed={selected} aria-label={`前往${place.name}`} aria-describedby={descriptionId}>
+          {(selected || (suggested && !locationError)) && <span className="map-marker-tag" aria-hidden="true">{suggested && !locationError ? '推荐' : '当前'}</span>}
           <span className="map-pin-cluster"><span className="map-pin"><Icon name={place.id === 'cave' ? 'mountain' : place.id === 'market' ? 'store' : place.id === 'clan' ? 'flag' : place.id === 'bamboo' ? 'leaf' : place.id === 'stream' ? 'spark' : 'home'} size={18} /></span>{count > 0 && <span className="map-event-count" aria-hidden="true">{count}</span>}</span>
           <span className="map-label">{place.name}</span>
-          <span id={descriptionId} className="sr-only">{selected ? '当前所在地。' : ''}{suggested ? '推荐探查地点。' : ''}{eventCounts ? `${count} 个可探查事件。` : ''}{locked ? '请先完成当前事件或战斗。' : '移动不消耗行动。'}</span>
+          {locationError && <span className="fang-map-locked" aria-hidden="true">未开放</span>}
+          <span id={descriptionId} className="sr-only">{selected ? '当前所在地。' : ''}{suggested && !locationError ? '推荐探查地点。' : ''}{eventCounts ? `${count} 个可探查事件。` : ''}{locked ? '请先完成当前事件或战斗。' : locationError ?? '移动不消耗行动。'}</span>
         </button>;
       })}
     </div>

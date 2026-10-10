@@ -1,8 +1,11 @@
-import { GU, LOCATIONS, SHOP } from './content';
+import { EVENTS, GU, LOCATIONS, RECIPES, SHOP } from './content';
 import { getActionError, getAvailableEvents, getChoiceError, getUpkeep } from './engine';
-import type { Effects, EndingId, EventDef, GameAction, GameState, LocationId } from './types';
+import { getChapterProgress } from './chapter';
+import { getCampaignEvents, getCampaignLocations, getCampaignShop, getLocationError, isFangYuan } from './campaign';
+import { FANG_STEPS } from './fang-content';
+import type { Effects, LegacyEndingId, EventDef, GameAction, GameState, LocationId } from './types';
 
-export type JourneyFocus = 'open' | EndingId;
+export type JourneyFocus = 'open' | LegacyEndingId;
 export type AdviceDestination =
   | { kind: 'action'; action: GameAction; label: string }
   | { kind: 'pane'; pane: 'gu' | 'forge' | 'market'; label: string };
@@ -16,13 +19,13 @@ export interface JourneyAdvice {
 }
 
 export function getMapEventCounts(game: GameState): Record<LocationId, number> {
-  return Object.fromEntries(LOCATIONS.map(place => [place.id, getAvailableEvents({ ...game, location: place.id }).length])) as Record<LocationId, number>;
+  return Object.fromEntries(getCampaignLocations(game).map(place => [place.id, getAvailableEvents({ ...game, location: place.id }).length])) as Record<LocationId, number>;
 }
 
 const actionDestination = (action: GameAction, label: string): AdviceDestination => ({ kind: 'action', action, label });
 
 function eventAdvice(game: GameState, event: EventDef, title: string, description: string, kind: JourneyAdvice['kind'] = 'discovery'): JourneyAdvice {
-  const place = LOCATIONS.find(item => item.id === event.location)!;
+  const place = getCampaignLocations(game).find(item => item.id === event.location)!;
   return {
     kind, title, description, location: place.id,
     destination: game.location === place.id
@@ -57,7 +60,7 @@ function earnAdvice(game: GameState, title: string, description: string): Journe
   };
 }
 
-function readyRoute(game: GameState, ending: EndingId): EventDef | undefined {
+function readyRoute(game: GameState, ending: LegacyEndingId): EventDef | undefined {
   const location: LocationId = ending === 'inheritance' ? 'cave' : ending === 'clan' ? 'clan' : 'market';
   const there = { ...game, location };
   return getAvailableEvents(there).find(event => event.choices.some(choice => (choice.ending === ending || choice.victoryEnding === ending) && !getChoiceError(there, choice)));
@@ -66,6 +69,12 @@ function readyRoute(game: GameState, ending: EndingId): EventDef | undefined {
 /** Recommendations are derived from the current rules; they never spend resources or advance the day. */
 export function getJourneyAdvice(game: GameState, focus: JourneyFocus): JourneyAdvice | null {
   if (game.ending || game.combat || game.activeEvent) return null;
+  if (isFangYuan(game)) return getFangAdvice(game);
+  const chapter = getChapterProgress(game);
+  const nextChapterEvent = EVENTS.find(event => event.id === chapter?.nextEventId);
+  if (nextChapterEvent) {
+    return eventAdvice(game, nextChapterEvent, chapter!.stageTitle, '这段主线交谈不消耗行动。听取条件、说清打算，最后的去路仍可自由选择。', 'route');
+  }
   if (game.actions === 0) {
     const shortage = Math.max(0, getUpkeep(game) - game.resources.stones);
     return {
@@ -138,8 +147,76 @@ export function getJourneyAdvice(game: GameState, focus: JourneyFocus): JourneyA
       return { kind: 'care', title: '进灯室前，先看看防护与补给', description: `市集仍有${offer.name}，售价 ${offer.price} 元石。它能为守关战增加余地；购买和换装都不消耗行动。`, location: 'market', destination: game.location === 'market' ? { kind: 'pane', pane: 'market', label: '挑选作战用蛊' } : actionDestination({ type: 'TRAVEL', location: 'market' }, '前往市集备战') };
     }
   }
+  if (guardian && chapter && game.day <= 8) {
+    if (!game.flags.includes('milestone-battle') && game.hp >= Math.ceil(game.maxHp * 0.7) && game.qi >= 8) {
+      const practice = (['academy', 'bamboo'] as const).flatMap(location => getAvailableEvents({ ...game, location }))
+        .find(event => ['academy-assessment', 'bamboo-boar'].includes(event.id) && event.choices.some(choice => choice.encounterId && !getChoiceError(game, choice)));
+      if (practice) return eventAdvice(game, practice, '可选准备 · 先熟悉一次攻防', '可以从切磋或山豕练习看招、护身与回气。探查后仍能选择退出，也可以直接前往遗藏试关。', 'care');
+    }
+    if (game.rank === 1 && game.cultivation < 12 && !getActionError(game, { type: 'TRAIN' })) {
+      return { kind: 'care', title: '可选准备 · 为二转攒下修为', description: `目前 ${game.cultivation} / 12 修为。温养一次消耗 1 行动、3 真元，获得 3 修为；突破另需 12 元石。你也可以保持一转试关。`, destination: actionDestination({ type: 'TRAIN' }, '温养一次空窍') };
+    }
+    if (!game.flags.includes('milestone-crafted')) {
+      const recipe = RECIPES.find(item => !getActionError(game, { type: 'CRAFT', recipeId: item.id, safe: true })
+        && game.resources.stones - (item.resources.stones ?? 0) - (item.safeExtra.stones ?? 0) >= getUpkeep(game));
+      if (recipe) return { kind: 'care', title: '可选准备 · 材料已经能稳炼一蛊', description: `「${recipe.name}」的蛊与辅材已齐，支付后仍够当前供养。先查看合炼明细，再决定是否投入；现有装备也可直接试关。`, destination: { kind: 'pane', pane: 'forge', label: '查看合炼准备' } };
+    }
+  }
   if (guardian) return eventAdvice(game, guardian, '可以把准备拿到灯室试一试', '探查后仍可决定是否试关。先看生命、真元与补给，进入战斗后不能临时换蛊。', 'route');
   const event = opportunity(game, effects => Object.keys(effects).length > 0, [game.location, ...LOCATIONS.filter(place => place.id !== game.location).map(place => place.id)]);
   if (event) return eventAdvice(game, event, '山里还有尚未处理的人和事', `可以从「${event.title}」继续，也可切换关注的路线，看看另一种安排。`);
   return restAdvice();
+}
+
+function getFangAdvice(game: GameState): JourneyAdvice | null {
+  const step = FANG_STEPS.find(item => !game.flags.includes(item.flag));
+  if (!step) return null;
+  const event = getCampaignEvents(game).find(item => item.id === step.eventId);
+  if (!event || getLocationError(game, event.location)) return null;
+  const there = { ...game, location: event.location };
+  if (!getAvailableEvents(there).some(item => item.id === event.id)) return null;
+  const advancing = event.choices.filter(choice => choice.effects.addFlags?.includes(step.flag));
+  const affordable = advancing.some(choice => !getChoiceError(there, choice));
+  const cost = event.actionCost ?? 1;
+  if (affordable && (cost === 0 || game.actions > 0)) {
+    return eventAdvice(game, event, step.title, cost === 0
+      ? '这段主线不消耗行动。按眼前处境作出选择，资源与人物态度会留在行记中。'
+      : '这段探索消耗一次行动。先看清代价，再决定如何运用记忆与手中资源。', 'route');
+  }
+  if (game.actions === 0) {
+    return {
+      kind: 'rest', title: '安排下一日的筹备',
+      description: `今晚供养折合 ${getUpkeep(game)} 元石。方源篇没有十日离山期限；确认结算后恢复行动与真元。`,
+      destination: actionDestination({ type: 'END_DAY' }, '查看日暮结算'),
+    };
+  }
+  const needsRest = advancing.some(choice => (choice.requirements ?? []).some(requirement => requirement.kind === 'stat'
+    && (requirement.key === 'hp' || requirement.key === 'qi') && requirement.min !== undefined && game[requirement.key] < requirement.min)
+    || (choice.effects.qi ?? 0) < -game.qi);
+  if (needsRest) return restAdvice('先调息，再处理眼前的主线');
+  const neededGoods = advancing.flatMap(choice => (choice.requirements ?? []).flatMap(requirement => requirement.kind === 'resource'
+    && requirement.key !== 'stones' && game.resources[requirement.key] < requirement.min ? [requirement.key] : []));
+  const offer = getCampaignShop(game).find(item => neededGoods.some(key => (item.effects.resources?.[key] ?? 0) > 0)
+    && !getActionError({ ...game, location: 'market' }, { type: 'BUY', itemId: item.id }));
+  if (offer) {
+    const market = getCampaignLocations(game).find(place => place.id === 'market')!;
+    return {
+      kind: 'resources', title: `先补足${offer.name}`,
+      description: `这一段需要${offer.name}。可在${market.name}购买，备妥后仍能继续当前主线。`,
+      location: 'market', destination: game.location === 'market'
+        ? { kind: 'pane', pane: 'market', label: '查看补给' }
+        : actionDestination({ type: 'TRAVEL', location: 'market' }, `前往${market.name}`),
+    };
+  }
+  const home = getCampaignLocations(game).find(place => place.id === 'clan')!;
+  if (!getActionError({ ...game, location: home.id }, { type: 'ACTIVITY' })) {
+    return {
+      kind: 'resources', title: '先备齐这一步所需的元石', description: '主线可以暂缓后再回来。整理手边资源换取少量元石，再支付住店、买酒或炼化所需的费用。',
+      location: home.id,
+      destination: game.location === home.id
+        ? actionDestination({ type: 'ACTIVITY' }, home.activity.label)
+        : actionDestination({ type: 'TRAVEL', location: home.id }, `前往${home.name}`),
+    };
+  }
+  return eventAdvice(game, event, step.title, '先处理这段主线，再安排后续筹备。', 'route');
 }

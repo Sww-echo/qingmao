@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ENEMIES, ENDINGS, EVENTS, GU, LOCATIONS, NPCS, ORIGINS, RECIPES, SHOP } from './content';
 import type { Effects, Requirement } from './types';
+import { createGame } from './engine';
 
 const guIds = new Set(GU.map((gu) => gu.id));
 const locationIds = new Set(LOCATIONS.map((location) => location.id));
@@ -122,7 +123,8 @@ describe('playable content integrity', () => {
         [choice.effects, choice.victoryEffects ?? {}, choice.defeatEffects ?? {}],
       )),
     ];
-    const producedFlags = new Set(effects.flatMap((effect) => effect.addFlags ?? []));
+    const initialFlags = ORIGINS.flatMap(origin => createGame({ name: '初行人', origin: origin.id, chapter: true }).flags);
+    const producedFlags = new Set([...initialFlags, ...effects.flatMap((effect) => effect.addFlags ?? [])]);
     for (const event of EVENTS) {
       const requirements = [
         ...(event.requirements ?? []),

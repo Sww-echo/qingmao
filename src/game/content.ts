@@ -2,6 +2,7 @@ import type {
   EndingDef, EnemyDef, EventChoice, EventDef, GuDef, LocationDef,
   NpcDef, OriginDef, RecipeDef, ShopItem,
 } from './types';
+import { CHAPTER_EVENTS } from './chapter-content';
 
 // 原创支线。数值、供养与少数品阶为十日行程做了简化；具体差异见各蛊说明。
 export const GU: GuDef[] = [
@@ -148,6 +149,7 @@ const defer = (outcome: string): EventChoice => ({
 });
 
 export const EVENTS: EventDef[] = [
+  ...CHAPTER_EVENTS,
   {
     id: 'academy-roster', title: '巡山名册上的空位', location: 'academy', tag: '起行', priority: 120,
     description: '教习把三张旧地图摊在桌上：竹林有新足迹，听雨涧有旧刻痕，市集有人收购断页。最后一班商队十日后离山，你每天有三次日间行动可用。',

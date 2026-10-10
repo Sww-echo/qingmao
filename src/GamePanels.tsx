@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { GU, NPCS, RECIPES, SHOP } from './game/content';
-import { getActionError, getUpkeep } from './game/engine';
+import { getCampaignGu, getCampaignLocations, getCampaignNpcs, getCampaignRecipes, getCampaignShop, isFangYuan } from './game/campaign';
+import { getActionError, getTrainingGain, getUpkeep } from './game/engine';
 import type { GameAction, GameState, GuRole, ResourceKey } from './game/types';
+import ActionButton from './GameActionButton';
 import GuArtwork from './GuArtwork';
+import { FangGuStatus, FangQuestPanel } from './FangChapter';
 import { EffectList, Icon, Meter, RESOURCE_NAMES, ROLE_ICONS, ROLE_NAMES, SectionHeading } from './ui';
 import type { IconName } from './ui';
 
@@ -15,6 +17,15 @@ const RESOURCE_ICONS: Record<ResourceKey, IconName> = {
 };
 const GU_ROLES = Object.keys(ROLE_NAMES) as GuRole[];
 
+export function CampActions({ game, onAction }: PanelProps) {
+  return <div className="camp-actions camp-actions-with-care">
+    <span>整顿自身</span>
+    {game.rank > 0 && <ActionButton game={game} action={{ type: 'TRAIN' }} onAction={onAction} icon="spark" detail={`1 行动 · 3 真元 → ${getTrainingGain(game)} 修为`}>温养空窍</ActionButton>}
+    <ActionButton game={game} action={{ type: 'REST' }} onAction={onAction} icon="moon" detail={game.rank === 0 ? '1 行动 · 恢复最多 8 生命' : '1 行动 · 恢复最多 8 生命、6 真元'}>原地调息</ActionButton>
+    <ActionButton game={game} action={{ type: 'USE_HERBS' }} onAction={onAction} icon="leaf" detail="2 药草 · 恢复最多 8 生命 · 不耗行动">药草疗伤</ActionButton>
+  </div>;
+}
+
 function IngredientCount({ name, current, needed }: { name: string; current: number; needed: number }) {
   const shortage = Math.max(0, needed - current);
   return <span className="ingredient-count"><span className="sr-only">{name}，现有 {current}，需要 {needed}。</span><strong aria-hidden="true">{current}<small> / {needed}</small></strong>{shortage > 0 ? <small className="ingredient-shortage">缺 {shortage}</small> : <span className="ingredient-ready"><Icon name="check" size={14} /><span className="sr-only">材料齐备</span></span>}</span>;
@@ -23,23 +34,27 @@ function IngredientCount({ name, current, needed }: { name: string; current: num
 export function GuPanel({ game, onAction }: PanelProps) {
   const [filter, setFilter] = useState<'owned' | 'all'>('owned');
   const [role, setRole] = useState<GuRole | 'all'>('all');
-  const ownedKinds = GU.filter((gu) => (game.inventory[gu.id] ?? 0) > 0).length;
-  const collection = GU.filter(gu => (filter === 'all' || (game.inventory[gu.id] ?? 0) > 0) && (role === 'all' || gu.role === role));
-  const sleeping = GU.filter((gu) => game.hungry.includes(gu.id) && (game.inventory[gu.id] ?? 0) > 0);
+  const fang = isFangYuan(game);
+  const guList = getCampaignGu(game);
+  const ownedKinds = guList.filter((gu) => (game.inventory[gu.id] ?? 0) > 0).length;
+  const collection = guList.filter(gu => (filter === 'all' || (game.inventory[gu.id] ?? 0) > 0) && (role === 'all' || gu.role === role));
+  const sleeping = guList.filter((gu) => game.hungry.includes(gu.id) && (game.inventory[gu.id] ?? 0) > 0);
+  const roles = fang ? GU_ROLES.filter(item => guList.some(gu => gu.role === item)) : GU_ROLES;
   const feedCost = sleeping.reduce((total, gu) => total + gu.upkeep, 0);
   const feedAction: GameAction = { type: 'FEED' };
   const feedError = getActionError(game, feedAction);
 
   return <section className="panel gu-panel" aria-label="蛊囊与装备">
     <SectionHeading eyebrow="炼 · 养 · 用" title="你的蛊囊">
-      <span className="muted">已拥有 {ownedKinds} / {GU.length} 种</span>
+      <span className="muted">{fang ? '已炼化并持有' : '已拥有'} {ownedKinds} / {guList.length} 种</span>
     </SectionHeading>
+    {fang && <FangGuStatus game={game} compact />}
     <div className="panel-head gu-toolbar">
       <div className="filter-group" role="group" aria-label="蛊虫筛选">
-        <button type="button" className={`button button-small ${filter === 'owned' ? 'button-primary' : 'button-quiet'}`} aria-pressed={filter === 'owned'} onClick={() => setFilter('owned')}>已拥有</button>
+        <button type="button" className={`button button-small ${filter === 'owned' ? 'button-primary' : 'button-quiet'}`} aria-pressed={filter === 'owned'} onClick={() => setFilter('owned')}>{fang ? '已炼化' : '已拥有'}</button>
         <button type="button" className={`button button-small ${filter === 'all' ? 'button-primary' : 'button-quiet'}`} aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>全部蛊谱</button>
       </div>
-      <label className="catalog-select"><span>职能</span><select value={role} onChange={event => setRole(event.target.value as GuRole | 'all')} aria-label="按蛊虫职能筛选"><option value="all">全部职能</option>{GU_ROLES.map(item => <option value={item} key={item}>{ROLE_NAMES[item]}</option>)}</select></label>
+      <label className="catalog-select"><span>职能</span><select value={role} onChange={event => setRole(event.target.value as GuRole | 'all')} aria-label="按蛊虫职能筛选"><option value="all">全部职能</option>{roles.map(item => <option value={item} key={item}>{ROLE_NAMES[item]}</option>)}</select></label>
     </div>
     <div className="gu-summary"><span><Icon name="bag" size={16} />携带 {game.equipped.length} / 4</span><span><Icon name="gem" size={16} />今日供养 {getUpkeep(game)} 元石</span><span className="catalog-result" role="status">显示 {collection.length} 种</span></div>
     <p className="muted panel-note">同时最多携带四种蛊。本日携带过的蛊都计入供养，卸下不会退回当天的费用；未携带的收藏不额外计费。</p>
@@ -48,7 +63,7 @@ export function GuPanel({ game, onAction }: PanelProps) {
       <button type="button" className="button button-primary button-small" disabled={Boolean(feedError)} title={feedError ?? undefined} aria-describedby={feedError ? 'gu-feed-error' : undefined} onClick={() => onAction(feedAction)}><Icon name="leaf" size={15} />补喂全部</button>
       {feedError && <p id="gu-feed-error" className="action-reason">{feedError}</p>}
     </div>}
-    {collection.length === 0 ? <div className="empty-state"><Icon name="bag" size={28} /><p>{role === 'all' ? '蛊囊暂时是空的。市集可以购入蛊虫，探索也能换来新的机缘。' : `当前筛选中没有${ROLE_NAMES[role]}蛊。可以换个职能，或在全部蛊谱中寻找。`}</p><button type="button" className="button button-quiet button-small" onClick={() => { setFilter('all'); setRole('all'); }}>查看全部蛊谱</button></div> : <div className="gu-grid">
+    {collection.length === 0 ? <div className="empty-state"><Icon name="bag" size={28} /><p>{role === 'all' ? fang ? '当前没有已炼化并入囊的蛊。月光蛊和酒虫的领取、寻获与炼化会随主线推进。' : '蛊囊暂时是空的。市集可以购入蛊虫，探索也能换来新的机缘。' : `当前筛选中没有${ROLE_NAMES[role]}蛊。可以换个职能，或在全部蛊谱中寻找。`}</p><button type="button" className="button button-quiet button-small" onClick={() => { setFilter('all'); setRole('all'); }}>查看全部蛊谱</button></div> : <div className="gu-grid">
       {collection.map((gu) => {
         const count = game.inventory[gu.id] ?? 0;
         const equipped = game.equipped.includes(gu.id);
@@ -62,7 +77,7 @@ export function GuPanel({ game, onAction }: PanelProps) {
             <div><h3>{gu.name}</h3><div className="gu-tags"><span>{gu.rank} 转</span><span><Icon name={ROLE_ICONS[gu.role]} size={13} />{ROLE_NAMES[gu.role]}</span><span>{gu.passive ? '携带生效' : '主动催动'}</span></div></div>
           </div>
           <p className="gu-description">{gu.description}</p>
-          <details className="gu-lore"><summary>蛊谱记载</summary><p className="muted">{gu.lore}</p></details>
+          <details className="gu-lore"><summary>蛊谱记载</summary><p className="muted">{fang && gu.id === 'moonlight' && !game.flags.includes('fy-cicada-revealed') ? '古月一族的代表蛊虫，以真元催发月刃。领取后仍须炼化其意志，今生的炼化过程尚待亲自经历。' : gu.lore}</p></details>
           <div className="gu-status"><span><Icon name="gem" size={15} />供养 {gu.upkeep} 元石 / 日</span><span>库存 {count} 只</span>{hungry && <span className="status-tag status-hungry">休眠</span>}{equipped && <span className="status-tag status-equipped">已携带</span>}</div>
           <div className="gu-card-footer">
             <button type="button" className={`button button-small ${equipped ? 'button-quiet' : 'button-primary'}`} disabled={Boolean(error)} title={error ?? undefined} aria-describedby={error ? reasonId : undefined} onClick={() => onAction(action)}>{equipped ? '卸下' : '装备'}{!equipped && <Icon name="arrow" size={14} />}</button>
@@ -76,6 +91,9 @@ export function GuPanel({ game, onAction }: PanelProps) {
 
 export function ForgePanel({ game, onAction }: PanelProps) {
   const [safe, setSafe] = useState(false);
+  const recipes = getCampaignRecipes(game);
+  const guList = getCampaignGu(game);
+  if (isFangYuan(game)) return <section className="panel forge-panel fang-forge" aria-label="合炼配方"><SectionHeading eyebrow="方源篇 · 重生初炼" title="本段尚未开放合炼" /><div className="fang-feature-note"><Icon name="flame" size={28} /><div><h3>先完成今生的首次炼蛊</h3><p>月光蛊与酒虫的炼化发生在主线中。将多只蛊合成新蛊的配方尚未开放，本段不需要为合炼筹措材料。</p></div></div><FangGuStatus game={game} compact /></section>;
 
   return <section className="panel forge-panel" aria-label="合炼配方">
     <SectionHeading eyebrow="取舍材料 · 重组能力" title="合炼炉">
@@ -90,8 +108,8 @@ export function ForgePanel({ game, onAction }: PanelProps) {
     </div>
     <p className="muted panel-note">普通合炼失败时，输入的蛊虫全部保留，但辅材与本次行动会消耗。稳炼支付额外辅材，确保成功；成功后，输入蛊合为一只新的蛊。材料数字为「现有 / 所需」。</p>
     <div className="recipe-list">
-      {RECIPES.map((recipe) => {
-        const result = GU.find((gu) => gu.id === recipe.result)!;
+      {recipes.map((recipe) => {
+        const result = guList.find((gu) => gu.id === recipe.result)!;
         const action: GameAction = { type: 'CRAFT', recipeId: recipe.id, safe };
         const error = getActionError(game, action);
         const reasonId = `recipe-reason-${recipe.id}`;
@@ -102,7 +120,7 @@ export function ForgePanel({ game, onAction }: PanelProps) {
           <div className="recipe-materials">
             <div><div className="recipe-material-title"><h4>投入蛊虫</h4><span>现有 / 所需</span></div><ul className="recipe-ingredients">
               {Object.entries(recipe.gu).map(([id, needed]) => {
-                const gu = GU.find((item) => item.id === id)!;
+                const gu = guList.find((item) => item.id === id)!;
                 const current = game.inventory[id] ?? 0;
                 return <li key={id} className={current >= needed ? 'is-ready' : 'is-missing'}><span><Icon name={ROLE_ICONS[gu.role]} size={15} />{gu.name}</span><IngredientCount name={gu.name} current={current} needed={needed} /></li>;
               })}
@@ -122,30 +140,34 @@ export function ForgePanel({ game, onAction }: PanelProps) {
 export function ShopPanel({ game, onAction }: PanelProps) {
   const [filter, setFilter] = useState<'all' | 'affordable'>('all');
   const [role, setRole] = useState<GuRole | 'all' | 'materials'>('all');
+  const fang = isFangYuan(game);
+  const guList = getCampaignGu(game);
+  const shop = getCampaignShop(game);
+  const marketName = getCampaignLocations(game).find(place => place.id === 'market')?.name ?? '市集';
   const inMarket = game.location === 'market';
   const travelAction: GameAction = { type: 'TRAVEL', location: 'market' };
   const travelError = getActionError(game, travelAction);
-  const items = SHOP.filter(item => {
-    const gu = GU.find(entry => entry.id === item.guId);
-    const matchesRole = role === 'all' || (role === 'materials' ? !item.guId : gu?.role === role);
+  const items = shop.filter(item => {
+    const gu = guList.find(entry => entry.id === item.guId);
+    const matchesRole = fang || role === 'all' || (role === 'materials' ? !item.guId : gu?.role === role);
     const affordable = item.price <= game.resources.stones && item.stock > (game.purchases[item.id] ?? 0);
     return matchesRole && (filter === 'all' || affordable);
   });
 
-  return <section className="panel shop-panel" aria-label="山寨市集商店">
-    <SectionHeading eyebrow="货有定价 · 量有余缺" title="商队货架">
+  return <section className="panel shop-panel" aria-label={fang ? `${marketName}货架` : '山寨市集商店'}>
+    <SectionHeading eyebrow="货有定价 · 量有余缺" title={fang ? '酒与伤药' : '商队货架'}>
       <span className="shop-purse"><Icon name="gem" size={17} />{game.resources.stones} <small>元石</small></span>
     </SectionHeading>
-    {!inMarket && <div className="shop-location-notice"><div><strong>你还没有到市集</strong><p className="muted">可以先看货。到山寨市集后才能购买，移动不消耗行动。</p></div><button type="button" className="button button-primary button-small" disabled={Boolean(travelError)} title={travelError ?? undefined} onClick={() => onAction(travelAction)}><Icon name="store" size={15} />前往市集</button>{travelError && <p className="action-reason">{travelError}</p>}</div>}
+    {!inMarket && <div className="shop-location-notice"><div><strong>{fang ? `你还没有到${marketName}` : '你还没有到市集'}</strong><p className="muted">可以先看货。到{marketName}后才能购买，移动不消耗行动。</p></div><button type="button" className="button button-primary button-small" disabled={Boolean(travelError)} title={travelError ?? undefined} onClick={() => onAction(travelAction)}><Icon name="store" size={15} />{fang ? `前往${marketName}` : '前往市集'}</button>{travelError && <p className="action-reason">{travelError}</p>}</div>}
     <div className="panel-head shop-toolbar">
       <div className="filter-group" role="group" aria-label="货架筛选"><button type="button" className={`button button-small ${filter === 'all' ? 'button-primary' : 'button-quiet'}`} aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>全部货物</button><button type="button" className={`button button-small ${filter === 'affordable' ? 'button-primary' : 'button-quiet'}`} aria-pressed={filter === 'affordable'} onClick={() => setFilter('affordable')}>买得起</button></div>
-      <label className="catalog-select"><span>种类</span><select value={role} onChange={event => setRole(event.target.value as GuRole | 'all' | 'materials')} aria-label="按货物种类筛选"><option value="all">全部种类</option>{GU_ROLES.map(item => <option value={item} key={item}>{ROLE_NAMES[item]}蛊</option>)}<option value="materials">合炼辅材</option></select></label>
+      {!fang && <label className="catalog-select"><span>种类</span><select value={role} onChange={event => setRole(event.target.value as GuRole | 'all' | 'materials')} aria-label="按货物种类筛选"><option value="all">全部种类</option>{GU_ROLES.map(item => <option value={item} key={item}>{ROLE_NAMES[item]}蛊</option>)}<option value="materials">合炼辅材</option></select></label>}
     </div>
     <p className="catalog-result shop-result" role="status">显示 {items.length} 件货物{filter === 'affordable' ? ' · 有余货且元石足够' : ''}</p>
-    <p className="muted panel-note">货物数量按本次行程计算，不会隔日补货。购入的蛊会收入蛊囊，装备后才发挥能力。</p>
+    <p className="muted panel-note">{fang ? '货物余量按本次行程记录。酒可用于引虫等主线筹备，所需数量会列在剧情选项中；货架不出售本章的主线蛊虫。' : '货物数量按本次行程计算，不会隔日补货。购入的蛊会收入蛊囊，装备后才发挥能力。'}</p>
     {items.length === 0 ? <div className="empty-state"><Icon name="store" size={28} /><p>这个筛选下暂无货物。可以看看其他职能，或放宽预算筛选。</p><button type="button" className="button button-quiet button-small" onClick={() => { setFilter('all'); setRole('all'); }}>查看全部货物</button></div> : <div className="shop-grid">
       {items.map((item) => {
-        const gu = item.guId ? GU.find((entry) => entry.id === item.guId) : undefined;
+        const gu = item.guId ? guList.find((entry) => entry.id === item.guId) : undefined;
         const remaining = Math.max(0, item.stock - (game.purchases[item.id] ?? 0));
         const resourceKey = RESOURCE_KEYS.find((key) => (item.effects.resources?.[key] ?? 0) > 0);
         const action: GameAction = { type: 'BUY', itemId: item.id };
@@ -155,7 +177,7 @@ export function ShopPanel({ game, onAction }: PanelProps) {
         return <article className={`shop-card${remaining === 0 ? ' is-sold-out' : ''}`} key={item.id} data-role={gu?.role}>
           <div className="shop-card-heading"><span className="shop-glyph" aria-hidden="true">{gu ? <GuArtwork guId={gu.id} /> : <Icon name={resourceKey ? RESOURCE_ICONS[resourceKey] : 'bag'} size={30} />}</span><div><h3>{item.name}</h3><span className="muted">{remaining > 0 ? `余货 ${remaining}` : '已售罄'}{gu && ` · 已有 ${game.inventory[gu.id] ?? 0}`}</span></div><span className="shop-price"><Icon name="gem" size={15} />{item.price}<span className="sr-only">元石</span></span></div>
           <p>{item.description}</p>
-          <EffectList effects={item.effects} compact />
+          <EffectList effects={item.effects} compact game={game} />
           <div className="shop-card-footer"><button type="button" className="button button-quiet button-small" disabled={Boolean(error)} title={error ?? undefined} aria-describedby={visibleError ? reasonId : undefined} onClick={() => onAction(action)}>{remaining === 0 ? '已经售罄' : '购入'}{remaining > 0 && <Icon name="arrow" size={14} />}</button>{visibleError && <p id={reasonId} className="action-reason">{visibleError}</p>}</div>
         </article>;
       })}
@@ -164,6 +186,10 @@ export function ShopPanel({ game, onAction }: PanelProps) {
 }
 
 function promiseNote(game: GameState, npcId: string): string {
+  if (isFangYuan(game)) {
+    const relation = game.relations[npcId] ?? 0;
+    return relation === 0 ? '当前关系尚无数值变化；人物背景不代表已获得今生的支持。' : `当前关系记录为 ${relation > 0 ? '+' : ''}${relation}，具体往来与选择见下方行记。`;
+  }
   const promised = (flag: string) => game.flags.includes(flag);
   const seen = (event: string) => game.seenEvents.includes(event);
   if (npcId === 'mentor-qiu' && promised('mentor-promise')) return seen('academy-private-lesson') ? '你们已处理过灯下指点的约定。' : '他曾答应额外指点，可回学堂探查。';
@@ -194,6 +220,7 @@ const COMMISSIONS = [
 ];
 
 function CommissionJournal({ game }: { game: GameState }) {
+  if (isFangYuan(game)) return null;
   const accepted = COMMISSIONS.filter(item => game.flags.includes(item.accepted));
   if (!accepted.length) return null;
 
@@ -236,17 +263,19 @@ function CommissionJournal({ game }: { game: GameState }) {
 
 export function JournalPanel({ game }: ReadPanelProps) {
   const logs = [...game.journal].reverse();
+  const fang = isFangYuan(game);
+  const people = getCampaignNpcs(game).filter(npc => !fang || (npc.name !== game.name && npc.name !== '方源'));
   const logIcons: Record<GameState['journal'][number]['kind'], IconName> = { story: 'book', good: 'check', bad: 'flag', info: 'compass' };
 
   return <section className="panel journal-panel" aria-label="行记与人物关系">
-    <SectionHeading eyebrow="每次取舍 · 都有回声" title="山中行记"><span className="muted">本局 {logs.length} 条记录</span></SectionHeading>
-    <CommissionJournal game={game} />
+    <SectionHeading eyebrow="每次取舍 · 都有回声" title={fang ? '方源行记' : '山中行记'}><span className="muted">本局 {logs.length} 条记录</span></SectionHeading>
+    {!fang && <CommissionJournal game={game} />}
     <div className="journal-people">
-      <h3 className="journal-subheading"><Icon name="people" size={18} />同行与对手</h3>
-      <p className="muted panel-note">关系记下往来的温度。真正兑现的回报来自你们已经达成的约定，完成援助与交易后会出现在后续事件里。</p>
-      <div className="npc-grid">{NPCS.map((npc) => {
+      <h3 className="journal-subheading"><Icon name="people" size={18} />{fang ? '记忆中的人与今生的往来' : '同行与对手'}</h3>
+      <p className="muted panel-note">{fang ? '这里列出方源篇人物与当前关系记录。前世所知不会自动换来今生的信任，实际对话与得失会写入行记。' : '关系记下往来的温度。真正兑现的回报来自你们已经达成的约定，完成援助与交易后会出现在后续事件里。'}</p>
+      <div className="npc-grid">{people.map((npc) => {
         const relation = game.relations[npc.id] ?? 0;
-        const relationLabel = relation >= 15 ? '相熟' : relation > 0 ? '有往来' : relation < 0 ? '存有芥蒂' : '尚未熟识';
+        const relationLabel = fang ? relation > 0 ? '关系较好' : relation < 0 ? '关系紧张' : '暂无变化' : relation >= 15 ? '相熟' : relation > 0 ? '有往来' : relation < 0 ? '存有芥蒂' : '尚未熟识';
         return <article className="npc-card" key={npc.id}>
           <div className="npc-heading"><div><h4>{npc.name}</h4><span className="muted">{npc.role}</span></div><span className={`npc-relation${relation > 0 ? ' is-positive' : relation < 0 ? ' is-negative' : ''}`}><strong>{relation > 0 ? '+' : ''}{relation}</strong><small>{relationLabel}</small></span></div>
           <p className="npc-motive">{npc.motive}</p><p className="npc-promise"><Icon name="flag" size={13} />{promiseNote(game, npc.id)}</p>
@@ -254,7 +283,7 @@ export function JournalPanel({ game }: ReadPanelProps) {
       })}</div>
     </div>
     <h3 className="journal-subheading"><Icon name="book" size={18} />此行经过<span className="muted">最近的事在前</span></h3>
-    {logs.length === 0 ? <div className="empty-state"><p>山路尚未留下足迹。作出第一项选择后，行记会记住这段经历。</p></div> : <ol className="journal-list">{logs.map((entry) => <li className={`journal-entry journal-${entry.kind}`} key={entry.id}><span className="journal-marker"><Icon name={logIcons[entry.kind]} size={14} /></span><div><span className="eyebrow">第 {entry.day} 日</span><p>{entry.text}</p></div></li>)}</ol>}
+    {logs.length === 0 ? <div className="empty-state"><p>山路尚未留下足迹。作出第一项选择后，行记会记住这段经历。</p></div> : <ol className="journal-list">{logs.map((entry) => <li className={`journal-entry journal-${entry.kind}`} key={entry.id}><span className="journal-marker"><Icon name={logIcons[entry.kind]} size={14} /></span><div><span className="eyebrow">第 {entry.day} {fang ? '行动日' : '日'}</span><p>{entry.text}</p></div></li>)}</ol>}
   </section>;
 }
 
@@ -276,6 +305,7 @@ function nextStepHint(game: GameState): string {
 }
 
 export function QuestPanel({ game }: ReadPanelProps) {
+  if (isFangYuan(game)) return <FangQuestPanel game={game} />;
   const inherited = game.flags.includes('inheritance-secured');
   const clanReady = game.clues >= 2 && game.trust >= 35;
   const departureReady = game.day >= 6 && game.clues >= 1 && game.resources.stones >= 35;

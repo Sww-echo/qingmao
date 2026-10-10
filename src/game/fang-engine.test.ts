@@ -1,0 +1,352 @@
+import { describe, expect, it } from 'vitest';
+import {
+  getCampaignEndings, getCampaignEnemies, getCampaignEvents, getCampaignGu,
+  getCampaignNpcs, getCampaignRecipes, getCampaignShop, getLocationError, isFangYuan,
+} from './campaign';
+import { FANG_STEPS } from './fang-content';
+import {
+  createGame, gameReducer, getActionError, getAvailableEvents,
+  getChoiceError, getEventActionCost, getTrainingGain,
+} from './engine';
+import { getJourneyAdvice } from './guidance';
+import type { GameAction, GameState, LocationId } from './types';
+
+// Each entry names an actual player choice. Route proofs below only dispatch actions.
+const ROUTE = [
+  ['fy-rebirth', 'recall-future'],
+  ['fy-awakening', 'accept-result'],
+  ['fy-claim-moonlight', 'keep-a-reserve'],
+  ['fy-family', 'refuse-adoption'],
+  ['fy-rain-refining', 'wait-for-qi'],
+  ['fy-inn', 'rent-quiet-room'],
+  ['fy-bamboo-wine', 'buy-after-dispute'],
+  ['fy-lure', 'spread-the-bait'],
+  ['fy-follow', 'follow-from-distance'],
+  ['fy-cave', 'check-the-exit'],
+  ['fy-recording', 'study-the-recording'],
+  ['fy-refine-liquor', 'rest-between-attempts'],
+  ['fy-cicada', 'steady-the-aperture'],
+  ['fy-report', 'report-moonlight'],
+] as const;
+
+function act(game: GameState, action: GameAction): GameState {
+  expect(getActionError(game, action), `day ${game.day}: ${JSON.stringify(action)}`).toBeNull();
+  const next = gameReducer(game, action);
+  expect(next, JSON.stringify(action)).not.toBe(game);
+  return next;
+}
+
+function travel(game: GameState, location: LocationId): GameState {
+  return game.location === location ? game : act(game, { type: 'TRAVEL', location });
+}
+
+function openEvent(game: GameState, eventId: string): GameState {
+  if (game.activeEvent === eventId) return game;
+  const event = getCampaignEvents(game).find(entry => entry.id === eventId);
+  expect(event, eventId).toBeDefined();
+  if (!event) throw new Error(`Missing event ${eventId}`);
+  if (game.actions < getEventActionCost(event)) game = act(game, { type: 'END_DAY' });
+  game = travel(game, event.location);
+  expect(getAvailableEvents(game).some(entry => entry.id === eventId), eventId).toBe(true);
+  return act(game, { type: 'EXPLORE', eventId });
+}
+
+function chooseEvent(game: GameState, eventId: string, choiceId: string): GameState {
+  return act(openEvent(game, eventId), { type: 'CHOOSE', choiceId });
+}
+
+function playThrough(eventId: string, seed = 12185): GameState {
+  let game = createGame({ campaign: 'fang-yuan', seed });
+  for (const [id, choice] of ROUTE) {
+    game = chooseEvent(game, id, choice);
+    if (id === eventId) return game;
+  }
+  throw new Error(`Unknown route checkpoint ${eventId}`);
+}
+
+function continueAfter(game: GameState, eventId: string): GameState {
+  const index = ROUTE.findIndex(([id]) => id === eventId);
+  expect(index).toBeGreaterThanOrEqual(0);
+  for (const [id, choice] of ROUTE.slice(index + 1)) game = chooseEvent(game, id, choice);
+  return game;
+}
+
+function reject(game: GameState, action: GameAction): void {
+  const before = structuredClone(game);
+  expect(getActionError(game, action), JSON.stringify(action)).not.toBeNull();
+  expect(gameReducer(game, action), JSON.stringify(action)).toBe(game);
+  expect(game).toEqual(before);
+}
+
+describe('Fang Yuan campaign identity and isolation', () => {
+  it('starts as the unawakened protagonist without borrowing an origin loadout', () => {
+    const game = createGame({ campaign: 'fang-yuan', seed: 12185 });
+    expect(isFangYuan(game)).toBe(true);
+    expect(game).toMatchObject({
+      version: 1, campaign: 'fang-yuan', name: '古月方源', origin: 'disciple',
+      location: 'clan', day: 1, actions: 3, rank: 0,
+      hp: 28, maxHp: 28, qi: 0, maxQi: 0, cultivation: 0,
+      resources: { stones: 0, herbs: 0, ore: 0, wine: 0 },
+      inventory: {}, equipped: [], hungry: [], usedToday: [], relations: {},
+      activeEvent: 'fy-rebirth', ending: null, combat: null,
+    });
+    expect(game.flags).not.toContain('chapter-one');
+    expect(game.flags).not.toContain('fy-awakened');
+    expect(game.journal.map(entry => entry.text).join('\n')).not.toMatch(/石灯|商队|无名行者|巡山邀约/);
+    reject(game, { type: 'CHOOSE', choiceId: 'seek-own-path' });
+    reject(game, { type: 'END_DAY' });
+  });
+
+  it('keeps legacy creation intact and gives the two campaigns distinct run identities', () => {
+    const old = createGame({ name: '古月方源', origin: 'disciple', seed: 12185 });
+    const current = createGame({ campaign: 'fang-yuan', seed: 12185 });
+    expect(old.campaign).toBeUndefined();
+    expect(isFangYuan(old)).toBe(false);
+    expect(old).toMatchObject({ rank: 1, maxQi: 12, activeEvent: null });
+    expect(old.inventory.moonlight).toBe(1);
+    expect(old.runId).not.toBe(current.runId);
+    expect(getCampaignEvents(old).some(event => event.id === 'cave-guardian')).toBe(true);
+    expect(getCampaignEvents(old).some(event => event.id.startsWith('fy-'))).toBe(false);
+    expect(getCampaignEndings(old).map(ending => ending.id)).toEqual(['inheritance', 'clan', 'departure']);
+  });
+
+  it('exposes protagonist content without an NPC copy of himself or the old three routes', () => {
+    const game = createGame({ campaign: 'fang-yuan', seed: 12185 });
+    const events = getCampaignEvents(game);
+    expect(events.length).toBeGreaterThanOrEqual(14);
+    expect(events.every(event => event.id.startsWith('fy-'))).toBe(true);
+    expect(getCampaignNpcs(game).length).toBeGreaterThan(0);
+    expect(getCampaignNpcs(game).some(npc => npc.id === 'fang-yuan' || /^(古月)?方源$/.test(npc.name))).toBe(false);
+    expect(new Set(getCampaignGu(game).map(gu => gu.id))).toEqual(new Set(['moonlight', 'liquor-worm']));
+    expect(getCampaignRecipes(game)).toEqual([]);
+    expect(getCampaignEnemies(game)).toEqual([]);
+    expect(getCampaignShop(game).some(item => item.guId === 'liquor-worm' || item.guId === 'moonlight')).toBe(false);
+    expect(getCampaignEndings(game).map(ending => ending.id)).toEqual(['fy-first-gu']);
+    expect(events.flatMap(event => event.choices).some(choice => choice.encounterId || choice.victoryEnding)).toBe(false);
+  });
+});
+
+describe('Fang Yuan chapter played through actual actions', () => {
+  it('unlocks the aperture through the ceremony, without permitting pre-awakening cultivation or resource farming', () => {
+    let game = playThrough('fy-rebirth');
+    for (const action of [
+      { type: 'TRAIN' }, { type: 'ACTIVITY' }, { type: 'EQUIP', guId: 'moonlight' },
+      { type: 'FEED' }, { type: 'BREAKTHROUGH' },
+      { type: 'CRAFT', recipeId: 'refine-moon-glow', safe: true },
+      { type: 'BUY', itemId: 'fy-bamboo-wine' },
+    ] satisfies GameAction[]) reject(game, action);
+    for (const location of ['market', 'bamboo', 'stream', 'cave'] as const) {
+      expect(getLocationError(game, location)).not.toBeNull();
+      reject(game, { type: 'TRAVEL', location });
+    }
+    game = act(game, { type: 'REST' });
+    expect(game).toMatchObject({ rank: 0, qi: 0, maxQi: 0 });
+    expect(game.journal.at(-1)?.text).not.toMatch(/真元已回满|6\s*点真元/);
+    game = act(game, { type: 'END_DAY' });
+    expect(game).toMatchObject({ day: 2, rank: 0, maxQi: 0, qi: 0, ending: null });
+    expect(game.journal.at(-1)?.text).not.toMatch(/真元已回满|6\s*点真元/);
+    game = chooseEvent(game, 'fy-awakening', 'accept-result');
+    expect(game).toMatchObject({ rank: 1, qi: 12, maxQi: 12, maxHp: 28, inventory: {} });
+    expect(game.flags).toContain('fy-awakened');
+    expect(game.resources.stones).toBe(0);
+    reject(game, { type: 'ACTIVITY' });
+  });
+
+  it('treats the claimed moonlight and recovered liquor worm as unrefined until the cicada scene', () => {
+    let game = playThrough('fy-claim-moonlight');
+    expect(game.flags).toContain('fy-moonlight-held-unrefined');
+    expect(game.inventory).toEqual({});
+    reject(game, { type: 'EQUIP', guId: 'moonlight' });
+    game = playThrough('fy-cave');
+    expect(game.flags).toContain('fy-liquor-held-unrefined');
+    expect(game.inventory).toEqual({});
+    reject(game, { type: 'EQUIP', guId: 'liquor-worm' });
+    const beforeRefinement = playThrough('fy-refine-liquor');
+    expect(beforeRefinement.inventory).toEqual({});
+    const refined = chooseEvent(beforeRefinement, 'fy-cicada', 'steady-the-aperture');
+    expect(refined.inventory).toEqual({ moonlight: 1, 'liquor-worm': 1 });
+    expect(refined.flags).toEqual(expect.arrayContaining(['fy-liquor-refined', 'fy-moonlight-refined', 'fy-vital-cicada']));
+    expect(refined.equipped).toEqual([]);
+    expect(refined.rank).toBe(1);
+    reject(refined, { type: 'EXPLORE', eventId: 'fy-cicada' });
+    reject(refined, { type: 'EQUIP', guId: 'spring-autumn-cicada' });
+  });
+
+  it('preserves meaningful family choices without granting the disputed inheritance', () => {
+    const before = playThrough('fy-claim-moonlight');
+    const refused = chooseEvent(before, 'fy-family', 'refuse-adoption');
+    const delayed = chooseEvent(before, 'fy-family', 'delay-decision');
+    expect(refused.resources.stones).toBe(6);
+    expect(delayed.resources.stones).toBe(6);
+    expect(refused.flags).toContain('fy-refused-adoption');
+    expect(refused.flags).not.toContain('fy-delayed-family-pressure');
+    expect(delayed.flags).toContain('fy-delayed-family-pressure');
+    expect(delayed.flags).not.toContain('fy-refused-adoption');
+    expect(refused.relations['fy-dong-tu']).toBeLessThan(delayed.relations['fy-dong-tu']!);
+    expect(refused.relations['fy-fang-zheng']).toBeLessThan(delayed.relations['fy-fang-zheng']!);
+    expect(delayed.suspicion).toBeGreaterThan(refused.suspicion);
+    expect(before.resources.stones).toBe(0);
+    reject(refused, { type: 'EXPLORE', eventId: 'fy-family' });
+  });
+
+  it('lets a penniless player defer the wine purchase, earn funds and finish the same mainline', () => {
+    let game = playThrough('fy-inn');
+    expect(game.resources.stones).toBe(4);
+    game = act(game, { type: 'BUY', itemId: 'fy-herbs' });
+    game = act(game, { type: 'BUY', itemId: 'fy-herbs' });
+    expect(game.resources.stones).toBe(0);
+    game = openEvent(game, 'fy-bamboo-wine');
+    reject(game, { type: 'CHOOSE', choiceId: 'buy-after-dispute' });
+    game = act(game, { type: 'CHOOSE', choiceId: 'prepare-later' });
+    expect(game.seenEvents).toContain('fy-bamboo-wine');
+    expect(game.flags).not.toContain('fy-wine-bought');
+    expect(game.resources.wine).toBe(0);
+    expect(getAvailableEvents(game).some(event => event.id === 'fy-bamboo-wine')).toBe(true);
+    game = travel(game, 'clan');
+    game = act(game, { type: 'ACTIVITY' });
+    expect(game.resources.stones).toBe(2);
+    game = chooseEvent(game, 'fy-bamboo-wine', 'buy-after-dispute');
+    expect(game.resources).toMatchObject({ stones: 0, wine: 1, herbs: 4 });
+    game = continueAfter(game, 'fy-bamboo-wine');
+    expect(game.ending).toMatchObject({ id: 'fy-first-gu', outcome: 'success' });
+    expect(game.resources.stones).toBe(35);
+  });
+
+  it('does not let shopping skip the wine story or unlock the wilderness early', () => {
+    let game = playThrough('fy-inn');
+    game = act(game, { type: 'BUY', itemId: 'fy-bamboo-wine' });
+    expect(game.resources.wine).toBe(1);
+    expect(game.flags).not.toContain('fy-wine-bought');
+    reject(game, { type: 'TRAVEL', location: 'bamboo' });
+    reject(game, { type: 'BUY', itemId: 'buy-liquor-worm' });
+    reject(game, { type: 'BUY', itemId: 'buy-moonlight' });
+    reject(game, { type: 'EXPLORE', eventId: 'market-departure' });
+    game = chooseEvent(game, 'fy-bamboo-wine', 'buy-after-dispute');
+    expect(game.resources.wine).toBe(2);
+    expect(getLocationError(game, 'bamboo')).toBeNull();
+    reject(game, { type: 'TRAVEL', location: 'cave' });
+  });
+
+  it('finishes all fourteen scenes with earned Gu and a single real reward, without injecting state', () => {
+    let game = createGame({ campaign: 'fang-yuan', seed: 12185 });
+    for (const [eventId, choiceId] of ROUTE) {
+      const before = structuredClone(game);
+      game = chooseEvent(game, eventId, choiceId);
+      expect(before.flags).not.toContain(FANG_STEPS.find(step => step.eventId === eventId)!.flag);
+      if (eventId !== 'fy-report') expect(game.ending, eventId).toBeNull();
+      if (!game.flags.includes('fy-cicada-revealed')) expect(game.inventory, eventId).toEqual({});
+    }
+    expect(game.ending).toMatchObject({ id: 'fy-first-gu', outcome: 'success' });
+    expect(game.flags).toEqual(expect.arrayContaining(FANG_STEPS.map(step => step.flag)));
+    expect(game.seenEvents).toEqual(ROUTE.map(([id]) => id));
+    expect(game.inventory).toEqual({ moonlight: 1, 'liquor-worm': 1 });
+    expect(game.resources).toEqual({ stones: 37, herbs: 0, ore: 0, wine: 0 });
+    expect(game).toMatchObject({ rank: 1, hp: 28, maxHp: 28, maxQi: 12, combat: null });
+    expect(game.journal.map(entry => entry.text).join('\n')).not.toMatch(/石灯|守关木傀|存活离山|晋升二转/);
+    expect(Object.keys(game.relations).every(id => id.startsWith('fy-'))).toBe(true);
+    reject(game, { type: 'EXPLORE', eventId: 'fy-report' });
+    reject(game, { type: 'CHOOSE', choiceId: 'report-moonlight' });
+  });
+
+  it('keeps day eleven playable and completes the chapter after a long pause', () => {
+    let game = playThrough('fy-awakening');
+    while (game.day < 11) game = act(game, { type: 'END_DAY' });
+    expect(game).toMatchObject({ day: 11, ending: null, rank: 1, qi: 12, actions: 3 });
+    expect(game.journal.some(entry => /离山|期限已到/.test(entry.text))).toBe(false);
+    game = continueAfter(game, 'fy-awakening');
+    expect(game.day).toBeGreaterThan(10);
+    expect(game.ending).toMatchObject({ id: 'fy-first-gu', outcome: 'success' });
+    expect(game.resources.stones).toBe(37);
+  });
+
+  it('requires actual refinement before a successful report or any borrowed legacy ending', () => {
+    const game = playThrough('fy-claim-moonlight');
+    const report = getCampaignEvents(game).find(event => event.id === 'fy-report')!;
+    const choice = report.choices.find(entry => entry.id === 'report-moonlight')!;
+    expect(getChoiceError(game, choice)).not.toBeNull();
+    expect(getAvailableEvents(game).some(event => event.id === 'fy-report')).toBe(false);
+    reject(game, { type: 'EXPLORE', eventId: 'fy-report' });
+    reject(game, { type: 'EXPLORE', eventId: 'academy-roster' });
+    expect(getChoiceError(game, { ...choice, ending: 'clan' })).not.toBeNull();
+    // Deliberately forged inventory isolates the equipment guard, not a claimed playable route.
+    reject({ ...game, inventory: { moonlight: 1 } }, { type: 'EQUIP', guId: 'moonlight' });
+  });
+
+  it('uses a fed, equipped liquor worm to improve cultivation without changing aptitude or rank', () => {
+    let game = playThrough('fy-cicada');
+    expect(getTrainingGain(game)).toBe(3);
+    game = act(game, { type: 'EQUIP', guId: 'liquor-worm' });
+    expect(getTrainingGain(game)).toBe(4);
+    if (game.actions === 0) game = act(game, { type: 'END_DAY' });
+    const before = game;
+    game = act(game, { type: 'TRAIN' });
+    expect(game.cultivation - before.cultivation).toBe(4);
+    expect(before.qi - game.qi).toBe(3);
+    expect(game).toMatchObject({ rank: 1, maxHp: 28, maxQi: 12 });
+    for (let days = 0; days < 25 && !game.hungry.includes('liquor-worm'); days += 1) {
+      game = act(game, { type: 'END_DAY' });
+    }
+    expect(game.hungry).toContain('liquor-worm');
+    expect(game.ending).toBeNull();
+    expect(getTrainingGain(game)).toBe(3);
+    const dormant = game;
+    game = act(game, { type: 'TRAIN' });
+    expect(game.cultivation - dormant.cultivation).toBe(3);
+  });
+
+  it('keeps second-rank breakthrough, old recipes and deeper inheritance outside this chapter', () => {
+    const real = playThrough('fy-cicada');
+    // Ample resources prove these are chapter boundaries rather than affordability failures.
+    const supplied: GameState = {
+      ...real, actions: 3, cultivation: 100,
+      resources: { stones: 100, herbs: 100, ore: 100, wine: 100 },
+    };
+    reject(supplied, { type: 'BREAKTHROUGH' });
+    reject(supplied, { type: 'CRAFT', recipeId: 'refine-moon-mark', safe: true });
+    const atCave = travel(supplied, 'cave');
+    expect(getAvailableEvents(atCave)).toEqual([]);
+    reject(atCave, { type: 'EXPLORE', eventId: 'cave-guardian' });
+    reject(atCave, { type: 'EXPLORE', eventId: 'cave-remedy-cache' });
+    expect(atCave.rank).toBe(1);
+  });
+
+  it('guides a zero-action player into the next free scene even if an old route focus was restored', () => {
+    let game = playThrough('fy-rain-refining');
+    while (game.actions > 0) game = act(game, { type: 'ACTIVITY' });
+    const day = game.day;
+    for (let moves = 0; moves < 2; moves += 1) {
+      const before = structuredClone(game);
+      const advice = getJourneyAdvice(game, 'departure');
+      expect(game).toEqual(before);
+      expect(advice).not.toBeNull();
+      expect(`${advice!.title} ${advice!.description}`).not.toMatch(/35|商队|石灯|宗族立足|三条去路/);
+      expect(advice!.destination.kind).toBe('action');
+      if (advice!.destination.kind !== 'action') throw new Error('Expected an actionable scene recommendation');
+      expect(advice!.destination.action.type).not.toBe('END_DAY');
+      game = act(game, advice!.destination.action);
+    }
+    expect(game).toMatchObject({ actions: 0, day, activeEvent: 'fy-inn' });
+    game = act(game, { type: 'CHOOSE', choiceId: 'rent-quiet-room' });
+    expect(game).toMatchObject({ actions: 0, day, activeEvent: null });
+    expect(game.flags).toContain('fy-lodged');
+  });
+
+  it('guides an unaffordable mainline choice back to real resource gathering before reopening it', () => {
+    let game = playThrough('fy-inn');
+    game = act(game, { type: 'BUY', itemId: 'fy-herbs' });
+    game = act(game, { type: 'BUY', itemId: 'fy-herbs' });
+    game = chooseEvent(game, 'fy-bamboo-wine', 'prepare-later');
+    for (let moves = 0; moves < 4; moves += 1) {
+      const advice = getJourneyAdvice(game, 'clan');
+      expect(advice).not.toBeNull();
+      if (moves < 2) expect(advice!.kind).toBe('resources');
+      expect(`${advice!.title} ${advice!.description}`).not.toMatch(/35|宗族信任|公仓|离山路费/);
+      if (advice!.destination.kind !== 'action') throw new Error('Expected resource gathering or a mainline action');
+      game = act(game, advice!.destination.action);
+    }
+    expect(game).toMatchObject({ activeEvent: 'fy-bamboo-wine', resources: { stones: 2 } });
+    game = act(game, { type: 'CHOOSE', choiceId: 'buy-after-dispute' });
+    expect(game.flags).toContain('fy-wine-bought');
+    expect(game.resources).toMatchObject({ stones: 0, wine: 1 });
+  });
+});

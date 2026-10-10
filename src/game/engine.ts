@@ -1,4 +1,8 @@
-import { ENEMIES, ENDINGS, EVENTS, GU, LOCATIONS, ORIGINS, RECIPES, SHOP } from './content';
+import { ORIGINS } from './content';
+import {
+  getCampaignEnemies, getCampaignEndings, getCampaignEvents, getCampaignGu, getCampaignLocations,
+  getCampaignRecipes, getCampaignShop, getLocationError, isFangYuan, MAX_FANG_DAY,
+} from './campaign';
 import type {
   EffectiveStats, Effects, EndingId, EnemyMove, EventChoice, EventDef, GameAction, GameState,
   GuDef, OriginId, RecipeDef, Requirement, ResourceKey, Resources,
@@ -9,6 +13,7 @@ const RESOURCE_NAMES: Record<ResourceKey, string> = { stones: '元石', herbs: '
 const STAT_NAMES = { hp: '生命', qi: '真元', cultivation: '修为', clues: '情报', trust: '宗族信任', suspicion: '疑心', rank: '境界', day: '日期' };
 const DAILY_ACTIONS = 3;
 const LAST_DAY = 10;
+const MAX_FANG_CULTIVATION = 10_000;
 const EQUIPMENT_LIMIT = 4;
 const BASE_ATTACK = 3;
 const BASE_GUARD = 4;
@@ -27,9 +32,17 @@ const unique = <T,>(values: T[]): T[] => [...new Set(values)];
 const finite = (value: number | undefined, fallback = 0): number => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 const count = (value: number | undefined): number => Math.max(0, Math.floor(finite(value)));
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, finite(value)));
-const guById = (id: string): GuDef | undefined => GU.find(gu => gu.id === id);
+const guById = (state: GameState, id: string): GuDef | undefined => getCampaignGu(state).find(gu => gu.id === id);
 const owned = (state: GameState, id: string): number => count(state.inventory[id]);
-const usable = (state: GameState, id: string): boolean => owned(state, id) > 0 && state.equipped.includes(id) && !state.hungry.includes(id) && !!guById(id) && guById(id)!.rank <= state.rank;
+const usable = (state: GameState, id: string): boolean => owned(state, id) > 0 && state.equipped.includes(id) && !state.hungry.includes(id) && !!guById(state, id) && guById(state, id)!.rank <= state.rank;
+
+function chapterMilestone(state: GameState, milestone: string): void {
+  if (isFangYuan(state) || state.flags.includes('chapter-one')) state.flags = unique([...state.flags, milestone]);
+}
+
+export function getEventActionCost(event: EventDef): 0 | 1 {
+  return event.actionCost ?? 1;
+}
 
 function cloneEffects(effects: Effects): Effects {
   return { ...effects, resources: effects.resources && { ...effects.resources }, gu: effects.gu && { ...effects.gu }, relations: effects.relations && { ...effects.relations }, addFlags: effects.addFlags && [...effects.addFlags], removeFlags: effects.removeFlags && [...effects.removeFlags] };
@@ -55,19 +68,19 @@ function normalize(state: GameState): void {
   state.hp = clamp(state.hp, 0, state.maxHp);
   state.qi = clamp(state.qi, 0, state.maxQi);
   state.actions = clamp(state.actions, 0, DAILY_ACTIONS);
-  state.cultivation = count(state.cultivation);
+  state.cultivation = isFangYuan(state) ? Math.min(MAX_FANG_CULTIVATION, count(state.cultivation)) : count(state.cultivation);
   state.clues = count(state.clues);
   state.trust = clamp(state.trust, 0, 100);
   state.suspicion = clamp(state.suspicion, 0, 100);
   for (const id of Object.keys(state.inventory)) {
     const amount = owned(state, id);
-    if (!guById(id) || !amount) delete state.inventory[id];
+    if (!guById(state, id) || !amount) delete state.inventory[id];
     else state.inventory[id] = amount;
   }
-  state.equipped = unique(state.equipped).filter(id => owned(state, id) > 0 && guById(id)!.rank <= state.rank).slice(0, EQUIPMENT_LIMIT);
+  state.equipped = unique(state.equipped).filter(id => owned(state, id) > 0 && guById(state, id)!.rank <= state.rank).slice(0, EQUIPMENT_LIMIT);
   state.hungry = unique(state.hungry).filter(id => owned(state, id) > 0);
   // Keep already consumed ingredients here: using or carrying them earlier still incurred today's upkeep.
-  state.usedToday = unique(state.usedToday).filter(id => !!guById(id));
+  state.usedToday = unique(state.usedToday).filter(id => !!guById(state, id));
   state.flags = unique(state.flags);
   state.seenEvents = unique(state.seenEvents);
   for (const id of Object.keys(state.relations)) state.relations[id] = clamp(state.relations[id], -100, 100);
@@ -77,7 +90,7 @@ function applyEffects(state: GameState, effects: Effects): void {
   for (const key of RESOURCE_KEYS) state.resources[key] += finite(effects.resources?.[key]);
   for (const key of ['hp', 'qi', 'cultivation', 'clues', 'trust', 'suspicion'] as const) state[key] += finite(effects[key]);
   for (const [id, amount] of Object.entries(effects.gu ?? {})) {
-    if (guById(id)) state.inventory[id] = owned(state, id) + finite(amount);
+    if (guById(state, id)) state.inventory[id] = owned(state, id) + finite(amount);
   }
   for (const [id, amount] of Object.entries(effects.relations ?? {})) state.relations[id] = finite(state.relations[id]) + finite(amount);
   state.flags = unique([...state.flags, ...(effects.addFlags ?? [])]).filter(flag => !effects.removeFlags?.includes(flag));
@@ -88,11 +101,13 @@ function finish(state: GameState, id: EndingId, reason: string, outcome: 'succes
   state.ending = { id, reason, outcome };
   state.combat = null;
   state.activeEvent = null;
-  log(state, `${ENDINGS.find(ending => ending.id === id)?.title ?? '旅途结束'}：${reason}`, outcome === 'success' ? 'good' : outcome === 'defeat' ? 'bad' : 'story');
+  log(state, `${getCampaignEndings(state).find(ending => ending.id === id)?.title ?? '旅途结束'}：${reason}`, outcome === 'success' ? 'good' : outcome === 'defeat' ? 'bad' : 'story');
 }
 
 function checkLife(state: GameState): void {
-  if (state.hp <= 0 && !state.ending) finish(state, 'departure', '伤势过重，你的青茅山之行止步于此。此次按败退结算。', 'defeat');
+  if (state.hp <= 0 && !state.ending) finish(state, 'departure', isFangYuan(state)
+    ? '伤势过重，这次重生初炼的尝试中断。没有完成本章，也没有获得后续剧情成果。'
+    : '伤势过重，你的青茅山之行止步于此。此次按败退结算。', 'defeat');
 }
 
 function random(state: GameState): number {
@@ -117,7 +132,7 @@ function requirementError(state: GameState, requirement: Requirement): string | 
     const required = requirement.value ?? true;
     return state.flags.includes(requirement.key) === required ? null : required ? '尚未完成这条路线的前置事件。' : '此前的选择已改变了这条路线。';
   }
-  const gu = guById(requirement.id);
+  const gu = guById(state, requirement.id);
   if (!gu) return '所需蛊虫资料不存在。';
   const needed = Math.max(1, count(requirement.count ?? 1));
   if (owned(state, gu.id) < needed) return `需要 ${needed} 只${gu.name}，目前持有 ${owned(state, gu.id)} 只。`;
@@ -140,7 +155,7 @@ function effectsError(state: GameState, effects: Effects, reserve: Partial<Resou
   }
   if (effects.qi !== undefined && effects.qi < 0 && state.qi < -effects.qi) return `真元不足，需要 ${-effects.qi}。`;
   for (const [id, amount] of Object.entries(effects.gu ?? {})) {
-    const gu = guById(id);
+    const gu = guById(state, id);
     if (!gu || !Number.isInteger(amount)) return '蛊虫资料无效。';
     if (amount < 0 && owned(state, id) < -amount) return `${gu.name}不足，需要 ${-amount} 只，现有 ${owned(state, id)} 只。`;
   }
@@ -154,12 +169,12 @@ function recipeCost(recipe: RecipeDef, safe: boolean): Partial<Resources> {
 }
 
 function upkeepIds(state: GameState): string[] {
-  return unique([...state.usedToday, ...state.equipped.filter(id => owned(state, id) > 0)]).filter(id => !!guById(id));
+  return unique([...state.usedToday, ...state.equipped.filter(id => owned(state, id) > 0)]).filter(id => !!guById(state, id));
 }
 
 /** Cost of the current day's carried Gu, including Gu unequipped later that day. */
 export function getUpkeep(state: GameState): number {
-  return upkeepIds(state).reduce((sum, id) => sum + count(guById(id)?.upkeep), 0);
+  return upkeepIds(state).reduce((sum, id) => sum + count(guById(state, id)?.upkeep), 0);
 }
 
 /** Attack/guard include the ordinary move's base value; all other values are bonuses. */
@@ -167,7 +182,7 @@ export function getEffectiveStats(state: GameState): EffectiveStats {
   const stats: EffectiveStats = { attack: BASE_ATTACK, guard: BASE_GUARD, scouting: 0, storage: 0, escape: 0 };
   for (const id of unique(state.equipped)) {
     if (!usable(state, id)) continue;
-    const gu = guById(id)!;
+    const gu = guById(state, id)!;
     if (!gu.passive) continue;
     if (gu.ability === 'power') stats.attack += gu.power;
     else if (gu.ability === 'guard') stats.guard += gu.power;
@@ -178,6 +193,16 @@ export function getEffectiveStats(state: GameState): EffectiveStats {
   return stats;
 }
 
+const canPurifyTraining = (state: GameState): boolean => isFangYuan(state)
+  && state.equipped.some(id => usable(state, id) && guById(state, id)?.ability === 'purify');
+
+/** Returns the actual cultivation gain, including the chapter's remaining capacity. */
+export function getTrainingGain(state: GameState): number {
+  if (!isFangYuan(state)) return 3;
+  const gain = canPurifyTraining(state) ? 4 : 3;
+  return Math.min(gain, Math.max(0, MAX_FANG_CULTIVATION - count(state.cultivation)));
+}
+
 const attackDamage = (power: number, passiveGuard: number, playerGuard: number): number => Math.max(1, power - passiveGuard - playerGuard);
 const retreatPercent = (escape: number): number => Math.min(100, 60 + Math.max(0, escape) * 10);
 
@@ -185,7 +210,7 @@ const retreatPercent = (escape: number): number => Math.min(100, 60 + Math.max(0
 export function getCombatForecast(state: GameState): CombatForecast | null {
   if (!state.combat || state.ending) return null;
   const combat = state.combat;
-  const enemy = ENEMIES.find(item => item.id === combat.enemyId);
+  const enemy = getCampaignEnemies(state).find(item => item.id === combat.enemyId);
   const intent = enemy?.moves[combat.turn % enemy.moves.length];
   if (!intent) return null;
   const stats = getEffectiveStats(state);
@@ -201,8 +226,8 @@ export function getCombatForecast(state: GameState): CombatForecast | null {
 }
 
 export function getAvailableEvents(state: GameState): EventDef[] {
-  if (state.ending || state.combat || state.activeEvent) return [];
-  return EVENTS.filter(event => event.location === state.location
+  if (state.ending || state.combat || state.activeEvent || getLocationError(state, state.location)) return [];
+  return getCampaignEvents(state).filter(event => event.location === state.location
     && (event.dayMin === undefined || state.day >= event.dayMin)
     && (event.dayMax === undefined || state.day <= event.dayMax)
     && (event.repeatable || !state.seenEvents.includes(event.id))
@@ -214,7 +239,15 @@ export function getAvailableEvents(state: GameState): EventDef[] {
 export function getChoiceError(state: GameState, choice: EventChoice): string | null {
   if (state.ending) return '本次旅途已经结束。';
   if (state.combat) return '请先完成当前战斗。';
-  if (choice.encounterId && !ENEMIES.some(enemy => enemy.id === choice.encounterId)) return '这一场遭遇的资料缺失。';
+  if (choice.encounterId && !getCampaignEnemies(state).some(enemy => enemy.id === choice.encounterId)) return '这一场遭遇的资料缺失。';
+  if ((choice.ending || choice.victoryEnding) && !isFangYuan(state) && state.flags.includes('chapter-one') && !state.flags.includes('chapter-ready')) {
+    return '先完成章节交涉，再回学堂听取「临行前的交代」，然后决定最终去路。';
+  }
+  if (isFangYuan(state) && (choice.ending || choice.victoryEnding)) {
+    if ((choice.ending ?? choice.victoryEnding) !== 'fy-first-gu') return '这不是方源篇的章节收束。';
+    if (!state.flags.includes('fy-cicada-revealed') || !state.flags.includes('fy-liquor-refined') || !state.flags.includes('fy-moonlight-refined')
+      || owned(state, 'moonlight') < 1 || owned(state, 'liquor-worm') < 1) return '先完成酒虫与月光蛊的炼化，再去学堂报验。';
+  }
   return requirementsError(state, choice.requirements) ?? effectsError(state, choice.effects);
 }
 
@@ -222,23 +255,39 @@ export function getActionError(state: GameState, action: GameAction): string | n
   if (state.ending) return '本次旅途已经结束，可在结算后开启新局。';
   if (state.combat && action.type !== 'COMBAT') return '请先完成当前战斗。';
   if (state.activeEvent && action.type !== 'CHOOSE') return '请先为当前事件作出选择。';
-  const timed = ['EXPLORE', 'ACTIVITY', 'TRAIN', 'REST', 'BREAKTHROUGH', 'CRAFT'];
+  if (isFangYuan(state)) {
+    if (state.rank === 0 && ['TRAIN', 'EQUIP', 'FEED', 'CRAFT', 'BREAKTHROUGH'].includes(action.type)) return '尚未开窍，先到学堂参加开窍大典。';
+    if (action.type === 'BREAKTHROUGH') return '本章停留在一转初阶；后续境界随原著章节开放。';
+    if (action.type === 'CRAFT') return '本章通过剧情初炼酒虫与月光蛊，合炼配方在后续章节开放。';
+    if (action.type === 'ACTIVITY' && !state.flags.includes('fy-family-settled')) return '先处理开窍、取蛊与家宅交涉，再自行筹备资源。';
+    if (action.type === 'BUY' && !state.flags.includes('fy-lodged')) return '先完成入住客栈的交涉，再补购物资。';
+    if (action.type === 'EQUIP' && !state.flags.includes(action.guId === 'moonlight' ? 'fy-moonlight-refined' : 'fy-liquor-refined')) return '这只蛊尚未完成炼化，不能装备。';
+  }
+  const timed = ['ACTIVITY', 'TRAIN', 'REST', 'BREAKTHROUGH', 'CRAFT'];
   if (timed.includes(action.type) && state.actions < 1) return '今日行动已用完，请结束当日。';
   switch (action.type) {
     case 'TRAVEL':
-      if (!LOCATIONS.some(location => location.id === action.location)) return '目的地不存在。';
-      return action.location === state.location ? '你已经在这里了。' : null;
+      if (!getCampaignLocations(state).some(location => location.id === action.location)) return '目的地不存在。';
+      return getLocationError(state, action.location) ?? (action.location === state.location ? '你已经在这里了。' : null);
     case 'EXPLORE': {
       const available = getAvailableEvents(state);
       if (action.eventId !== undefined && !available.some(event => event.id === action.eventId)) return '此事件目前不可选择，请选择当前地点可见的事件。';
-      return available.length ? null : '此地暂时没有新事件，可进行当地活动或前往其他地点。';
+      const event = action.eventId === undefined ? available[0] : available.find(item => item.id === action.eventId);
+      if (!event) return '此地暂时没有新事件，可进行当地活动或前往其他地点。';
+      return state.actions < getEventActionCost(event) ? '今日行动已用完，请结束当日。' : null;
     }
     case 'ACTIVITY': {
-      const location = LOCATIONS.find(item => item.id === state.location);
+      const locked = getLocationError(state, state.location);
+      if (locked) return locked;
+      const location = getCampaignLocations(state).find(item => item.id === state.location);
       return location ? effectsError(state, location.activity.effects) : '地点资料缺失。';
     }
     case 'TRAIN':
+      if (isFangYuan(state) && getTrainingGain(state) === 0) return '本章修为已达上限，请继续当前主线。';
       return state.qi < 3 ? '修炼需要 3 点真元，先休息或结束当日。' : null;
+    case 'USE_HERBS':
+      if (state.hp >= state.maxHp) return '生命已满，无需消耗药草。';
+      return state.resources.herbs < 2 ? '处理伤口需要 2 份药草。' : null;
     case 'REST':
     case 'END_DAY':
       return null;
@@ -247,13 +296,13 @@ export function getActionError(state: GameState, action: GameAction): string | n
       if (state.cultivation < 12) return '突破二转需要 12 点修为。';
       return state.resources.stones < 12 ? '突破二转需要 12 块元石。' : null;
     case 'CHOOSE': {
-      const event = EVENTS.find(item => item.id === state.activeEvent);
+      const event = getCampaignEvents(state).find(item => item.id === state.activeEvent);
       if (!event) return '当前没有待决事件。';
       const choice = event.choices.find(item => item.id === action.choiceId);
       return choice ? getChoiceError(state, choice) : '这个事件中没有该选项。';
     }
     case 'EQUIP': {
-      const gu = guById(action.guId);
+      const gu = guById(state, action.guId);
       if (!gu) return '蛊虫不存在。';
       if (owned(state, gu.id) < 1) return `尚未拥有${gu.name}。`;
       if (gu.rank > state.rank) return `${gu.name}需要二转境界才能装备。`;
@@ -261,15 +310,15 @@ export function getActionError(state: GameState, action: GameAction): string | n
       return unique(state.equipped).length >= EQUIPMENT_LIMIT ? '最多装备 4 只蛊，请先卸下一只。' : null;
     }
     case 'UNEQUIP':
-      return guById(action.guId) && state.equipped.includes(action.guId) ? null : '这只蛊没有被装备。';
+      return guById(state, action.guId) && state.equipped.includes(action.guId) ? null : '这只蛊没有被装备。';
     case 'FEED': {
-      const ids = unique(state.hungry).filter(id => owned(state, id) > 0 && !!guById(id));
+      const ids = unique(state.hungry).filter(id => owned(state, id) > 0 && !!guById(state, id));
       if (!ids.length) return '当前没有需要补喂的休眠蛊。';
-      const cost = ids.reduce((sum, id) => sum + count(guById(id)?.upkeep), 0);
+      const cost = ids.reduce((sum, id) => sum + count(guById(state, id)?.upkeep), 0);
       return state.resources.stones < cost ? `补喂需要 ${cost} 块元石，现有 ${count(state.resources.stones)}。` : null;
     }
     case 'BUY': {
-      const item = SHOP.find(entry => entry.id === action.itemId);
+      const item = getCampaignShop(state).find(entry => entry.id === action.itemId);
       if (!item) return '商店中没有这件物品。';
       if (state.location !== 'market') return '前往山寨市集后才能购买。';
       if (!Number.isFinite(item.stock) || item.stock < 1 || count(state.purchases[item.id]) >= item.stock) return '这件物品已售罄。';
@@ -277,10 +326,10 @@ export function getActionError(state: GameState, action: GameAction): string | n
       return effectsError(state, item.effects, { stones: item.price });
     }
     case 'CRAFT': {
-      const recipe = RECIPES.find(item => item.id === action.recipeId);
-      if (!recipe || !guById(recipe.result)) return '合炼配方不存在。';
+      const recipe = getCampaignRecipes(state).find(item => item.id === action.recipeId);
+      if (!recipe || !guById(state, recipe.result)) return '合炼配方不存在。';
       for (const [id, amount] of Object.entries(recipe.gu)) {
-        const gu = guById(id);
+        const gu = guById(state, id);
         if (!gu || !Number.isInteger(amount) || amount < 1) return '这张配方的蛊虫材料无效。';
         if (owned(state, id) < amount) return `合炼缺少${gu.name}：需要 ${amount} 只，现有 ${owned(state, id)} 只。`;
       }
@@ -293,7 +342,7 @@ export function getActionError(state: GameState, action: GameAction): string | n
     case 'COMBAT': {
       const combat = state.combat;
       if (!combat) return '当前没有战斗。';
-      const enemy = ENEMIES.find(item => item.id === combat.enemyId);
+      const enemy = getCampaignEnemies(state).find(item => item.id === combat.enemyId);
       if (!enemy || !enemy.moves.length) return '对手资料缺失。';
       if (action.move === 'attack' || action.move === 'defend' || action.move === 'retreat') return null;
       if (action.move === 'herbs') {
@@ -305,7 +354,7 @@ export function getActionError(state: GameState, action: GameAction): string | n
         return state.resources.wine < 1 ? '补充真元需要 1 份清酒。' : null;
       }
       if (action.move !== 'gu') return '未知的战斗动作。';
-      const gu = action.guId && guById(action.guId);
+      const gu = action.guId && guById(state, action.guId);
       if (!gu) return '请指定一只可用的蛊。';
       if (!usable(state, gu.id)) return '这只蛊尚未装备、处于休眠，或境界不足。';
       if (gu.passive) return '此蛊会在装备时自动生效，无需主动催动。';
@@ -317,24 +366,30 @@ export function getActionError(state: GameState, action: GameAction): string | n
   }
 }
 
-export function createGame({ name, origin, seed = 20261010 }: { name: string; origin: OriginId; seed?: number }): GameState {
-  const background = ORIGINS.find(item => item.id === origin) ?? ORIGINS[0];
+/** The UI starts the Fang Yuan campaign. Missing campaign preserves existing v1 integrations. */
+export function createGame({ name = '', origin = 'disciple', seed = 20261010, chapter = false, campaign }: { name?: string; origin?: OriginId; seed?: number; chapter?: boolean; campaign?: 'fang-yuan' } = {}): GameState {
+  const fang = campaign === 'fang-yuan';
+  const background = ORIGINS.find(item => item.id === (fang ? 'disciple' : origin)) ?? ORIGINS[0];
   if (!background) throw new Error('没有可用的出身资料。');
   const initialSeed = Math.trunc(finite(seed, 20261010)) >>> 0;
-  const displayName = name.trim().slice(0, 18) || '无名行者';
+  const displayName = fang ? '古月方源' : name.trim().slice(0, 18) || '无名行者';
   const inventory: Record<string, number> = {};
-  for (const id of background.gu) if (guById(id)) inventory[id] = (inventory[id] ?? 0) + 1;
-  const equipped = unique(background.gu).filter(id => guById(id)?.rank === 1).slice(0, EQUIPMENT_LIMIT);
+  const startingGu = fang ? [] : background.gu;
+  for (const id of startingGu) inventory[id] = (inventory[id] ?? 0) + 1;
+  const equipped = unique(startingGu).filter(id => getCampaignGu({ campaign }).find(gu => gu.id === id)?.rank === 1).slice(0, EQUIPMENT_LIMIT);
   const state: GameState = {
-    version: 1, runId: `${initialSeed.toString(36)}-${origin}-${displayName}`, seed: initialSeed, rng: initialSeed,
-    name: displayName, origin: background.id, day: 1, actions: DAILY_ACTIONS, location: 'academy',
-    hp: 28, maxHp: 28, qi: 12, maxQi: 12, rank: 1, cultivation: background.cultivation,
-    resources: { ...background.resources }, clues: 0, trust: background.trust, suspicion: 0,
-    inventory, equipped, hungry: [], usedToday: [...equipped], flags: [], relations: {}, seenEvents: [],
-    activeEvent: null, purchases: {}, combat: null, ending: null, journal: [], nextLogId: 1,
+    version: 1, ...(fang ? { campaign: 'fang-yuan' as const } : {}),
+    runId: fang ? `${initialSeed.toString(36)}-fang-yuan-${displayName}` : `${initialSeed.toString(36)}-${origin}-${displayName}`, seed: initialSeed, rng: initialSeed,
+    name: displayName, origin: background.id, day: 1, actions: DAILY_ACTIONS, location: fang ? 'clan' : 'academy',
+    hp: 28, maxHp: 28, qi: fang ? 0 : 12, maxQi: fang ? 0 : 12, rank: fang ? 0 : 1, cultivation: fang ? 0 : background.cultivation,
+    resources: fang ? { stones: 0, herbs: 0, ore: 0, wine: 0 } : { ...background.resources }, clues: 0, trust: fang ? 0 : background.trust, suspicion: 0,
+    inventory, equipped, hungry: [], usedToday: [...equipped], flags: !fang && chapter ? ['chapter-one'] : [], relations: {}, seenEvents: [],
+    activeEvent: fang ? 'fy-rebirth' : chapter ? 'chapter-arrival' : null, purchases: {}, combat: null, ending: null, journal: [], nextLogId: 1,
   };
   normalize(state);
-  log(state, `${displayName}以「${background.name}」的身份来到青茅山。山中遗藏的风声已起，你有十日决定自己的去路。`, 'story');
+  log(state, fang
+    ? '夜雨中，你醒在十五岁时的旧屋。五百年经历仍在心中，身体却尚未开窍。你是古月方源，此番仍以长生为志。'
+    : `${displayName}以「${background.name}」的身份来到青茅山。山中遗藏的风声已起，你有十日决定自己的去路。`, 'story');
   return state;
 }
 
@@ -344,22 +399,25 @@ function endDay(state: GameState): void {
   if (state.resources.stones >= upkeep) {
     state.resources.stones -= upkeep;
     state.hungry = state.hungry.filter(id => !ids.includes(id));
+    if (upkeep > 0) chapterMilestone(state, 'milestone-upkeep');
     log(state, `结清当日供养 ${upkeep} 块元石，今日携带的蛊已安顿。`, 'info');
   } else {
     state.hungry = unique([...state.hungry, ...ids.filter(id => owned(state, id) > 0)]);
     log(state, `供养需要 ${upkeep} 块元石，钱不足，因此没有扣款；今日携带的蛊进入休眠。可备足元石后补喂。`, 'bad');
   }
-  if (state.day >= LAST_DAY) {
+  if (!isFangYuan(state) && state.day >= LAST_DAY) {
     finish(state, 'departure', '十日期限已到，你没有取得此前约定的成果，随最后一批离山人结束旅途。此次按存活离山结算。', 'survived');
     return;
   }
-  state.day += 1;
+  state.day = isFangYuan(state) ? Math.min(MAX_FANG_DAY, state.day + 1) : state.day + 1;
   state.actions = DAILY_ACTIONS;
   state.hp = Math.min(state.maxHp, state.hp + 4);
   state.qi = state.maxQi;
   state.suspicion = Math.max(0, state.suspicion - 3);
   state.usedToday = [...state.equipped];
-  log(state, `第 ${state.day} 日。生命恢复 4 点，真元已回满，获得 3 次行动。`, 'info');
+  log(state, state.rank === 0
+    ? `第 ${state.day} 行动日。生命恢复最多 4 点，尚未开窍，获得 3 次行动。`
+    : `第 ${state.day} 日。生命恢复 4 点，真元已回满，获得 3 次行动。`, 'info');
 }
 
 function combatLog(state: GameState, text: string): void {
@@ -368,12 +426,13 @@ function combatLog(state: GameState, text: string): void {
 
 function winCombat(state: GameState): void {
   const combat = state.combat!;
-  const enemy = ENEMIES.find(item => item.id === combat.enemyId)!;
+  const enemy = getCampaignEnemies(state).find(item => item.id === combat.enemyId)!;
   const ending = combat.victoryEnding;
   const outcome = combat.victoryText || `你战胜了${enemy.name}。`;
   // Pending event rewards and enemy rewards are both gated on actual victory.
   applyEffects(state, enemy.reward);
   applyEffects(state, combat.victoryEffects);
+  if (!ending) chapterMilestone(state, 'milestone-battle');
   state.combat = null;
   log(state, `战胜${enemy.name}。${outcome}`, 'good');
   checkLife(state);
@@ -382,7 +441,7 @@ function winCombat(state: GameState): void {
 
 function retreat(state: GameState): void {
   const combat = state.combat!;
-  const enemy = ENEMIES.find(item => item.id === combat.enemyId)!;
+  const enemy = getCampaignEnemies(state).find(item => item.id === combat.enemyId)!;
   applyEffects(state, combat.defeatEffects);
   state.combat = null;
   state.location = 'academy';
@@ -392,7 +451,7 @@ function retreat(state: GameState): void {
 
 function enemyTurn(state: GameState): void {
   const combat = state.combat!;
-  const enemy = ENEMIES.find(item => item.id === combat.enemyId)!;
+  const enemy = getCampaignEnemies(state).find(item => item.id === combat.enemyId)!;
   const move = enemy.moves[combat.turn % enemy.moves.length]!;
   if (move.type === 'attack') {
     const passiveGuard = Math.max(0, getEffectiveStats(state).guard - BASE_GUARD);
@@ -446,7 +505,7 @@ function fight(state: GameState, action: Extract<GameAction, { type: 'COMBAT' }>
       damage = stats.attack;
       state.qi = Math.min(state.maxQi, state.qi + 1);
     } else {
-      const gu = guById(action.guId!)!;
+      const gu = guById(state, action.guId!)!;
       state.qi -= gu.qiCost;
       state.usedToday = unique([...state.usedToday, gu.id]);
       label = gu.name;
@@ -491,13 +550,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'EXPLORE': {
       const available = getAvailableEvents(next);
       const event = action.eventId === undefined ? available[0]! : available.find(item => item.id === action.eventId)!;
-      next.actions -= 1;
+      next.actions -= getEventActionCost(event);
       next.activeEvent = event.id;
-      log(next, `探查${LOCATIONS.find(item => item.id === next.location)?.name ?? '此地'}：${event.title}。`, 'story');
+      log(next, `探查${getCampaignLocations(state).find(item => item.id === next.location)?.name ?? '此地'}：${event.title}。`, 'story');
       break;
     }
     case 'ACTIVITY': {
-      const activity = LOCATIONS.find(item => item.id === next.location)!.activity;
+      const activity = getCampaignLocations(state).find(item => item.id === next.location)!.activity;
       next.actions -= 1;
       applyEffects(next, activity.effects);
       const storage = getEffectiveStats(next).storage;
@@ -509,16 +568,29 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       checkLife(next);
       break;
     }
-    case 'TRAIN':
+    case 'TRAIN': {
+      const gain = getTrainingGain(next);
+      const purified = canPurifyTraining(next);
       next.actions -= 1;
-      applyEffects(next, { qi: -3, cultivation: 3 });
-      log(next, '温养空窍：消耗 3 点真元，修为增加 3。', 'good');
+      applyEffects(next, { qi: -3, cultivation: gain });
+      chapterMilestone(next, 'milestone-trained');
+      log(next, purified
+        ? `以酒虫提纯真元后温养空窍：消耗 3 点真元，修为增加 ${gain}。资质与境界没有改变。`
+        : `温养空窍：消耗 3 点真元，修为增加 ${gain}。`, 'good');
       break;
+    }
     case 'REST':
       next.actions -= 1;
       applyEffects(next, { hp: 8, qi: 6 });
-      log(next, '静坐调息：恢复最多 8 点生命、6 点真元。', 'good');
+      log(next, next.rank === 0 ? '静坐歇息：恢复最多 8 点生命。' : '静坐调息：恢复最多 8 点生命、6 点真元。', 'good');
       break;
+    case 'USE_HERBS': {
+      const restored = Math.min(8, next.maxHp - next.hp);
+      next.resources.herbs -= 2;
+      next.hp += restored;
+      log(next, `药草疗伤：消耗 2 份药草，恢复 ${restored} 点生命。`, 'good');
+      break;
+    }
     case 'END_DAY':
       endDay(next);
       break;
@@ -534,16 +606,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       log(next, '冲关成功，晋升二转。消耗修为 12、元石 12；生命与上限增加 8，真元与上限增加 4，可以装备二转蛊。', 'good');
       break;
     case 'CHOOSE': {
-      const event = EVENTS.find(item => item.id === next.activeEvent)!;
+      const event = getCampaignEvents(state).find(item => item.id === next.activeEvent)!;
       const choice = event.choices.find(item => item.id === action.choiceId)!;
       next.seenEvents = unique([...next.seenEvents, event.id]);
       next.activeEvent = null;
       applyEffects(next, choice.effects);
+      if (isFangYuan(next) && event.id === 'fy-awakening' && next.rank === 0 && next.flags.includes('fy-awakened')) {
+        next.rank = 1;
+        next.maxQi = 12;
+        next.qi = 12;
+      }
       log(next, `${event.title} · ${choice.label}：${choice.outcome}`, 'story');
       checkLife(next);
       if (next.ending) break;
       if (choice.encounterId) {
-        const enemy = ENEMIES.find(item => item.id === choice.encounterId)!;
+        const enemy = getCampaignEnemies(state).find(item => item.id === choice.encounterId)!;
         next.combat = {
           enemyId: enemy.id, enemyHp: enemy.hp, enemyGuard: 0, playerGuard: 0, turn: 0,
           victoryEffects: cloneEffects(choice.victoryEffects ?? {}),
@@ -557,20 +634,22 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'EQUIP':
       next.equipped = unique([...next.equipped, action.guId]);
       next.usedToday = unique([...next.usedToday, action.guId]);
+      chapterMilestone(next, 'milestone-equipped');
       break;
     case 'UNEQUIP':
       next.equipped = next.equipped.filter(id => id !== action.guId);
       break;
     case 'FEED': {
       const ids = unique(next.hungry).filter(id => owned(next, id) > 0);
-      const cost = ids.reduce((sum, id) => sum + count(guById(id)?.upkeep), 0);
+      const cost = ids.reduce((sum, id) => sum + count(guById(state, id)?.upkeep), 0);
       next.resources.stones -= cost;
       next.hungry = [];
-      log(next, `补喂花费 ${cost} 块元石，${ids.map(id => guById(id)!.name).join('、')}恢复活力。`, 'good');
+      chapterMilestone(next, 'milestone-upkeep');
+      log(next, `补喂花费 ${cost} 块元石，${ids.map(id => guById(state, id)!.name).join('、')}恢复活力。`, 'good');
       break;
     }
     case 'BUY': {
-      const item = SHOP.find(entry => entry.id === action.itemId)!;
+      const item = getCampaignShop(state).find(entry => entry.id === action.itemId)!;
       next.resources.stones -= item.price;
       next.purchases[item.id] = count(next.purchases[item.id]) + 1;
       applyEffects(next, item.effects);
@@ -578,7 +657,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       break;
     }
     case 'CRAFT': {
-      const recipe = RECIPES.find(item => item.id === action.recipeId)!;
+      const recipe = getCampaignRecipes(state).find(item => item.id === action.recipeId)!;
       const cost = recipeCost(recipe, action.safe);
       next.actions -= 1;
       for (const key of RESOURCE_KEYS) next.resources[key] -= cost[key] ?? 0;
@@ -586,8 +665,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (succeeds) {
         for (const [id, amount] of Object.entries(recipe.gu)) next.inventory[id] = owned(next, id) - amount;
         next.inventory[recipe.result] = owned(next, recipe.result) + 1;
+        chapterMilestone(next, 'milestone-crafted');
         normalize(next);
-        log(next, `${action.safe ? '稳炼' : '合炼'}成功：${recipe.name}。输入蛊已合为${guById(recipe.result)!.name}，可在蛊囊中装备。`, 'good');
+        log(next, `${action.safe ? '稳炼' : '合炼'}成功：${recipe.name}。输入蛊已合为${guById(state, recipe.result)!.name}，可在蛊囊中装备。`, 'good');
       } else log(next, `合炼${recipe.name}失败。辅材与这次行动已经消耗，输入蛊虫全部保留。`, 'bad');
       break;
     }

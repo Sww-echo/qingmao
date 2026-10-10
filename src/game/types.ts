@@ -2,9 +2,10 @@ export type ResourceKey = 'stones' | 'herbs' | 'ore' | 'wine';
 export type Resources = Record<ResourceKey, number>;
 export type LocationId = 'academy' | 'market' | 'bamboo' | 'stream' | 'cave' | 'clan';
 export type OriginId = 'disciple' | 'scout' | 'trader';
-export type EndingId = 'inheritance' | 'clan' | 'departure';
+export type LegacyEndingId = 'inheritance' | 'clan' | 'departure';
+export type EndingId = LegacyEndingId | 'fy-first-gu';
 export type GuRole = 'attack' | 'defense' | 'support' | 'scouting' | 'economy' | 'movement';
-export type GuAbility = 'strike' | 'guard' | 'heal' | 'restore' | 'power' | 'scout' | 'storage' | 'escape';
+export type GuAbility = 'strike' | 'guard' | 'heal' | 'restore' | 'power' | 'scout' | 'storage' | 'escape' | 'purify';
 export type StatKey = 'hp' | 'qi' | 'cultivation' | 'clues' | 'trust' | 'suspicion' | 'rank' | 'day';
 
 export type Requirement =
@@ -98,6 +99,7 @@ export interface EventDef {
   dayMax?: number;
   requirements?: Requirement[];
   priority: number;
+  actionCost?: 0 | 1;
   repeatable?: boolean;
   choices: EventChoice[];
 }
@@ -174,6 +176,7 @@ export interface RunEnding {
 
 export interface GameState {
   version: 1;
+  campaign?: 'fang-yuan';
   runId: string;
   seed: number;
   rng: number;
@@ -186,7 +189,7 @@ export interface GameState {
   maxHp: number;
   qi: number;
   maxQi: number;
-  rank: 1 | 2;
+  rank: 0 | 1 | 2;
   cultivation: number;
   resources: Resources;
   clues: number;
@@ -213,6 +216,7 @@ export type GameAction =
   | { type: 'ACTIVITY' }
   | { type: 'TRAIN' }
   | { type: 'REST' }
+  | { type: 'USE_HERBS' }
   | { type: 'END_DAY' }
   | { type: 'BREAKTHROUGH' }
   | { type: 'CHOOSE'; choiceId: string }

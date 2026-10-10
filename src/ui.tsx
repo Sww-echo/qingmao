@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { GU, NPCS } from './game/content';
-import type { Effects, GuRole, ResourceKey } from './game/types';
+import { getCampaignGu, getCampaignNpcs, isFangYuan } from './game/campaign';
+import type { Effects, GameState, GuRole, ResourceKey } from './game/types';
 
 export type IconName = 'mountain' | 'compass' | 'bag' | 'flame' | 'store' | 'book' | 'sun' | 'moon' | 'leaf' | 'gem' | 'heart' | 'spark' | 'shield' | 'sword' | 'arrow' | 'close' | 'check' | 'download' | 'upload' | 'help' | 'flag' | 'eye' | 'people' | 'home' | 'wine' | 'ore';
 
@@ -42,8 +43,16 @@ export const RESOURCE_NAMES: Record<ResourceKey, string> = { stones: '元石', h
 export const ROLE_NAMES: Record<GuRole, string> = { attack: '攻伐', defense: '护身', support: '辅助', scouting: '侦察', economy: '经营', movement: '身法' };
 export const ROLE_ICONS: Record<GuRole, IconName> = { attack: 'sword', defense: 'shield', support: 'spark', scouting: 'eye', economy: 'bag', movement: 'compass' };
 
-export function effectLabels(effects: Effects): { text: string; negative: boolean }[] {
+export function getRealmLabel(game: GameState): string {
+  if (game.rank === 0) return '未开窍';
+  if (isFangYuan(game)) return '一转初阶';
+  return game.rank === 1 ? '一转' : '二转';
+}
+
+export function effectLabels(effects: Effects, game?: GameState): { text: string; negative: boolean }[] {
   const result: { text: string; negative: boolean }[] = [];
+  const guList = game ? getCampaignGu(game) : GU;
+  const people = game ? getCampaignNpcs(game) : NPCS;
   for (const [key, value] of Object.entries(effects.resources ?? {})) {
     if (value) result.push({ text: `${RESOURCE_NAMES[key as ResourceKey]} ${value > 0 ? '+' : ''}${value}`, negative: value < 0 });
   }
@@ -53,20 +62,23 @@ export function effectLabels(effects: Effects): { text: string; negative: boolea
     if (value) result.push({ text: `${label} ${value > 0 ? '+' : ''}${value}`, negative: key === 'suspicion' ? value > 0 : value < 0 });
   }
   for (const [id, count] of Object.entries(effects.gu ?? {})) {
-    result.push({ text: `${GU.find(gu => gu.id === id)?.name ?? id} ${count > 0 ? '+' : ''}${count}`, negative: count < 0 });
+    result.push({ text: `${guList.find(gu => gu.id === id)?.name ?? id} ${count > 0 ? '+' : ''}${count}`, negative: count < 0 });
   }
   for (const [id, value] of Object.entries(effects.relations ?? {})) {
-    if (value) result.push({ text: `${NPCS.find(npc => npc.id === id)?.name ?? '人物'}关系 ${value > 0 ? '+' : ''}${value}`, negative: value < 0 });
+    if (value) result.push({ text: `${people.find(npc => npc.id === id)?.name ?? '人物'}关系 ${value > 0 ? '+' : ''}${value}`, negative: value < 0 });
   }
   return result;
 }
 
-export function EffectList({ effects, compact = false }: { effects: Effects; compact?: boolean }) {
-  return <div className={`effect-list${compact ? ' compact' : ''}`}>{effectLabels(effects).map(({ text, negative }) => <span className={negative ? 'effect cost' : 'effect gain'} key={text}>{text}</span>)}</div>;
+export function EffectList({ effects, compact = false, game }: { effects: Effects; compact?: boolean; game?: GameState }) {
+  return <div className={`effect-list${compact ? ' compact' : ''}`}>{effectLabels(effects, game).map(({ text, negative }) => <span className={negative ? 'effect cost' : 'effect gain'} key={text}>{text}</span>)}</div>;
 }
 
 export function Meter({ label, value, max, kind = 'jade', icon }: { label: string; value: number; max: number; kind?: string; icon?: IconName }) {
-  return <div className={`meter meter-${kind}`}><div className="meter-label"><span>{icon && <Icon name={icon} size={14} />}{label}</span><b>{value}<small> / {max}</small></b></div><div className="meter-track" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={max}><i style={{ width: `${Math.min(100, Math.max(0, value / max * 100))}%` }} /></div></div>;
+  const available = Number.isFinite(max) && max > 0;
+  const safeValue = available && Number.isFinite(value) ? Math.min(max, Math.max(0, value)) : 0;
+  const percent = available ? safeValue / max * 100 : 0;
+  return <div className={`meter meter-${kind}`}><div className="meter-label"><span>{icon && <Icon name={icon} size={14} />}{label}</span><b>{available ? <>{value}<small> / {max}</small></> : <small>尚未开启</small>}</b></div><div className="meter-track" role="progressbar" aria-label={label} aria-valuenow={safeValue} aria-valuemin={0} aria-valuemax={available ? max : 1} aria-valuetext={available ? undefined : '尚未开启'}><i style={{ width: `${percent}%` }} /></div></div>;
 }
 
 export function Modal({ title, children, onClose, wide = false, label }: { title: string; children: ReactNode; onClose?: () => void; wide?: boolean; label?: string }) {

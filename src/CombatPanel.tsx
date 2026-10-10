@@ -1,4 +1,4 @@
-import { ENEMIES, GU } from './game/content';
+import { getCampaignEnemies, getCampaignGu } from './game/campaign';
 import { getActionError, getCombatForecast, getEffectiveStats } from './game/engine';
 import type { GameAction, GameState } from './game/types';
 import ActionButton from './GameActionButton';
@@ -35,12 +35,15 @@ function EnemyPortrait({ enemyId }: { enemyId: string }) {
 }
 
 export default function CombatPanel({ game, onAction }: { game: GameState; onAction: (action: GameAction) => void }) {
-  const combat = game.combat!;
-  const enemy = ENEMIES.find(item => item.id === combat.enemyId)!;
-  const forecast = getCombatForecast(game)!;
+  const combat = game.combat;
+  if (!combat) return null;
+  const enemy = getCampaignEnemies(game).find(item => item.id === combat.enemyId);
+  const forecast = getCombatForecast(game);
+  if (!enemy || !forecast) return <section className="combat-panel panel"><SectionHeading eyebrow="当前遭遇" title="战斗资料未就绪" /><p className="muted">当前篇章没有这场遭遇的资料，可从存档入口重新载入已保存的行程。</p></section>;
   const move = forecast.intent;
   const stats = getEffectiveStats(game);
-  const carried = game.equipped.map(id => GU.find(item => item.id === id)!);
+  const guList = getCampaignGu(game);
+  const carried = game.equipped.flatMap(id => { const gu = guList.find(item => item.id === id); return gu ? [gu] : []; });
   const active = carried.filter(gu => !gu.passive);
   const passive = carried.filter(gu => gu.passive);
 
