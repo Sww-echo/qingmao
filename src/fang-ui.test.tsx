@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { ReactNode } from 'react';
-import App from './App';
+import App, { displayedSaveStatus } from './App';
 import ActionFeedback, { feedbackFor } from './ActionFeedback';
 import ChapterPanel from './ChapterPanel';
 import ChapterEnding from './ChapterEnding';
@@ -223,6 +223,18 @@ describe('Fang Yuan UI server-rendered regression checks', () => {
     expect(buttons(fullCamp).find(button => button.label === '温养空窍')?.disabled).toBe(true);
     expect(textContent(fullCamp)).toContain('本章修为已达上限');
     expect(textContent(fullCamp)).not.toMatch(/3 真元 → [034] 修为/);
+  });
+
+  it('never reports a changed game as saved before its own write has settled', () => {
+    const before = checkpoint('fy-claim-moonlight');
+    const after = act(before, { type: 'TRAVEL', location: 'clan' });
+    // Between the player's action and the write effect's completion, the previous "saved" status is stale.
+    expect(displayedSaveStatus('saved', after, before)).toBe('saving');
+    expect(displayedSaveStatus('saved', after, after)).toBe('saved');
+    expect(displayedSaveStatus('saved', after, null)).toBe('saving');
+    expect(displayedSaveStatus('saving', after, after)).toBe('saving');
+    expect(displayedSaveStatus('error', after, before)).toBe('error');
+    expect(displayedSaveStatus('saved', null, null)).toBe('saved');
   });
 
   it('builds the ending review from a real completed run, including earned inventory, balances and relationships', () => {

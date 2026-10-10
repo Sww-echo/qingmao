@@ -10,3 +10,5 @@ test-results/
 .env
 .env.*
 !.env.example
+# 原著资料仅供本地核对，不随游戏分发
+docs/12185.txt

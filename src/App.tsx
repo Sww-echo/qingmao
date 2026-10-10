@@ -20,7 +20,13 @@ import { EffectList, getRealmLabel, Icon, Meter, Modal } from './ui';
 import type { IconName } from './ui';
 
 type Pane = 'map' | 'gu' | 'forge' | 'market' | 'journal';
-type SaveStatus = 'saved' | 'saving' | 'error';
+export type SaveStatus = 'saved' | 'saving' | 'error';
+
+/** The write effect runs after paint; a game that differs from the last persisted one must not read as saved. */
+export function displayedSaveStatus(status: SaveStatus, game: GameState | null, persisted: GameState | null): SaveStatus {
+  return status === 'saved' && game && persisted !== game ? 'saving' : status;
+}
+
 const NAV: { id: Pane; label: string; icon: IconName }[] = [
   { id: 'map', label: '山中行走', icon: 'compass' },
   { id: 'gu', label: '蛊虫行囊', icon: 'bag' },
@@ -141,6 +147,7 @@ export default function App() {
   const [feedback, setFeedback] = useState<ActionFeedbackData | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [persistedGame, setPersistedGame] = useState<GameState | null>(null);
   const [notice, setNotice] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -171,7 +178,7 @@ export default function App() {
     setResume(save);
     const currentRevision = ++revision.current;
     setSaveStatus('saving');
-    writeSave(save).then(() => { if (currentRevision === revision.current) { setSaveStatus('saved'); setSavedAt(save.savedAt); } }).catch(() => { if (currentRevision === revision.current) setSaveStatus('error'); });
+    writeSave(save).then(() => { if (currentRevision === revision.current) { setSaveStatus('saved'); setSavedAt(save.savedAt); setPersistedGame(game); } }).catch(() => { if (currentRevision === revision.current) setSaveStatus('error'); });
   }, [game]);
 
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 6500); return () => clearTimeout(timer); }, [notice]);
@@ -257,12 +264,13 @@ export default function App() {
   };
 
   const fang = Boolean(game && isFangYuan(game));
+  const shownSaveStatus = displayedSaveStatus(saveStatus, game, persistedGame);
   const finalLegacyDay = !fang && game?.day === 10;
   const displayedSaveGame = game ?? resume?.game ?? null;
 
   return <>
     {atTitle || !game ? <TitleScreen resume={resume} meta={meta} loading={loading} onContinue={continueGame} onStart={requestStart} onHelp={() => setHelpOpen(true)} onSave={() => setSaveOpen(true)} /> : game.ending ? <EndingScreen game={game} meta={meta} onNew={() => setAtTitle(true)} onTitle={() => setAtTitle(true)} onSave={exportCurrent} /> : <div className={`game-shell${fang ? ' fang-game' : ''}`} data-campaign={fang ? 'fang-yuan' : 'legacy'}>
-      <header className="game-header"><button className="brand" onClick={() => setAtTitle(true)} aria-label="返回山门"><span className="brand-mark">青</span><span><strong>青茅山</strong><small>{fang ? '重生初炼' : '传承争夺'}</small></span></button><div className="chapter-label"><span>{fang ? '方源篇' : '卷一'}</span>{fang ? '重生初炼' : '石灯遗藏'}</div><div className="header-tools"><button className="text-button save-indicator" onClick={() => setSaveOpen(true)}><span className={`save-dot ${saveStatus}`} />{saveStatus === 'saved' ? '已存档' : saveStatus === 'saving' ? '落笔中' : '保存失败，请备份'}</button><button className="icon-button" aria-label="查看游戏指南" onClick={() => setHelpOpen(true)}><Icon name="help" /></button><button className="icon-button" aria-label="管理存档" onClick={() => setSaveOpen(true)}><Icon name="book" /></button></div></header>
+      <header className="game-header"><button className="brand" onClick={() => setAtTitle(true)} aria-label="返回山门"><span className="brand-mark">青</span><span><strong>青茅山</strong><small>{fang ? '重生初炼' : '传承争夺'}</small></span></button><div className="chapter-label"><span>{fang ? '方源篇' : '卷一'}</span>{fang ? '重生初炼' : '石灯遗藏'}</div><div className="header-tools"><button className="text-button save-indicator" onClick={() => setSaveOpen(true)}><span className={`save-dot ${shownSaveStatus}`} />{shownSaveStatus === 'saved' ? '已存档' : shownSaveStatus === 'saving' ? '落笔中' : '保存失败，请备份'}</button><button className="icon-button" aria-label="查看游戏指南" onClick={() => setHelpOpen(true)}><Icon name="help" /></button><button className="icon-button" aria-label="管理存档" onClick={() => setSaveOpen(true)}><Icon name="book" /></button></div></header>
       <div className="day-strip"><div className="day-info"><Icon name={game.actions === 0 ? 'moon' : 'sun'} size={23} /><div><span>第 <strong>{String(game.day).padStart(2, '0')}</strong> {fang ? '行动日' : '日'} {!fang && <small>/ 十日</small>}</span><span className="time-name">{game.actions === 3 ? '晨雾未散' : game.actions === 2 ? '日过竹梢' : game.actions === 1 ? '山色将暮' : '灯火初上'}</span></div><div className="action-dots" aria-label={`今日剩余 ${game.actions} 次行动`}>{[0, 1, 2].map(i => <i className={i < game.actions ? 'available' : ''} key={i} />)}<span>{game.actions} 次行动</span></div></div><div className="resource-row"><span><Icon name="gem" /><b>{game.resources.stones}</b><small>元石</small></span><span><Icon name="leaf" /><b>{game.resources.herbs}</b><small>药草</small></span><span><Icon name="ore" /><b>{game.resources.ore}</b><small>矿料</small></span><span><Icon name="wine" /><b>{game.resources.wine}</b><small>清酒</small></span></div><button className={`button end-day-button${game.actions === 0 ? ' button-primary' : ''}`} onClick={() => setDayOpen(true)} disabled={!!game.combat || !!game.activeEvent}><Icon name="moon" />结束当日<Icon name="arrow" size={16} /></button></div>
       <ActionFeedback feedback={feedback} game={game} />
       <nav className="game-nav" aria-label="游戏功能">{NAV.map(item => <button key={item.id} className={pane === item.id ? 'active' : ''} onClick={() => showPane(item.id)} aria-current={pane === item.id ? 'page' : undefined} disabled={Boolean(game.activeEvent) || (Boolean(game.combat) && item.id !== 'map')}><Icon name={item.icon} /><span>{fang && item.id === 'market' ? '酒肆补给' : item.label}</span>{item.id === 'gu' && game.hungry.length > 0 && <i className="nav-alert" />}</button>)}</nav>

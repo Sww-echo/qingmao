@@ -16,8 +16,10 @@ const quietRoute = [
 ] as const;
 
 async function dismissNotice(page: Page) {
-  const close = page.getByRole('button', { name: '关闭提示', exact: true });
-  if (await close.isVisible()) await close.click();
+  // The toast is fixed at the bottom and can cover action buttons; close it and wait for it to leave.
+  const toast = page.locator('.toast');
+  if (await toast.isVisible()) await toast.getByRole('button', { name: '关闭提示', exact: true }).click();
+  await expect(toast).toBeHidden();
 }
 
 async function startFang(page: Page) {
@@ -184,7 +186,7 @@ test('can defer a paid story choice and recover through normal preparation', asy
   await dialog.locator('[data-choice-id="prepare-later"]').click();
   await dismissNotice(page);
   await visit(page, 'clan');
-  await page.getByRole('button', { name: '整理份例', exact: true }).click();
+  await page.locator('.location-actions').getByRole('button', { name: '整理份例', exact: true }).click();
   await resolveStep(page, 'fy-bamboo-wine', 'buy-after-dispute');
   const { save } = await exportSave(page, info, 'fang-recovered.json');
   expect(save.game.resources).toMatchObject({ stones: 0, wine: 3 });

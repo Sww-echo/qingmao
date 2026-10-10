@@ -7,8 +7,10 @@ import { createSave, EMPTY_META, serializeSave } from '../src/game/storage';
 import { test } from './fixtures';
 
 async function dismissNotice(page: Page) {
-  const close = page.getByRole('button', { name: '关闭提示', exact: true });
-  if (await close.isVisible()) await close.click();
+  // The toast is fixed at the bottom and can cover action buttons; close it and wait for it to leave.
+  const toast = page.locator('.toast');
+  if (await toast.isVisible()) await toast.getByRole('button', { name: '关闭提示', exact: true }).click();
+  await expect(toast).toBeHidden();
 }
 
 async function startJourney(page: Page, name: string) {
@@ -181,7 +183,7 @@ test('buys and equips protection, follows enemy intent, and wins the inheritance
   }
   await expect(page.getByRole('heading', { name: '独掌传承', level: 1, exact: true })).toBeVisible();
   await expect(page.getByText('达成结局', { exact: true })).toBeVisible();
-  await expect(page.getByText('已走过 1 段旅途 · 已抵达 1 / 3 种结局', { exact: true })).toBeVisible();
+  await expect(page.locator('.ending-progress')).toHaveText('原创支线：已抵达 1 / 3 种结局');
   await expect(page.locator('.chapter-ending')).toContainText('第二章尚未开放');
 });
 
