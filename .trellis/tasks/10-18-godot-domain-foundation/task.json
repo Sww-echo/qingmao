@@ -3,7 +3,7 @@
   "name": "godot-domain-foundation",
   "title": "Godot 基础：数据、规则与存档迁移",
   "description": "先交付可见Godot原生工程，再迁移V1规则和数据，验证全字段随机/动作轨迹一致性、独立存档恢复及桌面/Web基础可运行性。",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": "domain-foundation",
   "package": null,
@@ -23,16 +23,29 @@
   "relatedFiles": [
     ".trellis/tasks/10-18-godot-domain-foundation/prd.md",
     ".trellis/tasks/10-18-godot-domain-foundation/design.md",
-    ".trellis/tasks/10-18-godot-domain-foundation/implement.md"
+    ".trellis/tasks/10-18-godot-domain-foundation/implement.md",
+    ".trellis/tasks/10-18-godot-domain-foundation/w0-toolchain-evidence.md"
   ],
-  "notes": "2026-10-18 最新用户要求先创建详细Godot架构/玩法计划；P1既有证据保留，P2–P4按本版评审后开工，当前未启动。",
+  "notes": "2026-10-18 用户批准本版架构方案并要求开工。W0 已完成：Godot 4.7.2-stable 取得并校验（SHA512 对官方）、godot/ 并行工程建立、36/36 壳层冒烟通过、真实窗口/移动/交互/缩放实测、macOS 与 Web 最小导出实测。W1–W3 未开始；P2-A–E 尚未全部达成。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
-    "planning_review": "awaiting-architecture-review",
-    "implementation_authorized": false,
+    "planning_review": "approved-2026-10-18",
+    "implementation_authorized": true,
     "architecture_plan": ".trellis/tasks/10-18-godot-architecture-plan",
-    "latest_review_status": "awaiting-review",
-    "prior_planning_review": "approved-2026-10-18"
+    "latest_review_status": "approved-2026-10-18",
+    "prior_planning_review": "approved-2026-10-18",
+    "engine": "4.7.2.stable.official.ed1daf0bf",
+    "renderer": "gl_compatibility",
+    "w0": {
+      "status": "complete",
+      "evidence": ".trellis/tasks/10-18-godot-domain-foundation/w0-toolchain-evidence.md",
+      "smoke_checks": "36/36",
+      "native_verified": true,
+      "macos_export_verified": true,
+      "web_export_verified": true,
+      "human_visual_review": false
+    },
+    "w1_to_w3": "not-started"
   }
 }

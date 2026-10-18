@@ -1,0 +1,205 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scenes/play.gd" id="1_play"]
+[ext_resource type="Script" path="res://presentation/player.gd" id="2_player"]
+[ext_resource type="Script" path="res://presentation/interactable.gd" id="3_hotspot"]
+[ext_resource type="Script" path="res://presentation/interaction_controller.gd" id="4_interaction"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_player"]
+radius = 16.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hotspot"]
+size = Vector2(170, 170)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.06, 0.07, 0.09, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="Play" type="Node2D"]
+script = ExtResource("1_play")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Ground" type="Polygon2D" parent="World"]
+color = Color(0.14, 0.18, 0.15, 1)
+polygon = PackedVector2Array(-200, -150, 1800, -150, 1800, 1050, -200, 1050)
+
+[node name="LectureHall" type="Polygon2D" parent="World"]
+color = Color(0.31, 0.27, 0.23, 1)
+polygon = PackedVector2Array(120, 80, 560, 80, 560, 340, 120, 340)
+
+[node name="DrillGround" type="Polygon2D" parent="World"]
+color = Color(0.27, 0.23, 0.2, 1)
+polygon = PackedVector2Array(860, 90, 1380, 90, 1380, 420, 860, 420)
+
+[node name="SpiritField" type="Polygon2D" parent="World"]
+color = Color(0.18, 0.29, 0.21, 1)
+polygon = PackedVector2Array(140, 640, 620, 640, 620, 960, 140, 960)
+
+[node name="Player" type="CharacterBody2D" parent="World"]
+unique_name_in_owner = true
+position = Vector2(900, 580)
+script = ExtResource("2_player")
+
+[node name="Body" type="Polygon2D" parent="World/Player"]
+color = Color(0.87, 0.74, 0.36, 1)
+polygon = PackedVector2Array(0, -20, 16, 12, -16, 12)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Player"]
+shape = SubResource("CircleShape2D_player")
+
+[node name="Camera" type="Camera2D" parent="World/Player"]
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+
+[node name="InteractionController" type="Node" parent="World"]
+unique_name_in_owner = true
+script = ExtResource("4_interaction")
+
+[node name="Hotspots" type="Node2D" parent="World"]
+
+[node name="LectureHallSpot" type="Area2D" parent="World/Hotspots"]
+position = Vector2(340, 210)
+script = ExtResource("3_hotspot")
+target_id = "academy.lecture"
+display_name = "学堂讲堂"
+description = "先生在此讲授蛊道基础。此处是占位交互：真实的课目、行动消耗与修为收益会在 W2 接入规则后，由 GameSession 的只读投影给出。"
+
+[node name="Mark" type="Polygon2D" parent="World/Hotspots/LectureHallSpot"]
+color = Color(0.72, 0.62, 0.35, 0.35)
+polygon = PackedVector2Array(-70, -70, 70, -70, 70, 70, -70, 70)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Hotspots/LectureHallSpot"]
+shape = SubResource("RectangleShape2D_hotspot")
+
+[node name="DrillGroundSpot" type="Area2D" parent="World/Hotspots"]
+position = Vector2(1120, 255)
+script = ExtResource("3_hotspot")
+target_id = "academy.training"
+display_name = "演武场"
+description = "弟子操练的场地。此处是占位交互：训练项目、真元与生命的代价、以及可见危险，会在 W2 接入规则后显示。"
+
+[node name="Mark" type="Polygon2D" parent="World/Hotspots/DrillGroundSpot"]
+color = Color(0.72, 0.5, 0.32, 0.35)
+polygon = PackedVector2Array(-70, -70, 70, -70, 70, 70, -70, 70)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Hotspots/DrillGroundSpot"]
+shape = SubResource("RectangleShape2D_hotspot")
+
+[node name="SpiritFieldSpot" type="Area2D" parent="World/Hotspots"]
+position = Vector2(380, 800)
+script = ExtResource("3_hotspot")
+target_id = "academy.spirit_field"
+display_name = "学堂灵田"
+description = "学堂自留的灵植田。此处是占位交互：采集机会、已知风险与未探明部分，会在 W2 接入规则后显示。"
+
+[node name="Mark" type="Polygon2D" parent="World/Hotspots/SpiritFieldSpot"]
+color = Color(0.42, 0.66, 0.44, 0.35)
+polygon = PackedVector2Array(-70, -70, 70, -70, 70, 70, -70, 70)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Hotspots/SpiritFieldSpot"]
+shape = SubResource("RectangleShape2D_hotspot")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Root" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StatusBar" type="PanelContainer" parent="UI/Root"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 16.0
+offset_top = 12.0
+offset_right = -16.0
+offset_bottom = 60.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="StatusLine" type="Label" parent="UI/Root/StatusBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "架构演示：未接入完整规则"
+
+[node name="Prompt" type="Label" parent="UI/Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -104.0
+offset_right = 260.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 0.92, 0.68, 1)
+horizontal_alignment = 1
+vertical_alignment = 1
+text = ""
+
+[node name="ExplainPanel" type="PanelContainer" parent="UI/Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -340.0
+offset_top = -190.0
+offset_right = 340.0
+offset_bottom = 190.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="UI/Root/ExplainPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 22
+
+[node name="Body" type="VBoxContainer" parent="UI/Root/ExplainPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="ExplainTitle" type="Label" parent="UI/Root/ExplainPanel/Margin/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = ""
+
+[node name="Separator" type="HSeparator" parent="UI/Root/ExplainPanel/Margin/Body"]
+layout_mode = 2
+
+[node name="ExplainBody" type="Label" parent="UI/Root/ExplainPanel/Margin/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 3
+text = ""
+
+[node name="CloseHint" type="Label" parent="UI/Root/ExplainPanel/Margin/Body"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.66, 0.72, 1)
+text = "按 E 或 Esc 关闭"
+horizontal_alignment = 1

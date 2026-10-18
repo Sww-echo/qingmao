@@ -35,11 +35,12 @@
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
-    "planning_review": "awaiting-architecture-review",
-    "implementation_authorized": false,
+    "planning_review": "approved-2026-10-18",
+    "implementation_authorized": true,
     "prior_planning_review": "approved-2026-10-18-for-P1",
     "completed_authorized_scope": "P1 rules implementation and verification; pending commit bookkeeping",
     "architecture_plan": ".trellis/tasks/10-18-godot-architecture-plan",
-    "latest_review_status": "awaiting-review"
+    "latest_review_status": "approved-2026-10-18",
+    "w0_delivered_by": ".trellis/tasks/10-18-godot-domain-foundation/w0-toolchain-evidence.md"
   }
 }
