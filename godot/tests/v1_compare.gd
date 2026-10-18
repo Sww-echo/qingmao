@@ -43,7 +43,9 @@ func _process(_delta: float) -> bool:
 	_report = {
 		"ok": true, "formatVersion": 1, "expectedFile": _expected_path,
 		"expectedSha256": CanonicalJson.sha256(bytes),
-		"contentSha256": loaded.content_sha256, "godotVersion": Engine.get_version_info().string,
+		"contentSha256": loaded.content_sha256, "godotVersion": _godot_version(),
+		"os": OS.get_name(), "cpu": OS.get_processor_name(), "renderer": RenderingServer.get_current_rendering_driver_name(),
+		"packId": "prototype",
 		"scenarioId": _catalog.data.scenarioId, "rulesVersion": _catalog.data.rulesVersion,
 		"contentVersion": _catalog.data.contentVersion,
 		"seedSets": parser.data.seedSets, "runs": 0, "actions": 0, "states": 0,
@@ -123,6 +125,14 @@ func _hash(value: Variant) -> String:
 	if not encoded.ok:
 		return "canonical-error:" + str(encoded.error)
 	return CanonicalJson.sha256(encoded.bytes)
+
+
+func _godot_version() -> String:
+	var info: Dictionary = Engine.get_version_info()
+	return "%d.%d.%d.%s.%s.%s" % [
+		int(info.major), int(info.minor), int(info.patch),
+		str(info.status), str(info.build), str(info.hash).substr(0, 9),
+	]
 
 
 func _expected_error(value: Variant, content_hash: String) -> String:

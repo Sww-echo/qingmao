@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { readFile, rm } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -6,6 +6,22 @@ import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { PROTOTYPE_CONTENT, simulateStrategy } from '../src/game/prototype/index.ts';
 import { ROOT, SEED_SETS, STRATEGIES, envelope, fail, hash, outputPath, parseOptions, readJson, verifyTrace, writeJson } from './prototype-common.mjs';
+
+export const GODOT_VERSION = '4.7.2.stable.official.ed1daf0bf';
+
+function git(args) {
+  try {
+    return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
+  } catch {
+    return 'unavailable';
+  }
+}
+
+export function sourceIdentity() {
+  const commit = git(['rev-parse', 'HEAD']);
+  const status = git(['status', '--porcelain=v1']);
+  return { commit, dirty: status !== 'unavailable' && status.length > 0 };
+}
 
 export function buildExpected(set = 'development') {
   if (!['development', 'holdout', 'all'].includes(set)) throw new Error('种子集必须是 development、holdout 或 all');
@@ -110,18 +126,34 @@ export async function main(args = process.argv.slice(2)) {
     return;
   }
   const set = options['--set'] ?? 'development';
+  const binary = process.env.GODOT_BIN ?? join(homedir(), 'Applications/Godot.app/Contents/MacOS/Godot');
+  const version = spawnSync(binary, ['--version'], { encoding: 'utf8', timeout: 30000 });
+  if (version.error || version.status !== 0 || version.stdout.trim() !== GODOT_VERSION) {
+    throw new Error(`Godot 版本必须为 ${GODOT_VERSION}: ${version.stdout.trim() || version.error?.message || `exit ${version.status}`}`);
+  }
   const started = performance.now();
+  const source = sourceIdentity();
+  const startedAt = new Date().toISOString();
   const expected = buildExpected(set);
   const directory = outputPath(options['--out'] ?? 'artifacts/godot');
   const expectedPath = join(directory, `v1-expected-${set}.json`);
   const reportPath = join(directory, `v1-compare-${set}.json`);
   await writeJson(expectedPath, expected);
   await rm(reportPath, { force: true });
+  const command = [binary, '--headless', '--path', join(ROOT, 'godot'), '--script', 'res://tests/v1_compare.gd', '--',
+    `--expected=${expectedPath}`, `--report=${reportPath}`];
   console.log(`Expected ${set}: ${expected.runs.length} runs, ${expected.runs.reduce((sum, run) => sum + run.actions.length, 0)} actions; ${expectedPath}`);
-  const execution = await runGodotComparison(expectedPath, reportPath);
+  const execution = await runGodotComparison(expectedPath, reportPath, binary);
   let report;
   try { report = await readJson(reportPath); }
   catch { throw new Error(`Godot 未生成报告（exit=${execution.code}, signal=${execution.signal}）; run a headless editor import first`); }
+  report = { ...report, startedAt, finishedAt: new Date().toISOString(), source, set,
+    command, exitCode: execution.code, untested: [
+      '真实窗口键鼠试玩与画面/字体/焦点验收',
+      'GameSession、存档恢复与 Web 刷新持久化（W3）',
+      'V2 内容、规则与平衡（W6）',
+    ] };
+  await writeJson(reportPath, report);
   if (execution.code !== 0 || report?.ok !== true) {
     await diagnoseFailure(report, directory);
     throw new Error(`Godot V1 对照失败：${report.failure?.message ?? report.error ?? `exit ${execution.code}`}`);
@@ -130,6 +162,11 @@ export async function main(args = process.argv.slice(2)) {
   const actions = expected.runs.reduce((sum, run) => sum + run.actions.length, 0);
   const expectedHash = hash(expected);
   if (report.formatVersion !== 1 || report.expectedFile !== expectedPath
+    || report.godotVersion !== GODOT_VERSION || report.set !== set || report.packId !== 'prototype'
+    || !report.os || !report.cpu || !report.renderer || !report.startedAt || !report.finishedAt
+    || !Array.isArray(report.untested) || report.untested.length === 0 || report.source?.commit !== source.commit
+    || report.source?.dirty !== source.dirty || report.exitCode !== 0
+    || JSON.stringify(report.command) !== JSON.stringify(command)
     || report.expectedSha256 !== expectedHash || hash(await readFile(expectedPath, 'utf8')) !== expectedHash
     || report.contentSha256 !== expected.contentSha256 || report.scenarioId !== expected.scenarioId
     || report.rulesVersion !== expected.rulesVersion || report.contentVersion !== expected.contentVersion

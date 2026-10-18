@@ -142,6 +142,8 @@ GameState.to_data() -> Dictionary
   `{ok:false,error:{code:"rule-rejected",message,fieldPath:"action"}}`. Preserve
   the frozen TS validation order and Chinese rejection messages. The action
   argument is a Dictionary; nonobject input is rejected by the action codec.
+- `Rules.create` validates the uint32 seed and catalog with runtime checks and
+  returns `null` on failure; never rely on assertions for release behavior.
 - `apply` validates before cloning or drawing randomness. Success returns
   `{ok:true,state,events}`; `events` is the detached list of new log dictionaries.
   Both rejected and accepted actions leave the entire input model and action
@@ -194,6 +196,9 @@ Use literal string keys for JSON dictionaries. New dot-assigned GDScript keys
 can be `StringName`, which the canonical writer correctly rejects. Keep paths
 for input and output distinct and never let error reporting overwrite input.
 Clear old reports before a process run so stale success cannot pass verification.
+The Node comparison driver also requires the exact locked engine string and
+records report time, source commit/dirty state, command, exit code and untested
+scope. A compatible-looking but different engine is not equivalence evidence.
 
 W2 adds `rules_unit` and `v1_replay` to the five W1 suites. Run real Godot tooling
 tests with `GODOT_BIN`, including isolated action/state/chain corruption and

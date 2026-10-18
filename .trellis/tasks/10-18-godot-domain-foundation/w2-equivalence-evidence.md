@@ -11,7 +11,7 @@
 | --- | --- |
 | 分支 | `codex/initial-import` |
 | 前置规划提交 | `6a53b6e` |
-| W0 / W1 | 已交付；W1 实现随本包待提交 |
+| W0 / W1 | 已交付；W1/W2 实现随 `eef1920` 提交 |
 | Node | `v24.18.0` |
 | Godot | `4.7.2.stable.official.ed1daf0bf` |
 | 主机 / 渲染 | Apple M4 / arm64 / macOS；Compatibility |
@@ -19,7 +19,7 @@
 | rules / content | `prototype-rules-1` / `prototype-content-1` |
 | content SHA256 | `14ad9c82d896da3ebe7d472d7d92f5594f403984c8decaf4e9bf7e477ec9e9f1` |
 | 预期全集 SHA256 | `7cf44e3fc6075ccfb108e6f3f43ac251405fc1962060c547ec9e9d52bf1f66c2` |
-| 对照报告 SHA256 | `df7893562a2e695d010da1cabe52721d8086a5e285862a0fc82ee70023cc5d70` |
+| 对照报告 SHA256 | 见 §4；最终干净工作树报告重跑后登记 |
 
 ## 2. 实施内容
 
@@ -57,9 +57,9 @@ Godot --headless --path godot --script res://tests/run_all.gd
 | canonical_json | 40 | 通过 |
 | state_codec | 1751 | 通过 |
 | content_validation | 73 | 通过 |
-| rules_unit | 1268 | 通过 |
+| rules_unit | 1273 | 通过 |
 | v1_replay | 3243 | 通过 |
-| **合计** | **6486** | **0 失败** |
+| **合计** | **6491** | **0 失败** |
 
 `v1_replay` 三条轨迹合计 90 + 94 + 81 = **265 次动作**。每一步都先比较
 `V1Policies.choose(public_view)` 与冻结动作，再以 `Rules.apply` 执行并比较完整
@@ -117,7 +117,7 @@ war-ready / network / labor。以上均用锁定 Godot 与 `GODOT_BIN`，实际�
 
 | 命令 | 结果 |
 | --- | --- |
-| `GODOT_BIN=… npm run godot:test-tools` | 16 / 16 通过（含真实 Godot 进程） |
+| `GODOT_BIN=… npm run godot:test-tools` | 19 / 19 通过（含真实 Godot 进程） |
 | `npm run check` | 构建通过；14 文件 / 295 项测试通过 |
 | `npm run prototype:freeze -- --check` | 5 个冻结文件无漂移 |
 | `npm run content:validate` | V1 源、生成内容、清单通过 |

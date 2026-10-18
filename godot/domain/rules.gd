@@ -4,7 +4,10 @@ extends RefCounted
 
 
 static func create(seed: int, catalog: ContentCatalog) -> GameState:
-	assert(Rng32.is_valid_state(seed), "seed must be a uint32 integer")
+	if not Rng32.is_valid_state(seed):
+		return null
+	if catalog == null:
+		return null
 	var state := GameState.new()
 	state.scenario_id = catalog.data["scenarioId"]
 	state.rules_version = catalog.data["rulesVersion"]

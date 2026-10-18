@@ -28,7 +28,7 @@
     ".trellis/tasks/10-18-godot-domain-foundation/w1-contracts-evidence.md",
     ".trellis/tasks/10-18-godot-domain-foundation/w2-equivalence-evidence.md"
   ],
-  "notes": "2026-10-18 用户批准原架构并完成 W0（见证据）。随后重设计方案修订后获用户明确授权“先提交再按任务开始实施”；规划提交 6a53b6e 后完成 W1：五套件1975检查、工具8测试、字节等价硬门槛、只读漂移及双包资源检查/macOS包内自检通过。W2 完成纯 V1 规则、三策略与对照工具：七套件6486检查、3轨迹265动作、600局53042动作/53642完整状态、工具16测试及导出内容自检通过，见 w2-equivalence-evidence.md。W1/W2 实现尚未提交；P2-A–E 尚未全部达成，下一包 W3。",
+  "notes": "2026-10-18 用户批准原架构并完成 W0（见证据）。随后重设计方案修订后获用户明确授权“先提交再按任务开始实施”；规划提交 6a53b6e 后完成 W1：五套件1975检查、工具8测试、字节等价硬门槛、只读漂移及双包资源检查/macOS包内自检通过。W2 完成纯 V1 规则、三策略与对照工具：七套件6491检查、3轨迹265动作、600局53042动作/53642完整状态、工具19测试及导出内容自检通过，见 w2-equivalence-evidence.md。W1/W2 实现已随 eef1920 提交；P2-A–E 尚未全部达成，下一包 W3。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
@@ -59,20 +59,22 @@
       "macos_export_content_verified": true,
       "web_pck_resources_verified": true,
       "web_runtime_verified": false,
-      "implementation_committed": false
+      "implementation_committed": true,
+      "implementation_commit": "eef1920"
     },
     "w2": {
       "status": "complete",
       "evidence": ".trellis/tasks/10-18-godot-domain-foundation/w2-equivalence-evidence.md",
-      "suite_checks": "6486/6486",
+      "suite_checks": "6491/6491",
       "golden_traces": "3/3",
       "golden_actions": 265,
       "comparison_runs": 600,
       "comparison_actions": 53042,
       "comparison_states": 53642,
-      "tool_tests": "16/16",
+      "tool_tests": "19/19",
       "macos_export_content_verified": true,
-      "implementation_committed": false
+      "implementation_committed": true,
+      "implementation_commit": "eef1920"
     },
     "w1_to_w3": "W1/W2 complete; W3 not started"
   }

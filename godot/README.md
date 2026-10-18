@@ -137,6 +137,7 @@ godot/
   `godot:compare` 产出 `artifacts/godot/v1-expected-<set>.json` 并驱动 Godot，报告为
   `v1-compare-<set>.json`；首差保留实测快照及自动导出的 TS 参考轨迹和 JSON 路径。
   使用 `GODOT_BIN` 可指定引擎，默认沿用上述本机安装；首次需导入工程资源。
+  对照驱动先校验精确版本串，并在报告中记录时间、源码提交/dirty、命令、退出码和未测范围。
 
 ## 6. 当前边界（不要误读）
 

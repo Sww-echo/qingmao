@@ -152,16 +152,18 @@ test('Godot runner distinguishes missing inputs, assertions and invalid argument
       '--headless', '--path', root, '--script', 'res://tests/run_all.gd', '--', ...args,
     ], { encoding: 'utf8', timeout: 30000 });
   }
-  for (const name of ['canonical_json', 'state_codec', 'content_validation']) {
+  for (const name of ['canonical_json', 'state_codec', 'content_validation', 'rules_unit', 'v1_replay']) {
     const result = run([`--suite=${name}`]);
     assert.equal(result.status, 2, result.stderr);
-    assert.match(result.stderr, /missing input res:\/\/content\/generated\/prototype\/content.json/);
+    assert.match(result.stderr, /missing input res:\/\/content\/generated\/prototype\/content\.json/);
   }
   await mkdir(join(root, 'content/generated/prototype'), { recursive: true });
   await cp(join(ROOT, 'shared/prototype/content.json'), join(root, 'content/generated/prototype/content.json'));
-  const missingFixture = run(['--suite=state_codec']);
-  assert.equal(missingFixture.status, 2, missingFixture.stderr);
-  assert.match(missingFixture.stderr, /missing input res:\/\/tests\/fixtures/);
+  for (const name of ['state_codec', 'v1_replay']) {
+    const missingFixture = run([`--suite=${name}`]);
+    assert.equal(missingFixture.status, 2, missingFixture.stderr);
+    assert.match(missingFixture.stderr, /missing input res:\/\/tests\/fixtures/);
+  }
   const missingManifest = run(['--suite=content_validation']);
   assert.equal(missingManifest.status, 2, missingManifest.stderr);
   assert.match(missingManifest.stderr, /missing input .*manifest.json/);

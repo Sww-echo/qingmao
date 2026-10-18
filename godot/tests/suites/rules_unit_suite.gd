@@ -13,6 +13,7 @@ func run(_tree: SceneTree) -> Dictionary:
 	if not _expect(loaded["ok"], "rules unit content must load: %s" % loaded.get("error", "")):
 		return _result()
 	_catalog = loaded["catalog"]
+	_creation_boundaries()
 	_requirement_boundaries()
 	_rejected_actions()
 	_event_boundaries()
@@ -25,6 +26,14 @@ func run(_tree: SceneTree) -> Dictionary:
 	_combat_supplies_and_endings()
 	_shelter_resolution()
 	return _result()
+
+
+func _creation_boundaries() -> void:
+	for seed: int in [-1, 4294967296]:
+		_expect(Rules.create(seed, _catalog) == null, "initialization rejects out-of-range seed %d" % seed)
+	_expect(Rules.create(0, _catalog) != null and Rules.create(4294967295, _catalog) != null, "initialization accepts uint32 endpoints")
+	_expect(Rules.create(1, null) == null, "initialization requires a content catalog")
+	_expect(Rng32.is_valid_state(-1) == false and Rng32.is_valid_state(4294967296) == false, "RNG state predicate rejects non-uint32 inputs")
 
 
 func _requirement_boundaries() -> void:

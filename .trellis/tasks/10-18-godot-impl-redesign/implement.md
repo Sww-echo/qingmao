@@ -25,7 +25,7 @@
 - [x] `run_all.gd` 升级为套件 runner（`--suite` 过滤、退出码 0/1/2）；smoke 拆分保留。
 - [x] `godot/README.md` 更新命令表与未测项姿态。
 
-2026-10-18 W1 gate 已通过，五套件1975检查、工具8测试、字节等价/漂移/导出自检见 [W1 证据](../10-18-godot-domain-foundation/w1-contracts-evidence.md)。实现尚未提交。
+2026-10-18 W1 gate 已通过，五套件1975检查、工具8测试、字节等价/漂移/导出自检见 [W1 证据](../10-18-godot-domain-foundation/w1-contracts-evidence.md)。实现随 `eef1920` 提交。
 
 命令：
 
@@ -65,7 +65,7 @@ npm run godot:compare -- --set all
 退出标准（W2 gate · 评审点①）：3 轨迹逐步差异为零；600 局动作序列 + 哈希链全等；rules_unit 全绿；`w2-equivalence-evidence.md` 含命令、耗时、结果、未测项。
 回退：按规则组（requirements → day_cycle → combat/crisis → queries）逐组回退；此阶段无 UI 依赖，影响面小。
 
-2026-10-18 W2 gate 已通过：七套件6486检查、3轨迹265动作逐步全状态、600局53042动作/53642状态、工具16测试与macOS包内自检全绿；见 [W2 证据](../10-18-godot-domain-foundation/w2-equivalence-evidence.md)。
+2026-10-18 W2 gate 已通过：七套件6491检查、3轨迹265动作逐步全状态、600局53042动作/53642状态、工具19测试与macOS包内自检全绿；见 [W2 证据](../10-18-godot-domain-foundation/w2-equivalence-evidence.md)。
 
 ## 3. W3 会话、存档与恢复（P2 · 2–3 人日）
 

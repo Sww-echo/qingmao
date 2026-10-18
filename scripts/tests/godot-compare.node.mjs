@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { ROOT, hash, json } from '../prototype-common.mjs';
-import { buildExpected, diagnoseFailure, firstDifference } from '../godot-v1-compare.mjs';
+import { GODOT_VERSION, buildExpected, diagnoseFailure, firstDifference, sourceIdentity } from '../godot-v1-compare.mjs';
 
 async function sandbox(t) {
   const directory = await mkdtemp(join(tmpdir(), 'qingmao-v1-compare-'));
@@ -77,6 +77,9 @@ test('cohort generator includes initial and every full-state hash, ordered actio
 
 test('comparison refuses a stale successful report when the engine does not write a new one', async t => {
   const directory = await sandbox(t);
+  const fakeGodot = join(directory, 'fake-godot');
+  await writeFile(fakeGodot, `#!/bin/sh\nprintf '%s\\n' '${GODOT_VERSION}'\n`);
+  await chmod(fakeGodot, 0o755);
   const expected = buildExpected('development');
   const actions = expected.runs.reduce((sum, run) => sum + run.actions.length, 0);
   await writeFile(join(directory, 'v1-compare-development.json'), json({
@@ -84,10 +87,65 @@ test('comparison refuses a stale successful report when the engine does not writ
     actions, states: actions + expected.runs.length,
   }));
   const result = spawnSync(process.execPath, ['scripts/godot-v1-compare.mjs', '--out', directory], {
-    cwd: ROOT, encoding: 'utf8', env: { ...process.env, GODOT_BIN: '/usr/bin/true' }, timeout: 60000,
+    cwd: ROOT, encoding: 'utf8', env: { ...process.env, GODOT_BIN: fakeGodot }, timeout: 60000,
   });
   assert.notEqual(result.status, 0, result.stderr);
   assert.match(result.stderr, /未生成报告/);
+});
+
+test('comparison requires the locked Godot version', { skip: !process.env.GODOT_BIN }, async t => {
+  const result = spawnSync(process.execPath, ['scripts/godot-v1-compare.mjs', '--set', 'development'], {
+    cwd: ROOT, encoding: 'utf8', env: { ...process.env, GODOT_BIN: '/usr/bin/true' }, timeout: 60000,
+  });
+  assert.notEqual(result.status, 0, result.stderr);
+  assert.match(result.stderr, new RegExp(GODOT_VERSION.replaceAll('.', '\\.')));
+});
+
+test('source identity records a commit and whether the worktree is dirty', () => {
+  const identity = sourceIdentity();
+  assert.match(identity.commit, /^[a-f0-9]{40}$/);
+  assert.equal(typeof identity.dirty, 'boolean');
+});
+
+test('comparison accepts a complete report and rejects missing evidence metadata', async t => {
+  const directory = await sandbox(t);
+  const fakeGodot = join(directory, 'fake-godot');
+  const expectedPath = join(directory, 'v1-expected-development.json');
+  const reportPath = join(directory, 'v1-compare-development.json');
+  const reportFile = join(directory, 'report-fixture.json');
+  await writeFile(fakeGodot, `#!/bin/sh
+if [ "$1" = "--version" ]; then
+  printf '%s\\n' '${GODOT_VERSION}'
+  exit 0
+fi
+cp '${reportFile}' '${reportPath}'
+`);
+  await chmod(fakeGodot, 0o755);
+  const expected = buildExpected('development');
+  await writeFile(expectedPath, json(expected));
+  const actions = expected.runs.reduce((sum, run) => sum + run.actions.length, 0);
+  const base = {
+    ok: true, formatVersion: 1, expectedFile: expectedPath, expectedSha256: hash(expected),
+    contentSha256: expected.contentSha256, godotVersion: GODOT_VERSION, packId: 'prototype',
+    scenarioId: expected.scenarioId, rulesVersion: expected.rulesVersion,
+    contentVersion: expected.contentVersion, seedSets: expected.seedSets,
+    runs: expected.runs.length, actions, states: actions + expected.runs.length,
+    os: 'macOS', cpu: 'Apple M4', renderer: 'gl_compatibility',
+  };
+  await writeFile(reportFile, json(base));
+  const args = ['scripts/godot-v1-compare.mjs', '--out', directory];
+  const env = { ...process.env, GODOT_BIN: fakeGodot };
+  const complete = spawnSync(process.execPath, args, { cwd: ROOT, encoding: 'utf8', env, timeout: 60000 });
+  assert.equal(complete.status, 0, complete.stderr);
+  const report = JSON.parse(await readFile(reportPath, 'utf8'));
+  assert.equal(report.set, 'development');
+  assert.equal(report.source.dirty, sourceIdentity().dirty);
+  assert.ok(report.startedAt && report.finishedAt && report.command.length && report.untested.length);
+
+  await writeFile(reportFile, json({ ...base, renderer: '' }));
+  const missing = spawnSync(process.execPath, args, { cwd: ROOT, encoding: 'utf8', env, timeout: 60000 });
+  assert.notEqual(missing.status, 0, missing.stderr);
+  assert.match(missing.stderr, /不完整或不匹配/);
 });
 
 test('full-state diagnostics localize a changed deterministic log and retain the reference trace', async t => {
