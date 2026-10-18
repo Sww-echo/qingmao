@@ -20,6 +20,14 @@ This directory contains guidelines for frontend development. Fill in each file w
 | [State Management](./state-management.md) | Local state, global state, server state | To fill |
 | [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
 | [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
+| [Strategy Prototype](./strategy-prototype.md) | Isolated rules, upkeep, simulation, and replay contracts | Implemented P1 contract |
+
+## Quality Check
+
+For prototype or interchange changes, load the Strategy Prototype contract and
+run `npm run check`, `npm run content:validate`, `npm run prototype:replay`, and
+the development simulation. Run holdout only after the rule freeze. Existing
+placeholder guides are not evidence of validated Godot conventions.
 
 ---
 

@@ -10,7 +10,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "check": "npm run build && npm test"
+    "check": "npm run build && npm test",
+    "prototype:simulate": "node scripts/prototype-simulate.mjs",
+    "prototype:freeze": "node scripts/prototype-freeze.mjs",
+    "prototype:replay": "node scripts/prototype-replay.mjs",
+    "prototype:audit-combat": "node scripts/prototype-combat-audit.mjs",
+    "content:validate": "node scripts/validate-prototype-content.mjs"
   },
   "dependencies": {
     "react": "19.2.8",
