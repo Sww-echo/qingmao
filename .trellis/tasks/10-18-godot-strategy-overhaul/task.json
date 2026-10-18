@@ -23,7 +23,8 @@
     "10-18-godot-domain-foundation",
     "10-18-godot-playable-slice",
     "10-18-godot-validation-release",
-    "10-18-godot-architecture-plan"
+    "10-18-godot-architecture-plan",
+    "10-18-godot-impl-redesign"
   ],
   "parent": null,
   "relatedFiles": [

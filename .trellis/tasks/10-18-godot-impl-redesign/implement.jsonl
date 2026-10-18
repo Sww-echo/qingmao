@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/strategy-prototype.md", "reason": "P1 已实现的规则、供养、策略政策与回放边界（W2 移植对照的规范侧）"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端规范目录索引；Godot 侧约定以本方案与 P1 规范为准，不假设空规范已生效"}
+{"file": "shared/contracts/prototype-trace-v1.md", "reason": "冻结内容、逐步轨迹、uint32 RNG 与跨引擎交接合同"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/design.md", "reason": "分层/目录/接口/序列化/存档/测试设计（W1–W3 施工图与差异清单）"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/contracts.md", "reason": "会话/存档/内容合同与规则增量 D1–D5"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/gameplay.md", "reason": "V2 玩法、事件表与数值假设（W6 施工图）"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/implement.md", "reason": "W1–W8 步骤、命令、退出标准与回退点"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/research/design-evidence.md", "reason": "证据索引与实施期须复核的不确定性清单"}

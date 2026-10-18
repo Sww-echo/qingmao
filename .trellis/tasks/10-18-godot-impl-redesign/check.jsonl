@@ -1,0 +1,6 @@
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/validation.md", "reason": "V0–V14 矩阵、AC1–AC10 映射与证据/报告规则（检查依据）"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/contracts.md", "reason": "合同与 D1–D5；检查实现是否逐条对齐、是否新增了未列出的合同种类"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/design.md", "reason": "跨层边界、序列化字节等价门槛、存档故障语义"}
+{"file": ".trellis/spec/frontend/strategy-prototype.md", "reason": "P1 规范侧期望（规则不可绕过、回放纪律）"}
+{"file": "shared/contracts/prototype-trace-v1.md", "reason": "跨引擎交接不可违背项（规范 JSON、全状态比对）"}
+{"file": ".trellis/spec/guides/index.md", "reason": "跨层/复用思考指南索引（检查时按需装载）"}
