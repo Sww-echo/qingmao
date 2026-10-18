@@ -1,0 +1,33 @@
+{
+  "contentVersion": "prototype-content-1",
+  "files": [
+    {
+      "kind": "content",
+      "path": "res://content/generated/prototype/content.json",
+      "sha256": "14ad9c82d896da3ebe7d472d7d92f5594f403984c8decaf4e9bf7e477ec9e9f1",
+      "source": "shared/prototype/content.json"
+    },
+    {
+      "kind": "fixture",
+      "path": "res://tests/fixtures/prototype/war-ready-42.json",
+      "sha256": "6189779ebc939be7370b9d093f71592caea46cfc0a16aeec20936e26e050e7e8",
+      "source": "shared/fixtures/prototype/war-ready-42.json"
+    },
+    {
+      "kind": "fixture",
+      "path": "res://tests/fixtures/prototype/network-42.json",
+      "sha256": "c1f96fdae09f19d5e8bcdba61decdc501ee4ebf6ba946d5f989d839a439ed39a",
+      "source": "shared/fixtures/prototype/network-42.json"
+    },
+    {
+      "kind": "fixture",
+      "path": "res://tests/fixtures/prototype/labor-42.json",
+      "sha256": "edbfc223f59bb9065a12b91aadb3ae1043ae748d5580cfff35ccedd66ec0da2a",
+      "source": "shared/fixtures/prototype/labor-42.json"
+    }
+  ],
+  "formatVersion": 1,
+  "packId": "prototype",
+  "rulesVersion": "prototype-rules-1",
+  "scenarioId": "qingmao-fourteen-day-prototype"
+}

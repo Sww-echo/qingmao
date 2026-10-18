@@ -15,7 +15,11 @@
     "prototype:freeze": "node scripts/prototype-freeze.mjs",
     "prototype:replay": "node scripts/prototype-replay.mjs",
     "prototype:audit-combat": "node scripts/prototype-combat-audit.mjs",
-    "content:validate": "node scripts/validate-prototype-content.mjs"
+    "content:validate": "node scripts/validate-prototype-content.mjs",
+    "godot:sync-content": "node scripts/godot-sync-content.mjs",
+    "godot:validate-content": "node scripts/godot-content-validation.mjs",
+    "godot:test-tools": "node --test scripts/tests/godot-content.node.mjs scripts/tests/godot-compare.node.mjs",
+    "godot:compare": "node scripts/godot-v1-compare.mjs"
   },
   "dependencies": {
     "react": "19.2.8",

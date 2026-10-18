@@ -26,7 +26,7 @@
 | [P1 策略原型](../10-18-godot-strategy-prototype/prd.md) | 规则与验证已提交；in_progress 尚未归档 | 保留冻结夹具及历史证据 |
 | [架构计划](../10-18-godot-architecture-plan/prd.md) | planning，详细方案待评审 | 本版方案评审 |
 | [实现方案重设计](../10-18-godot-impl-redesign/README.md) | planning 记录，方案已批准 | 按 W1–W8 承接三个子任务 |
-| [P2 Godot 基础](../10-18-godot-domain-foundation/prd.md) | in_progress；W0 已交付，W1–W3 已获继续授权 | 数据/规则对照→会话/存档 |
+| [P2 Godot 基础](../10-18-godot-domain-foundation/prd.md) | in_progress；W0/W1/W2 已交付，W2 证据在子任务内（实现尚未提交） | W3 会话/存档 |
 | [P3 三地点试玩](../10-18-godot-playable-slice/prd.md) | planning；W4–W7 | 可玩第1日→完整V1→有限V2实验→体验收敛 |
 | [P4 集成验收](../10-18-godot-validation-release/prd.md) | planning；W8 | 桌面包、V2独立评估、Web结果 |
 

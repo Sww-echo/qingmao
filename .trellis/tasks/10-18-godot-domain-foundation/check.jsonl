@@ -4,3 +4,7 @@
 {"file": ".trellis/spec/frontend/strategy-prototype.md", "reason": "P1 已实现的规则、供养、策略政策与回放边界"}
 {"file": "shared/contracts/prototype-trace-v1.md", "reason": "冻结内容、逐步轨迹、uint32 RNG 与跨引擎交接合同"}
 {"file": ".trellis/tasks/10-18-godot-architecture-plan/research/architecture-evidence.md", "reason": "最新架构规划的仓库证据、合同/迁移/玩法/工作包索引与待评审边界"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/design.md", "reason": "已批准 W1 接口和内容管线；取代旧方案冲突处"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/contracts.md", "reason": "严格 V1/未来 V2 版本隔离和字段合同"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/validation.md", "reason": "W1 五套件、字节等价、漂移检测和导出自检退出标准"}
+{"file": ".trellis/spec/frontend/godot-foundation.md", "reason": "W1 已验证 code-spec 与工具/错误/导出边界，规则与存档尚未实施"}

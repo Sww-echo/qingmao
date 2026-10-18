@@ -21,6 +21,7 @@ This directory contains guidelines for frontend development. Fill in each file w
 | [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
 | [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
 | [Strategy Prototype](./strategy-prototype.md) | Isolated rules, upkeep, simulation, and replay contracts | Implemented P1 contract |
+| [Godot Foundation](./godot-foundation.md) | Data/codec/content, pure V1 rules, comparison tooling and export boundaries | W1/W2 contract; no saves |
 
 ## Quality Check
 
@@ -28,6 +29,9 @@ For prototype or interchange changes, load the Strategy Prototype contract and
 run `npm run check`, `npm run content:validate`, `npm run prototype:replay`, and
 the development simulation. Run holdout only after the rule freeze. Existing
 placeholder guides are not evidence of validated Godot conventions.
+For Godot foundation changes, also load Godot Foundation and run the seven
+Godot suites, content sync `--check`, tooling tests, V1 comparison when rules or
+policies change, and exported content verification.
 
 ---
 

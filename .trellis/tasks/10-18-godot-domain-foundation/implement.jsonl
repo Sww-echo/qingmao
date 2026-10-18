@@ -4,3 +4,7 @@
 {"file": ".trellis/spec/frontend/strategy-prototype.md", "reason": "P1 已实现的规则、供养、策略政策与回放边界"}
 {"file": "shared/contracts/prototype-trace-v1.md", "reason": "冻结内容、逐步轨迹、uint32 RNG 与跨引擎交接合同"}
 {"file": ".trellis/tasks/10-18-godot-architecture-plan/research/architecture-evidence.md", "reason": "最新架构规划的仓库证据、合同/迁移/玩法/工作包索引与待评审边界"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/research/design-evidence.md", "reason": "已批准重设计的证据与源码索引；W1–W3 以重设计方案为准"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/design.md", "reason": "已批准四层接口、规范 JSON 硬门槛、内容同步与套件合同"}
+{"file": ".trellis/tasks/10-18-godot-impl-redesign/contracts.md", "reason": "严格版本边界、V1 不漂移、未来会话和存档合同；本轮仅 W1"}
+{"file": ".trellis/spec/frontend/godot-foundation.md", "reason": "W1 已落地的数据模型、codec、规范 JSON、内容管线与导出合同，后续 W2/W3 必须复用"}

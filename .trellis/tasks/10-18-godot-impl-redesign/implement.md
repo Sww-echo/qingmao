@@ -15,15 +15,17 @@
 
 步骤：
 
-- [ ] 按 design.md §2 建 `domain/`、`application/`、`infrastructure/` 空实现与类名；W0 冒烟保持全绿。
-- [ ] `rng32.gd` 移植（uint32 语义、16 位拆分乘法）＋ `rng_vectors` 套件。
-- [ ] `canonical_json.gd` 手写写出器 + sha256；`canonical_json` 套件（规格用例 + **content.json 字节等价硬门槛**）。**门槛不过就停下修格式，不得进入 W2（风险 R1）**。
-- [ ] `state_codec.gd`（GameState ⇄ camelCase Dictionary）＋ `state_codec` 套件（数值整数性/范围/往返/负例）；接收已选 ContentCatalog，不混用版本目录。
-- [ ] `content_validation.gd` 的 V1 分支 + `scripts/godot-content-validation.mjs` 的版本路由（V1 委托冻结校验器）；`content_validation` 套件（冻结内容 + ≥12 负例）。W1 不提前接纳 V2 扩展。
-- [ ] `content_loader.gd` + `bootstrap/main.gd` 的 `--verify-content` 启动分支。
-- [ ] `scripts/godot-sync-content.mjs` + package.json 脚本；首次同步生成 manifest。
-- [ ] `run_all.gd` 升级为套件 runner（`--suite` 过滤、退出码 0/1/2）；smoke 拆分保留。
-- [ ] `godot/README.md` 更新命令表与未测项姿态。
+- [x] 按 design.md §2 建 W1 的 `domain/`、`infrastructure/` 与数据类；W0 冒烟保持全绿。实施细化：`application/` 留给 W3，不建无行为占位类。
+- [x] `rng32.gd` 移植（uint32 语义、16 位拆分乘法）＋ `rng_vectors` 套件。
+- [x] `canonical_json.gd` 手写写出器 + sha256；`canonical_json` 套件（规格用例 + **content.json 字节等价硬门槛**）。**门槛不过就停下修格式，不得进入 W2（风险 R1）**。
+- [x] `state_codec.gd`（GameState ⇄ camelCase Dictionary）＋ `state_codec` 套件（数值整数性/范围/往返/负例）；接收已选 ContentCatalog，不混用版本目录。
+- [x] `content_validation.gd` 的 V1 分支 + `scripts/godot-content-validation.mjs` 的版本路由（V1 委托冻结校验器）；`content_validation` 套件（冻结内容 + ≥12 负例）。W1 不提前接纳 V2 扩展。
+- [x] `content_loader.gd` + `bootstrap/main.gd` 的 `--verify-content` 启动分支。
+- [x] `scripts/godot-sync-content.mjs` + package.json 脚本；首次同步生成 manifest。
+- [x] `run_all.gd` 升级为套件 runner（`--suite` 过滤、退出码 0/1/2）；smoke 拆分保留。
+- [x] `godot/README.md` 更新命令表与未测项姿态。
+
+2026-10-18 W1 gate 已通过，五套件1975检查、工具8测试、字节等价/漂移/导出自检见 [W1 证据](../10-18-godot-domain-foundation/w1-contracts-evidence.md)。实现尚未提交。
 
 命令：
 
@@ -44,13 +46,13 @@ godot --headless --path godot --script res://tests/run_all.gd
 
 步骤：
 
-- [ ] `requirements.gd` / `effects.gd` 逐步移植（顺序敏感点先写单测）。
-- [ ] `day_cycle.gd`（END_DAY 全序，尤其第 14 日供养后直接开危机，不夜间恢复）、`combat.gd`（含撤退/全危机规则）、危机分支、die/reason 累积。此时只做 V1，D1–D5 留到 W6。
-- [ ] `queries.gd`：public view / legal actions / 验证文案逐条对照 `engine.ts`。
-- [ ] `rules_unit` 套件（拒绝无副作用、RNG 不消耗、顺序用例）；补无蛊侦查合法/有蛊侦查不抽风险 RNG、免费移动、最终日不恢复的独立用例，不假设合法黄金轨迹覆盖全部分支。
-- [ ] `policies/` 三策略移植 + `v1_replay` 套件：seed42 × 3 策略逐步骤全量过。
-- [ ] `scripts/godot-v1-compare.mjs` + `tests/v1_compare.gd`；`prototype-replay.mjs` 加 `--dump`（仅开发用）。先 `--set development`，后 `--set holdout`。
-- [ ] 600 局全绿后，把首差定位流程实测一遍（人为制造一次差异 → 走通定位路径 → 复原）。
+- [x] `requirements.gd` / `effects.gd` 逐步移植（顺序敏感点先写单测）。
+- [x] `day_cycle.gd`（END_DAY 全序，尤其第 14 日供养后直接开危机，不夜间恢复）、`combat.gd`（含撤退/全危机规则）、危机分支、die/reason 累积。此时只做 V1，D1–D5 留到 W6。
+- [x] `queries.gd`：public view / legal actions / 验证文案逐条对照 `engine.ts`。
+- [x] `rules_unit` 套件（拒绝无副作用、RNG 不消耗、顺序用例）；补无蛊侦查合法/有蛊侦查不抽风险 RNG、免费移动、最终日不恢复的独立用例，不假设合法黄金轨迹覆盖全部分支。
+- [x] `policies/` 三策略移植 + `v1_replay` 套件：seed42 × 3 策略逐步骤全量过。
+- [x] `scripts/godot-v1-compare.mjs` + `tests/v1_compare.gd`；`prototype-replay.mjs` 加 `--dump`（仅开发用）。先 `--set development`，后 `--set holdout`。
+- [x] 600 局全绿后，把首差定位流程实测一遍（人为制造一次差异 → 走通定位路径 → 复原）。
 
 命令：
 
@@ -62,6 +64,8 @@ npm run godot:compare -- --set all
 
 退出标准（W2 gate · 评审点①）：3 轨迹逐步差异为零；600 局动作序列 + 哈希链全等；rules_unit 全绿；`w2-equivalence-evidence.md` 含命令、耗时、结果、未测项。
 回退：按规则组（requirements → day_cycle → combat/crisis → queries）逐组回退；此阶段无 UI 依赖，影响面小。
+
+2026-10-18 W2 gate 已通过：七套件6486检查、3轨迹265动作逐步全状态、600局53042动作/53642状态、工具16测试与macOS包内自检全绿；见 [W2 证据](../10-18-godot-domain-foundation/w2-equivalence-evidence.md)。
 
 ## 3. W3 会话、存档与恢复（P2 · 2–3 人日）
 

@@ -1,5 +1,5 @@
 extends Node
-## Composition root for the architecture demo (W0).
+## Composition root for the architecture demo and W1 content verification.
 ##
 ## Owns exactly one screen at a time and swaps between the title and the
 ## location shell. It deliberately owns no game state: per the architecture plan
@@ -8,11 +8,36 @@ extends Node
 
 const TITLE_SCENE := preload("res://scenes/title.tscn")
 const PLAY_SCENE := preload("res://scenes/play.tscn")
+const ContentLoaderScript := preload("res://infrastructure/content_loader.gd")
 
 @onready var _screen_host: Node = %ScreenHost
+var _catalog: RefCounted
 
 
 func _ready() -> void:
+	var arguments := OS.get_cmdline_user_args()
+	if not arguments.is_empty():
+		if arguments.size() != 1 or arguments[0] != "--verify-content":
+			printerr("Unsupported startup arguments: %s" % " ".join(arguments))
+			get_tree().quit(2)
+			return
+		var verified := ContentLoaderScript.verify_all()
+		if not verified.ok:
+			printerr(verified.error)
+			get_tree().quit(1)
+			return
+		for pack in verified.packs:
+			print("Content verified: pack=%s contentVersion=%s contentSha256=%s" % [
+				pack.pack_id, pack.content_version, pack.content_sha256,
+			])
+		get_tree().quit(0)
+		return
+	var loaded := ContentLoaderScript.load_pack()
+	if not loaded.ok:
+		push_error(loaded.error)
+		get_tree().quit(1)
+		return
+	_catalog = loaded.catalog
 	_show_title()
 
 

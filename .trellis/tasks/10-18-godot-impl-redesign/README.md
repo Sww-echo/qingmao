@@ -37,5 +37,6 @@
 ## 现状边界（不要误读）
 
 - W0 已交付：Godot 4.7.2-stable 锁定、原生壳窗口、36/36 冒烟、macOS/Web 最小导出（证据：`../10-18-godot-domain-foundation/w0-toolchain-evidence.md`）。
-- 除此之外，规则、数据、会话、存档、真实事件与战斗**均未实施**；本目录所有"未来时态"的描述都是计划而非成果。
+- W1/W2 已由 P2 承接完成：数据合同、RNG/规范 JSON、codec、严格 V1 校验、纯规则、三策略与跨引擎对照，见 [W1 证据](../10-18-godot-domain-foundation/w1-contracts-evidence.md) 和 [W2 证据](../10-18-godot-domain-foundation/w2-equivalence-evidence.md)；实施改动尚未提交。
+- 会话/存档（W3）、真实事件与战斗 UI（W4 起）**均未实施**；其余"未来时态"描述仍是计划而非成果。
 - 估算为设计假设（剩余约 19–30 人日，见 implement.md），不是日期承诺。
