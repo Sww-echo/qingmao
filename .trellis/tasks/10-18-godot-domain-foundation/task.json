@@ -1,0 +1,38 @@
+{
+  "id": "godot-domain-foundation",
+  "name": "godot-domain-foundation",
+  "title": "Godot 基础：数据、规则与存档迁移",
+  "description": "先交付可见Godot原生工程，再迁移V1规则和数据，验证全字段随机/动作轨迹一致性、独立存档恢复及桌面/Web基础可运行性。",
+  "status": "planning",
+  "dev_type": null,
+  "scope": "domain-foundation",
+  "package": null,
+  "priority": "P1",
+  "creator": "codex",
+  "assignee": "codex",
+  "createdAt": "2026-10-18",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "initial-import",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "10-18-godot-strategy-overhaul",
+  "relatedFiles": [
+    ".trellis/tasks/10-18-godot-domain-foundation/prd.md",
+    ".trellis/tasks/10-18-godot-domain-foundation/design.md",
+    ".trellis/tasks/10-18-godot-domain-foundation/implement.md"
+  ],
+  "notes": "2026-10-18 最新用户要求先创建详细Godot架构/玩法计划；P1既有证据保留，P2–P4按本版评审后开工，当前未启动。",
+  "meta": {
+    "primary_platform": "desktop",
+    "web_target": "feasibility",
+    "planning_review": "awaiting-architecture-review",
+    "implementation_authorized": false,
+    "architecture_plan": ".trellis/tasks/10-18-godot-architecture-plan",
+    "latest_review_status": "awaiting-review",
+    "prior_planning_review": "approved-2026-10-18"
+  }
+}

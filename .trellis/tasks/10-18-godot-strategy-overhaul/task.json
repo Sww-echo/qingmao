@@ -1,0 +1,45 @@
+{
+  "id": "godot-strategy-overhaul",
+  "name": "godot-strategy-overhaul",
+  "title": "青茅山 Godot 4 改造与生存策略升级",
+  "description": "规划 Godot 4 的 2D 场景与规则迁移，并优化经济、修炼、蛊虫、关系与危机之间的策略取舍；先完成小范围可玩验证，再规划完整青茅山迁移。",
+  "status": "planning",
+  "dev_type": null,
+  "scope": "godot-strategy",
+  "package": null,
+  "priority": "P1",
+  "creator": "codex",
+  "assignee": "codex",
+  "createdAt": "2026-10-18",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "initial-import",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "10-18-godot-strategy-prototype",
+    "10-18-godot-domain-foundation",
+    "10-18-godot-playable-slice",
+    "10-18-godot-validation-release",
+    "10-18-godot-architecture-plan"
+  ],
+  "parent": null,
+  "relatedFiles": [
+    ".trellis/tasks/10-18-godot-strategy-overhaul/prd.md",
+    ".trellis/tasks/10-18-godot-strategy-overhaul/design.md",
+    ".trellis/tasks/10-18-godot-strategy-overhaul/implement.md"
+  ],
+  "notes": "2026-10-18 最新用户要求先创建详细Godot架构/玩法计划；P1既有证据保留，P2–P4按本版评审后开工，当前未启动。",
+  "meta": {
+    "primary_platform": "desktop",
+    "web_target": "feasibility",
+    "planning_review": "awaiting-architecture-review",
+    "implementation_authorized": false,
+    "prior_planning_review": "approved-2026-10-18-for-P1",
+    "completed_authorized_scope": "P1 rules implementation and verification; pending commit bookkeeping",
+    "architecture_plan": ".trellis/tasks/10-18-godot-architecture-plan",
+    "latest_review_status": "awaiting-review"
+  }
+}

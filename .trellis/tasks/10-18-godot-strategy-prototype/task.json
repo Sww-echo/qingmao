@@ -1,0 +1,43 @@
+{
+  "id": "godot-strategy-prototype",
+  "name": "godot-strategy-prototype",
+  "title": "策略原型：经济、成长与阶段危机",
+  "description": "在隔离的规则测试情境中验证十四日策略循环、两种可行生存策略与刷钱对照，冻结首版规则和内容契约。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": "strategy-prototype",
+  "package": null,
+  "priority": "P1",
+  "creator": "codex",
+  "assignee": "codex",
+  "createdAt": "2026-10-18",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "initial-import",
+  "worktree_path": null,
+  "commit": "1719784015e0801c2334ebc6a7e8687df64a06fe",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "10-18-godot-strategy-overhaul",
+  "relatedFiles": [
+    ".trellis/tasks/10-18-godot-strategy-prototype/prd.md",
+    ".trellis/tasks/10-18-godot-strategy-prototype/design.md",
+    ".trellis/tasks/10-18-godot-strategy-prototype/implement.md",
+    ".trellis/tasks/10-18-godot-strategy-prototype/rules-freeze.md",
+    ".trellis/tasks/10-18-godot-strategy-prototype/trace-review.md",
+    ".trellis/tasks/10-18-godot-strategy-prototype/verification.md",
+    ".trellis/tasks/10-18-godot-strategy-prototype/balance-summary.json"
+  ],
+  "notes": "2026-10-18 P1规则、验证和冻结已完成并提交；用户明确授权提交推送并包含txt。尚未归档；P2等待最新架构方案评审，不在本轮启动。",
+  "meta": {
+    "primary_platform": "desktop",
+    "web_target": "feasibility",
+    "planning_review": "approved-2026-10-18",
+    "implementation_authorized": true,
+    "delivery": "P1 implementation and verification committed; archive bookkeeping not requested",
+    "unit_tests_passed": 295,
+    "replayed_simulations": 600,
+    "commit_authorization": "2026-10-18 user requested commit and push, then explicitly included txt"
+  }
+}

@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/10-18-godot-strategy-overhaul/research/current-strategy-audit.md", "reason": "当前方源规则、可达策略、测试边界与文档冲突的源码证据"}
+{"file": ".trellis/tasks/10-18-godot-strategy-overhaul/research/godot-migration-evidence.md", "reason": "Godot官方约束、当前环境、随机数和存档迁移边界"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "确认当前前端规范目录及其占位状态，不把空规范当作Godot已验证约定"}
+{"file": ".trellis/spec/frontend/strategy-prototype.md", "reason": "P1 已实现的规则、供养、策略政策与回放边界"}
+{"file": "shared/contracts/prototype-trace-v1.md", "reason": "冻结内容、逐步轨迹、uint32 RNG 与跨引擎交接合同"}
