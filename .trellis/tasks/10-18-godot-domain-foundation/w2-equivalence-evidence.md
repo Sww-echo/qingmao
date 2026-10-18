@@ -19,7 +19,7 @@
 | rules / content | `prototype-rules-1` / `prototype-content-1` |
 | content SHA256 | `14ad9c82d896da3ebe7d472d7d92f5594f403984c8decaf4e9bf7e477ec9e9f1` |
 | 预期全集 SHA256 | `7cf44e3fc6075ccfb108e6f3f43ac251405fc1962060c547ec9e9d52bf1f66c2` |
-| 对照报告 SHA256 | 见 §4；最终干净工作树报告重跑后登记 |
+| 对照报告 SHA256（all） | `685cf2c050ba27b23dcd704f1db92c968d049d7c957acb1599d763361b726fb0` |
 
 ## 2. 实施内容
 
@@ -71,13 +71,20 @@ camelCase 状态，包括日志、账本、动作计数、RNG 状态/次数和�
 
 | 命令 | 局数 | 动作 | 完整状态（含初态） | Godot 耗时 | 结果 |
 | --- | ---: | ---: | ---: | ---: | --- |
-| `npm run godot:compare -- --set development` | 300 | 26,522 | 26,822 | 57.07 s | 通过 |
-| `npm run godot:compare -- --set holdout` | 300 | 26,520 | 26,820 | 61.06 s | 通过 |
-| `npm run godot:compare -- --set all` | **600** | **53,042** | **53,642** | **112.65 s** | **通过** |
+| `npm run godot:compare -- --set development` | 300 | 26,522 | 26,822 | 62.36 s | 通过 |
+| `npm run godot:compare -- --set holdout` | 300 | 26,520 | 26,820 | 62.49 s | 通过 |
+| `npm run godot:compare -- --set all` | **600** | **53,042** | **53,642** | **120.51 s** | **通过** |
 
 开发集为 1–100，留出集为已登记的 10001–10100；每集均跑
 war-ready / network / labor。以上均用锁定 Godot 与 `GODOT_BIN`，实际对照一次完成，
 不是把单独两轮数字相加冒充 `all`。
+
+三份报告均来自干净工作树，源码标识为 `993df45`（`dirty:false`），锁定 Godot
+`4.7.2.stable.official.ed1daf0bf`，退出码 0。报告记录 UTC 起止时间、OS/CPU/渲染器、
+命令、pack id、三元版本、content SHA256 与未测项。报告 SHA256：
+development `acf646e71635efd0c778da4d5da9acb4dec96c1a0e756472a4d64e884817cda0`，
+holdout `1f3c86497ea0af7f42cdff8f6011cb7a08e7709be7dff0fcf26334aa9b40e357`，
+all `685cf2c050ba27b23dcd704f1db92c968d049d7c957acb1599d763361b726fb0`。
 
 比较要求以下全部相等：初态及每步完整状态哈希、累计链、策略动作、终局摘要、
 三元版本和 content SHA256。报告只在退出 0 且 `ok:true`、run/action/state 数与
@@ -117,7 +124,8 @@ war-ready / network / labor。以上均用锁定 Godot 与 `GODOT_BIN`，实际�
 
 | 命令 | 结果 |
 | --- | --- |
-| `GODOT_BIN=… npm run godot:test-tools` | 19 / 19 通过（含真实 Godot 进程） |
+| `GODOT_BIN=… npm run godot:test-tools` | 19 / 19 通过（含真实 Godot 进程；版本锁定/报告元数据/缺输入路径） |
+| Godot 七套件复跑 | 6,491 检查，0 失败 |
 | `npm run check` | 构建通过；14 文件 / 295 项测试通过 |
 | `npm run prototype:freeze -- --check` | 5 个冻结文件无漂移 |
 | `npm run content:validate` | V1 源、生成内容、清单通过 |
