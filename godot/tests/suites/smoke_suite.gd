@@ -67,9 +67,13 @@ func _check_title_scene() -> void:
 	if not _check.expect(title != null, "title scene failed to instantiate"):
 		return
 	_check.expect(title.has_signal("start_requested"), "title scene lacks start_requested")
+	_check.expect(title.has_signal("continue_requested"), "title scene lacks continue_requested")
 	_check.expect(title.has_signal("quit_requested"), "title scene lacks quit_requested")
 	_tree.root.add_child(title)
-	for path in ["Center/Column/StartButton", "Center/Column/QuitButton"]:
+	for path in [
+		"Center/Column/StartButton", "Center/Column/ContinueButton",
+		"Center/Column/SaveStatus", "Center/Column/QuitButton",
+	]:
 		_check.expect(title.get_node_or_null(path) != null, "title scene is missing %s" % path)
 	title.queue_free()
 
@@ -79,9 +83,18 @@ func _check_play_scene() -> void:
 	if not _check.expect(play != null, "play scene failed to instantiate"):
 		return
 	_check.expect(play.has_signal("exit_requested"), "play scene lacks exit_requested")
+	_check.expect(play.has_method("configure"), "play scene lacks the W3 session boundary")
 	_tree.root.add_child(play)
 	_check.expect(play.get_node_or_null("World/Player") != null, "play scene is missing World/Player")
 	_check.expect(play.get_node_or_null("World/InteractionController") != null, "play scene is missing World/InteractionController")
+	for path in [
+		"UI/Root/SessionPanel/Margin/Body/SessionHud",
+		"UI/Root/SessionPanel/Margin/Body/SaveStatus",
+		"UI/Root/SessionPanel/Margin/Body/Actions/WorkButton",
+		"UI/Root/SessionPanel/Margin/Body/Actions/RestButton",
+		"UI/Root/SessionPanel/Margin/Body/Actions/EndDayButton",
+	]:
+		_check.expect(play.get_node_or_null(path) != null, "play scene is missing %s" % path)
 	var ids: PackedStringArray = []
 	for hotspot in _tree.get_nodes_in_group("interactable"):
 		ids.append(hotspot.target_id)

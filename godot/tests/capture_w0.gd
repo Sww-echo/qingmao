@@ -17,7 +17,7 @@ const MAIN_SCENE := preload("res://bootstrap/main.tscn")
 ## the camera, the area detection and the layout to reach a steady state.
 const SETTLE := 20
 
-var _out_dir := "/tmp/w0-evidence"
+var _out_dir := OS.get_environment("QINGMAO_CAPTURE_OUT") if not OS.get_environment("QINGMAO_CAPTURE_OUT").is_empty() else "/tmp/w0-evidence"
 var _main: Node
 var _step := 0
 var _timer := 0
@@ -35,6 +35,7 @@ func _ready() -> void:
 		ProjectSettings.get_setting("rendering/renderer/rendering_method"),
 	])
 	_main = MAIN_SCENE.instantiate()
+	_main.save_root = "user://qingmao_capture_w0"
 	add_child(_main)
 
 

@@ -26,9 +26,10 @@
     ".trellis/tasks/10-18-godot-domain-foundation/implement.md",
     ".trellis/tasks/10-18-godot-domain-foundation/w0-toolchain-evidence.md",
     ".trellis/tasks/10-18-godot-domain-foundation/w1-contracts-evidence.md",
-    ".trellis/tasks/10-18-godot-domain-foundation/w2-equivalence-evidence.md"
+    ".trellis/tasks/10-18-godot-domain-foundation/w2-equivalence-evidence.md",
+    ".trellis/tasks/10-18-godot-domain-foundation/w3-session-save-evidence.md"
   ],
-  "notes": "2026-10-18 用户批准原架构并完成 W0（见证据）。随后重设计方案修订后获用户明确授权“先提交再按任务开始实施”；规划提交 6a53b6e 后完成 W1：五套件1975检查、工具8测试、字节等价硬门槛、只读漂移及双包资源检查/macOS包内自检通过。W2 完成纯 V1 规则、三策略与对照工具：七套件6491检查、3轨迹265动作、600局53042动作/53642完整状态、工具19测试及导出内容自检通过，见 w2-equivalence-evidence.md。W1/W2 实现已随 eef1920 提交；P2-A–E 尚未全部达成，下一包 W3。",
+  "notes": "2026-10-18 用户批准原架构并完成 W0；重设计获明确授权“先提交再按任务开始实施”。规划提交 6a53b6e 后完成 W1/W2，实现随 eef1920 提交；W2 的600局53042动作/53642完整状态对照见证据。2026-10-19 W3 会话/存档已实施：九套件6756检查、工具27测试含8个真实进程中断、4个黄金恢复点、原生跨进程继续及 Web IndexedDB 保存刷新继续通过，接口冻结在 README。P2 保持 in_progress 待交接评审；W4–W8 未实施，不将自动输入当真人试玩。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
@@ -76,6 +77,20 @@
       "implementation_committed": true,
       "implementation_commit": "eef1920"
     },
-    "w1_to_w3": "W1/W2 complete; W3 not started"
+    "w3": {
+      "status": "verified-awaiting-review",
+      "evidence": ".trellis/tasks/10-18-godot-domain-foundation/w3-session-save-evidence.md",
+      "suite_checks": "6756/6756",
+      "session_checks": 126,
+      "save_checks": 130,
+      "tool_tests": "27/27",
+      "process_interruption_cases": 8,
+      "golden_restore_points": 4,
+      "native_process_continue_verified": true,
+      "web_refresh_continue_verified": true,
+      "human_playtest": false,
+      "interface_version": 1
+    },
+    "w1_to_w3": "W1/W2 complete; W3 automated gates verified on 2026-10-19, P2 awaiting review"
   }
 }

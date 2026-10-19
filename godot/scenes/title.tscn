@@ -52,7 +52,7 @@ horizontal_alignment = 1
 [node name="Subtitle" type="Label" parent="Center/Column"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.62, 0.66, 0.72, 1)
-text = "十四日生存筹备 · Godot 4 架构演示"
+text = "十四日生存筹备"
 horizontal_alignment = 1
 
 [node name="Banner" type="PanelContainer" parent="Center/Column"]
@@ -61,7 +61,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
 
 [node name="BannerText" type="Label" parent="Center/Column/Banner"]
 layout_mode = 2
-text = "架构演示：未接入完整规则（W0）"
+text = "架构演示"
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="Center/Column"]
@@ -72,19 +72,29 @@ layout_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 48)
 layout_mode = 2
-text = "新局（进入学堂占位场景）"
+text = "新局（固定种子 42）"
 
 [node name="ContinueButton" type="Button" parent="Center/Column"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 44)
 layout_mode = 2
 disabled = true
-text = "继续（W3 接入存档后可用）"
+text = "继续（暂无有效存档）"
 
 [node name="ImportButton" type="Button" parent="Center/Column"]
 custom_minimum_size = Vector2(300, 44)
 layout_mode = 2
 disabled = true
-text = "导入（W3 接入存档后可用）"
+text = "导入（暂不可用）"
+
+[node name="SaveStatus" type="Label" parent="Center/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(640, 0)
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.62, 0.66, 0.72, 1)
+text = "尚无存档"
+horizontal_alignment = 1
 
 [node name="QuitButton" type="Button" parent="Center/Column"]
 unique_name_in_owner = true

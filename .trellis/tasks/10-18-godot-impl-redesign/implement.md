@@ -73,13 +73,13 @@ npm run godot:compare -- --set all
 
 步骤：
 
-- [ ] `session_contracts.gd` + `game_session.gd`（同局去重 64；去重早于 revision；同 ID 异载荷拒绝；重入 busy；过期/超前 revision 都拒绝）。
-- [ ] `view_projector.gd`；`save_service.gd`（latest-wins、同物理槽位串行、切局 generation 检查）+ `desktop_save_store.gd` + envelope codec；实现 current/backup 恢复优先级与 tmp 非提交态。
-- [ ] `session_semantics` 套件：成功后以原 baseRevision 重试须 dedup，revision/信号/保存次数均只增加一次；缓存淘汰与 UI 旧结果不回退；规则拒绝结果可重放、busy 不缓存。
-- [ ] `save_faults` 套件：逐项覆盖 design.md §7 的轮换中断矩阵，含 current 缺失但 backup 有效、恢复失败保留唯一好档、仅 tmp 残留、不同 runId 同槽位迟到写；每个中断点模拟退出重开，另做真实磁盘篡改一例。
-- [ ] play 场景接最小 HUD（revision/存档状态/日/生命/元石）作接口演示：证明"后续场景可经冻结接口取状态、提交动作"。
-- [ ] Web 导出 + 浏览器实测：保存 → 刷新 → 继续；记录结论或可复现阻断（受限环境走 `probe_capability()` 文案路径）。
-- [ ] 会话接口冻结声明写入 `godot/README.md`（含版本化说明）。
+- [x] `session_contracts.gd` + `game_session.gd`（同局去重 64；去重早于 revision；同 ID 异载荷拒绝；重入 busy；过期/超前 revision 都拒绝）。
+- [x] `view_projector.gd`；`save_service.gd`（latest-wins、同物理槽位串行、切局 generation 检查）+ `desktop_save_store.gd` + envelope codec；实现 current/backup 恢复优先级与 tmp 非提交态。
+- [x] `session_semantics` 套件：成功后以原 baseRevision 重试须 dedup，revision/信号/保存次数均只增加一次；缓存淘汰与 UI 旧结果不回退；规则拒绝结果可重放、busy 不缓存。
+- [x] `save_faults` 套件：逐项覆盖 design.md §7 的轮换中断矩阵，含 current 缺失但 backup 有效、恢复失败保留唯一好档、仅 tmp 残留、不同 runId 同槽位迟到写；每个中断点模拟退出重开，另做真实磁盘篡改一例。
+- [x] play 场景接最小 HUD（revision/存档状态/日/生命/元石）作接口演示：证明"后续场景可经冻结接口取状态、提交动作"。
+- [x] Web 导出 + 浏览器实测：保存 → 刷新 → 继续；记录结论或可复现阻断（受限环境走 `probe_capability()` 文案路径）。
+- [x] 会话接口冻结声明写入 `godot/README.md`（含版本化说明）。
 
 命令（完成相应实现后执行，不代表现有入口已通过）：
 
@@ -90,6 +90,9 @@ godot --headless --path godot --export-debug "Web" ../artifacts/godot/web/index.
 ```
 
 退出标准（W3 gate · 评审点②）：两套件及逐步中断矩阵全绿；四恢复点重载等价；重复命令不重复提交/发信号/保存；Web 结论落盘；接口冻结声明在册。证据：`w3-session-save-evidence.md`。
+2026-10-19 自动门槛已验证：九套件6756检查、工具27测试（8个真实进程中断）、
+四点完整状态恢复、原生跨进程继续和 Web IndexedDB/刷新继续。见
+[W3 证据](../10-18-godot-domain-foundation/w3-session-save-evidence.md)；P2 待交接评审，未据此进入 W4。
 回退：会话/存档停用、内存运行，游戏逻辑不受影响。
 
 ## 4. W4 可玩第 1 日（P3 · 2–3 人日）

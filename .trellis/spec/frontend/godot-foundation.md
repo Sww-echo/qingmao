@@ -2,9 +2,9 @@
 
 ## 1. Scope / Trigger
 
-Applies to the W1 data boundary and W2 V1 rules in `godot/domain/`,
-`godot/infrastructure/`, the suite runner, content/comparison tooling, and export
-presets. W3 will introduce the sole `GameSession` state owner and save contract.
+Applies to the W1 data boundary, W2 V1 rules and W3 session/save boundary in
+`godot/domain/`, `godot/application/`, `godot/infrastructure/`, the suite runner,
+content/comparison tooling, and export presets.
 Keep the W0 shell and existing React game isolated.
 
 The authoritative V1 content/types remain `src/game/prototype/`. Never edit
@@ -226,3 +226,43 @@ return CanonicalJson.encode(encoded.data)
 
 Never parse state fields independently in UI code or let the loader reference
 `res://../shared`. Keep V1 fixtures and unknown future versions separate.
+
+## 9. Session and Save Boundary (W3)
+
+- `GameSession` owns the live model. UI uses detached views, dictionary commands
+  and its three signals. All dispatch outcomes include revision/view/events,
+  including boundary rejections. No state reference crosses into scenes.
+- Check command shape independently of current mutable event, then run ID,
+  busy/readiness, dedup, revision and rules. A successful CHOOSE retry must still
+  dedup after another event opens. Cache both rule and revision rejections.
+  Busy is transient and uncached. Replayed results do not emit or save again.
+- Keep the lifecycle lock through commit signal and save enqueue. Guard
+  dispatch, new_run and load_run, including signal callback reentry.
+  New-run IDs use independent entropy, never the deterministic game RNG.
+- Enqueue the initial revision zero. Until confirmation, savedRevision is -1,
+  not zero. Saving an older revision cannot mark newer in-memory state saved.
+  Failed enqueue/write retains the last confirmed revision and live state.
+- Envelope v1 has exact fields, selected versions/content SHA256, canonical body
+  hash and strict StateCodec validation. Validate integer floats before casting.
+  Enforce 2 MiB using file length before allocating a read buffer.
+- Share lock/generation by normalized physical slot path within the process,
+  not by SaveService instance or run ID. Guard rotation, promotion and callbacks.
+  Pending snapshots are copied/latest-wins; reject stale confirmed revisions.
+  Multiprocess and multi-tab writers are not supported by this contract.
+- Validate old current before replacing backup. If only backup is valid,
+  restore/re-read current first and never modify the good backup on failure.
+  Re-read promoted/restored bytes and compare with the intended bytes, not just
+  structural validity. Advance savedRevision only after final confirmation.
+- Missing/invalid current always tries backup and reports source plus cause.
+  `load(false)` is read-only for the title screen. Failed restoration preserves
+  backup and tmp; tmp alone is an error, never a committed save or empty slot.
+- Web capability uses OS.is_userfs_persistent plus a write/read probe. A memory
+  filesystem round trip alone is not persistence evidence. Verify IndexedDB,
+  refresh and continue in a real browser; disclose untested browser/quota modes.
+
+Run all nine suites and `GODOT_BIN=... npm run godot:test-tools`. The latter
+includes eight isolated child processes killed at transaction boundaries, each
+followed by a fresh verifier process. SaveFaults also checks four golden recovery
+points on real disk with complete state equality and the next action, real
+tampering, and switches during I/O. Native automated input is not human playtest
+acceptance. The versioned UI handoff is documented in `godot/README.md` section 7.

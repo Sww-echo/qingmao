@@ -9,6 +9,8 @@ const SUITES: Dictionary = {
 	"content_validation": "res://tests/suites/content_validation_suite.gd",
 	"rules_unit": "res://tests/suites/rules_unit_suite.gd",
 	"v1_replay": "res://tests/suites/v1_replay_suite.gd",
+	"session_semantics": "res://tests/suites/session_semantics_suite.gd",
+	"save_faults": "res://tests/suites/save_faults_suite.gd",
 }
 
 var _ran: bool = false
@@ -60,11 +62,14 @@ func _process(_delta: float) -> bool:
 
 func _required_input_error(suite_name: String) -> String:
 	var paths: PackedStringArray = []
-	if suite_name in ["canonical_json", "state_codec", "content_validation", "rules_unit", "v1_replay"]:
+	if suite_name in [
+		"canonical_json", "state_codec", "content_validation", "rules_unit",
+		"v1_replay", "session_semantics", "save_faults",
+	]:
 		paths.append("res://content/generated/prototype/content.json")
 	if suite_name == "content_validation":
 		paths.append("res://content/generated/prototype/manifest.json")
-	if suite_name in ["state_codec", "v1_replay"]:
+	if suite_name in ["state_codec", "v1_replay", "save_faults"]:
 		for strategy: String in ["war-ready", "network", "labor"]:
 			paths.append("res://tests/fixtures/prototype/%s-42.json" % strategy)
 	for path: String in paths:

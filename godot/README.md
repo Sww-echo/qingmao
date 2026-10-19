@@ -1,8 +1,8 @@
 # 青茅山 · Godot 4 工程
 
-本目录是与现有 React 版本**并行**的 Godot 4 工程。可见界面仍为 **W0 原生窗口壳**，
-W1 增加纯数据、严格 V1 校验、规范 JSON 和内容管线，W2 增加可无头验证的完整 V1 规则。
-**规则尚未接入可见界面，GameSession 与存档属于 W3。**
+本目录是与现有 React 版本**并行**的 Godot 4 工程。W1/W2 提供严格 V1 数据边界和规则，
+W3 接入唯一 GameSession、独立存档与恢复，以及标题继续和最小行动 HUD。
+**目前仍是架构演示，完整事件、战斗和可玩流程 UI 属于 W4/W5。**
 
 最新批准方案见 [实现重设计](../.trellis/tasks/10-18-godot-impl-redesign/README.md)，
 实施包见 [implement.md](../.trellis/tasks/10-18-godot-impl-redesign/implement.md)。
@@ -36,7 +36,7 @@ npm run godot:sync-content
 # 打开真实窗口
 ~/Applications/Godot.app/Contents/MacOS/Godot --path godot
 
-# 全部七套件：五个基础套件 + rules_unit / v1_replay
+# 全部九套件：基础、规则回放、session_semantics / save_faults
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/run_all.gd
 
 # 单套件；通过退出 0，断言失败 1，参数/环境错误 2
@@ -49,6 +49,7 @@ npm run godot:validate-content
 npm run godot:test-tools
 
 # 同时执行隔离临时工程中的 runner 退出码 / loader 坏清单进程测试
+# 以及八个强制终止子进程后的存档恢复测试
 GODOT_BIN="$HOME/Applications/Godot.app/Contents/MacOS/Godot" npm run godot:test-tools
 
 # W2：三策略独立运行，逐动作、完整状态哈希与累计链对照
@@ -63,7 +64,8 @@ node scripts/prototype-replay.mjs --seed 42 --policy network --dump artifacts/go
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot -- --verify-content
 
 # 生成截图证据（真实窗口 + 引擎内捕获，不需要系统录屏权限）
-~/Applications/Godot.app/Contents/MacOS/Godot --path godot res://tests/capture_w0.tscn -- --out=/tmp/w0-evidence
+QINGMAO_CAPTURE_OUT=/tmp/w0-evidence \
+  ~/Applications/Godot.app/Contents/MacOS/Godot --path godot res://tests/capture_w0.tscn
 ```
 
 操作：`WASD` / 方向键移动，`E` 与目标交互，`Esc` 关闭面板 / 返回标题。
@@ -87,7 +89,8 @@ node scripts/prototype-replay.mjs --seed 42 --policy network --dump artifacts/go
 
 实际包名以导出结果为准。成功输出 pack/contentVersion/contentSha256 并退出 0；
 缺文件、内容/清单损坏、哈希/版本不符均退出 1，未知启动参数退出 2。
-导出成功本身不能替代包内可执行文件的自检。Web 持久化与刷新恢复属于 W3，W1 不作通过声明。
+导出成功本身不能替代包内可执行文件的自检。W3 已在隔离 Chromium 中实测保存、刷新和继续；
+不代表 Safari、隐私模式、配额耗尽或浏览器崩溃时的数据耐久性已验证。
 也可用编辑器读取实际 PCK，检查内容包含与测试资源排除：
 
 ```sh
@@ -105,7 +108,8 @@ godot/
   export_presets.cfg     # 无凭据的 macOS / Web preset
   bootstrap/main.*       # 唯一组合根：内容加载/自检、标题 <-> 地点壳
   domain/                # 纯数据模型、RNG、V1规则/查询、内容目录及严格校验（不依赖场景）
-  infrastructure/        # canonical JSON / state codec / 只读内容加载
+  application/           # GameSession / ViewProjector / SaveService
+  infrastructure/        # canonical JSON / codecs / 内容加载 / desktop 与 Web stores
   presentation/          # 占位角色、交互目标、交互控制器（无规则）
   scenes/                # title / play（学堂占位地点）
   ui/app_theme.tres      # 全局主题：Noto Sans SC
@@ -147,7 +151,38 @@ godot/
 同步/漂移工具、包内内容自检。验证结果见 [W1 证据](../.trellis/tasks/10-18-godot-domain-foundation/w1-contracts-evidence.md)。
 
 **W2 新增**：requirements/effects/day_cycle/combat 四组规则、查询、三策略移植、完整黄金回放
-与批量对照工具。可见窗口仍为 W0 壳，不能把无头验证当作真实可玩演示。
+与批量对照工具。不能把无头验证当作真实可玩演示。
 
-**未做**：GameSession/独立存档/恢复（W3）、真实事件与战斗 UI
-（W4 起）、V2 schema 与玩法（W6）。`application/` 保留给 W3，不用无行为占位类冒充接口已冻结。
+**W3 新增**：命令去重、revision、完整拒绝结果、不可变视图、初始快照与自动保存、
+current/backup 恢复及 tmp 中断诊断。真实窗口经自动键鼠输入验证跨进程继续，
+不冒充真人完整试玩。见 [W3 证据](../.trellis/tasks/10-18-godot-domain-foundation/w3-session-save-evidence.md)。
+
+**未做**：完整事件与战斗 UI、种子输入、导入/导出控件（W4/W5）、V2（W6）、体验验收和发行（W7/W8）。
+
+## 7. 会话接口冻结（v1，W3）
+
+UI 仅依赖 `GameSession.new_run(seed)`、`load_run(body)`、`dispatch(command)`、
+`snapshot_view()` 及三个信号；不持有 GameState，不直接调用 Rules 或磁盘 store。
+命令/结果/信号形状沿用 [contracts.md §§3–5](../.trellis/tasks/10-18-godot-impl-redesign/contracts.md)。
+不兼容修改必须显式升级接口版本并同步使用方和测试。
+
+- 新局生成独立随机 runId（不消耗游戏 RNG），立即入队 revision 0。未确认保存时
+  `savedRevision = -1`，状态为 `saving`；保存失败保留内存状态，绝不重做动作。
+- 同局缓存最近 64 个成功、规则拒绝及 revision 拒绝结果。去重早于 revision，
+  结果保留原视图与原 revision；UI 按提交信号或新快照渲染，不能用旧重放结果回退。
+  action 形状校验不依赖当前事件；当前事件合法性由规则决定。
+- 提交信号到存档入队期间，dispatch/new/load 重入均拒绝。读取存档清空去重，
+  从 body.revision 继续，不重放已结算的效果。视图及缓存结果均为独立副本。
+- `saveStatus` 和 `dayReview` 是投影，不是 UI 自行计算的规则。日结展示刚结束的日、
+  新增账本、应付/实付供养、本次错过事件、庇护承诺及危机状态。
+- 存档位于 `user://qingmao_strategy_demo/<scenarioId>/<rulesVersion>/`。
+  Envelope v1 严格校验版本、内容/正文 SHA256、完整 state，读取前限制 2 MiB。
+  与旧 Web 格式互不转换。
+- SaveService 在单一进程内按规范化物理路径共享写锁及代际；未开始快照 latest-wins。
+  切局取消旧任务，轮换、提升和确认均检查代际，旧回调不改新局状态。
+  不承诺多个应用进程或多个浏览器标签同时写同一槽位。
+- `load(false)` 仅检查（标题使用），`load()` 尝试恢复；current 无效即尝试 backup，
+  并返回来源、原失败原因及恢复写错误。tmp 从不自动提升，只有 tmp 也不会当作无档。
+  无有效正式档时保留诊断文件并明确失败，不静默覆盖。
+- Web 通过 `OS.is_userfs_persistent()` 与实际写读探测能力；能力不足时警告，
+  写入返回失败。IndexedDB 实测结论仅适用于证据所列浏览器/环境。

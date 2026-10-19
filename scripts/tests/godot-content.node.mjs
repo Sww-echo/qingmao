@@ -152,14 +152,14 @@ test('Godot runner distinguishes missing inputs, assertions and invalid argument
       '--headless', '--path', root, '--script', 'res://tests/run_all.gd', '--', ...args,
     ], { encoding: 'utf8', timeout: 30000 });
   }
-  for (const name of ['canonical_json', 'state_codec', 'content_validation', 'rules_unit', 'v1_replay']) {
+  for (const name of ['canonical_json', 'state_codec', 'content_validation', 'rules_unit', 'v1_replay', 'session_semantics', 'save_faults']) {
     const result = run([`--suite=${name}`]);
     assert.equal(result.status, 2, result.stderr);
     assert.match(result.stderr, /missing input res:\/\/content\/generated\/prototype\/content\.json/);
   }
   await mkdir(join(root, 'content/generated/prototype'), { recursive: true });
   await cp(join(ROOT, 'shared/prototype/content.json'), join(root, 'content/generated/prototype/content.json'));
-  for (const name of ['state_codec', 'v1_replay']) {
+  for (const name of ['state_codec', 'v1_replay', 'save_faults']) {
     const missingFixture = run([`--suite=${name}`]);
     assert.equal(missingFixture.status, 2, missingFixture.stderr);
     assert.match(missingFixture.stderr, /missing input res:\/\/tests\/fixtures/);
