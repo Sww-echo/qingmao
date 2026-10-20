@@ -25,7 +25,7 @@
     ".trellis/tasks/10-18-godot-playable-slice/design.md",
     ".trellis/tasks/10-18-godot-playable-slice/implement.md"
   ],
-  "notes": "2026-10-20 W4 完成并已推送远程；W5 第一增量已实施并推送（三地点几何/热点、安全出生点、关系/风险 HUD、非当前地点热点过滤）。9 套件 6761 检查、war-ready 120、network 118、labor 118、title 31、reload_flow 27 均 0 失败。W5 gate 仍需真人三局与窗口级进程重开；当前沙箱无法新建 X 套接字，窗口证据待补。",
+  "notes": "2026-10-20 W4 完成并推送；W5 第一增量与 19 事件 UI 覆盖已实施：三地点几何/热点、安全出生点、关系/风险 HUD、热点可见性过滤、四恢复点 UI 重载、19 事件通用模态检查。9 套件 6761、war-ready 120、network 118、labor 118、reload 27、event_coverage 153、title 31 均 0 失败。W5 gate 仍需真人三局与窗口级进程重开。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
@@ -49,7 +49,7 @@
       "implementation_commit": "8251747"
     },
     "w5": {
-      "status": "first-increment-verified",
+      "status": "first-increment-and-event-coverage-verified",
       "startedAt": "2026-10-20",
       "plan": [
         "TRAVEL 后切换地点几何并把玩家放到安全出生点",
@@ -92,7 +92,9 @@
       "window_verified_after_fix": false,
       "evidence_commit": null,
       "reload_flow_checks": 27,
-      "ui_recovery_points_verified": true
+      "ui_recovery_points_verified": true,
+      "event_coverage_checks": 153,
+      "events_covered": 19
     }
   }
 }

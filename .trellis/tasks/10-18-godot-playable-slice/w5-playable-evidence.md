@@ -29,6 +29,7 @@ QINGMAO_FLOW_STRATEGY=network   "$GODOT_BIN" --headless --path godot --script re
 QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script res://tests/play_flow.gd
 "$GODOT_BIN" --headless --path godot --script res://tests/title_flow.gd
 "$GODOT_BIN" --headless --path godot --script res://tests/reload_flow.gd
+"$GODOT_BIN" --headless --path godot --script res://tests/event_coverage.gd
 ```
 
 | 验证 | 结果 |
@@ -42,6 +43,7 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 | 热点可达 | 学堂 3、客栈 2、竹林 3；非当前地点热点不可交互 |
 | 关系 HUD | 巡山队长/客栈掌柜/嫌疑/暴露与 `view.state` 一致 |
 | 恢复点渲染 | 事件/战斗/日结/结局各载入新会话：modal 由状态恢复，日结不重放账目，战斗七种行动与意图可见 |
+| 全部 19 事件 | `event_coverage` 153 checks / 0 failures；每个事件都由同一通用事件模态打开，选项启用态与 `actionOptions` 一致 |
 | 720p 布局 | 会话面板、滚动容器、结束此日按钮、行记均在视口内 |
 
 `play_flow` 通过 `pressed.emit()` 驱动真实控件，但仍不是真人键鼠试玩。
@@ -55,6 +57,8 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 ## 4. 尚未完成（W5 gate 剩余）
 
 - 真人键鼠完成战备成功、借势成功、劳作失败三局并记录；当前为场景控件自动驱动。
+- 19 事件已逐一经通用事件 UI 打开并核对选项状态；仍未逐事件真实点击结算（自动策略覆盖
+  18 个，`crisis-arrival` 由第 14 日日结进入）。
 - 事件中/战斗中/日结后的**窗口级进程**重开与实机走查；UI 级四恢复点已由
   `tests/reload_flow.gd` 覆盖，W3 `save_faults` 覆盖规则/存档接口。
 - 本轮沙箱无法新建 X 套接字（Xvfb bind 失败），修复后的窗口截图与真人键鼠三局待补；
