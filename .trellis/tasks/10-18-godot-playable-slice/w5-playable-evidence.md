@@ -66,7 +66,7 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
   `tests/reload_flow.gd` 覆盖，W3 `save_faults` 覆盖规则/存档接口。
 - 已用沙箱外临时 Xvfb（1280×720，OpenGL3）重跑 `capture_w5.gd`：三地点、蛊、事件、
   暂停、日结、战斗、结局共 10 张真实窗口截图，输出在 `artifacts/godot/w5/`（被忽略）。
-  `Image.flip_y()` 修正了该 X11/OpenGL 驱动下的上下翻转。
+  为避免误判方向，用红/蓝角标测试确认 `get_image()` 行 0 就是引擎顶部，因此不翻转。
 - 真人键鼠三局仍待补；自动窗口输入不等于真人试玩。
 - 720p/1080p 修复后窗口截图（当前截图早于 W4 review 修复）。
 - 连点/失焦/重入的实机走查。
