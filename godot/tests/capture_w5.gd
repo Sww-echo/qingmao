@@ -66,6 +66,10 @@ func _run() -> void:
 	await _settle(20)
 	_shot("07-day-review")
 
+	# The live screen is a child of Main; free it so the state-derived modals
+	# below are the only UI layer in frame.
+	_main.queue_free()
+	await _settle(3)
 	await _capture_state_modals()
 	print("CAPTURE done: %s" % _out)
 	quit(0)

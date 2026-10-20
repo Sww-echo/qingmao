@@ -67,3 +67,28 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 
 原著章节复刻、唯一解、隐藏好感度、完整 165 日、正式美术、V2 玩法实验。
 `蛊真人.txt` 仅作本地核对资料，不进入游戏内容，也不存在按原著经历判定死亡的逻辑。
+
+## 6. 代码 review（2026-10-20）
+
+本轮在 W5 提交后做了第二轮独立阅读与针对性探针，不把实现阶段的自我检查当作 review。
+
+发现并修复：
+
+1. `_render` 先 `refocus()` 再应用地点几何/出生点，导致切换地点瞬间可能基于旧热点显示提示；
+   调整为先应用地点视觉与出生点，再重建焦点。
+2. `capture_w5.gd` 在旧 Play 场景仍在树中时加载状态模态，两张 CanvasLayer 会重叠；
+   截图前先释放旧屏幕。
+3. `godot:compare` 版本校验失败文案在沙箱 EPERM 下打印 `exit undefined`；
+   改为保留实际错误/空输出信息。
+4. `play_flow.gd` 结尾重复的 ending 断言块合并，避免维护两份同义检查。
+
+复核后：9 套件 6761 检查、war-ready 120、network 118、labor 118、reload 27、
+title 31 均 0 失败；`QINGMAO_FLOW_STRATEGY` 路径与 720p 布局回归通过。
+
+���保留的 review 备注（未在本轮改）：
+
+- `SaveService.flush_pending()` 失败后不恢复 `_pending`；当前会明确报错并在标题显示
+  “上次保存失败”，但内存中的待写快照会被丢弃。修复涉及存档重试语义与故障用例，
+  应在 W7/V2 前单独评审，不在 W5 静默改合同。
+- `play_flow` 仍通过 `pressed.emit()` 驱动控件；这是自动化，不是真人键鼠验收。
+- 沙箱无法新建 X 套接字，修复后的窗口截图与真人三局仍待补。

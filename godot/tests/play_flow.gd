@@ -117,8 +117,6 @@ func _run() -> void:
 		_expect(String(ending.id) == expected_id,
 			"%s UI run ending=%s (expected %s)" % [_strategy, ending.id, expected_id])
 		_expect(not (ending.reasons as Array).is_empty(), "%s ending explains reasons" % _strategy)
-	if final_view.get("endingView", null) != null:
-		var ending: Dictionary = final_view.endingView
 		_expect(_play.get_node("%EndingCenter").visible, "ending modal is shown")
 		_expect(String(_play.get_node("%EndingBody").text).contains("原因"), "ending modal explains reasons")
 	# The final state must be on disk and readable.

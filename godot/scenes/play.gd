@@ -301,6 +301,9 @@ func _render(view: Dictionary) -> void:
 	if _panel.visible and location_id != _panel_location:
 		_panel.visible = false
 		_set_world_input(not _modal_layer.visible)
+	# Apply geometry/visibility/spawn first: refocus() must observe the new
+	# location's hotspot set, not the previous location's stale candidates.
+	_apply_location_visuals(location_id)
 	# Hotspot focus/prompt is world-scene state, not rule state. Moving between
 	# locations does not move the avatar, so no enter/exit signal fires: rebuild
 	# or clear the prompt explicitly or a stale "按 E" stays over the inn.
@@ -324,7 +327,6 @@ func _render(view: Dictionary) -> void:
 	_save_status.text = _save_label(status)
 	_location_name.text = String(location.get("name", state.location))
 	_location_desc.text = String(location.get("description", ""))
-	_apply_location_visuals(String(state.location))
 	_render_travel(view, state)
 	_render_events(view, state)
 	_render_actions(view)

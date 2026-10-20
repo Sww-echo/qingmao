@@ -143,16 +143,17 @@ export async function main(args = process.argv.slice(2)) {
   }
   const set = options['--set'] ?? 'development';
   const binary = process.env.GODOT_BIN ?? join(homedir(), 'Applications/Godot.app/Contents/MacOS/Godot');
-  const version = { stdout: '' };
+  let versionOutput = '';
+  let versionProblem = 'no --version output';
   try {
-    version.stdout = runText(binary, ['--version']);
+    versionOutput = runText(binary, ['--version']);
   } catch (error) {
-    version.stdout = '';
+    versionProblem = error.message;
   }
   // The version string is the contract; a sandbox EPERM with captured stdout
   // still produced evidence, while a missing/other version does not.
-  if (version.stdout.trim() !== GODOT_VERSION) {
-    throw new Error(`Godot 版本必须为 ${GODOT_VERSION}: ${version.stdout.trim() || version.error?.message || `exit ${version.status}`}`);
+  if (versionOutput.trim() !== GODOT_VERSION) {
+    throw new Error(`Godot 版本必须为 ${GODOT_VERSION}: ${versionOutput.trim() || versionProblem}`);
   }
   const started = performance.now();
   const source = sourceIdentity();
