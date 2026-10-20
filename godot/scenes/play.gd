@@ -7,6 +7,12 @@ signal quit_requested()
 
 const SCOPE_NOTE := "真实规则 · 可玩第 1 日（三地点场景属 W5）"
 const WORLD_SCENE_LOCATION := "academy"
+## Safe spawn points per location; scenes never persist these (W5 design).
+const LOCATION_SPAWNS := {
+	"academy": Vector2(900, 580),
+	"inn": Vector2(520, 520),
+	"bamboo": Vector2(620, 520),
+}
 const ENDING_NAMES := {
 	"held-the-line": "守住通道",
 	"shelter-secured": "庇护所落定",
@@ -117,6 +123,8 @@ var _notice: String = ""
 var _review_key: String = ""
 var _had_modal: bool = false
 var _last_location: String = ""
+var _last_visual_location: String = ""
+var _panel_location: String = ""
 
 func configure(session: GameSession, load_notice: String = "") -> void:
 	_session = session
@@ -203,12 +211,14 @@ func _on_interaction_requested(
 		return
 	_panel_title.text = display_name
 	_panel_body.text = description
+	_panel_location = String(_view.state.location)
 	_panel.visible = true
 	_prompt.visible = false
 	_set_world_input(false)
 
 func _world_scene_active() -> bool:
-	return not _view.is_empty() and String(_view.state.location) == WORLD_SCENE_LOCATION
+	# W5: the avatar exists in all three locations, not only the academy.
+	return not _view.is_empty()
 
 func _close_panel() -> void:
 	_panel.visible = false
@@ -285,11 +295,12 @@ func _render(view: Dictionary) -> void:
 		return
 	_view = view
 	var state: Dictionary = view.state
-	# The explanation panel only exists over the academy hotspot. Leaving the
-	# location while it is open must not leave the avatar locked behind it.
+	# The explanation panel belongs to the location it was opened in. Any
+	# location change must close it and release the avatar.
 	var location_id: String = String(state.location)
-	if _panel.visible and location_id != WORLD_SCENE_LOCATION:
+	if _panel.visible and location_id != _panel_location:
 		_panel.visible = false
+		_set_world_input(not _modal_layer.visible)
 	# Hotspot focus/prompt is world-scene state, not rule state. Moving between
 	# locations does not move the avatar, so no enter/exit signal fires: rebuild
 	# or clear the prompt explicitly or a stale "按 E" stays over the inn.
@@ -403,6 +414,13 @@ func _set_action_button(button: Button, view: Dictionary, action: Dictionary, la
 
 func _render_utilities(view: Dictionary, state: Dictionary) -> void:
 	%GuButton.text = "蛊虫（%d）" % state.inventory.size()
+	# Read-only relationship/risk readout: rules already own these numbers.
+	var relations: Dictionary = state.relations
+	var exposure_count: int = (state.exposures as Array).size()
+	%RelationLine.text = "巡山队长 %d · 客栈掌柜 %d · 嫌疑 %d · 暴露 %d" % [
+		int(relations.get("guard-captain", 0)), int(relations.get("innkeeper", 0)),
+		int(state.suspicion), exposure_count,
+	]
 	var exposures: Array = state.exposures
 	%ClearExposureButton.visible = not exposures.is_empty()
 	if not exposures.is_empty():
@@ -885,9 +903,25 @@ func _apply_location_visuals(location: String) -> void:
 			ground.color = Color(0.1, 0.2, 0.13)
 		_:
 			ground.color = Color(0.14, 0.18, 0.15)
-	$World/LectureHall.visible = location == "academy"
-	$World/DrillGround.visible = location == "academy"
-	$World/SpiritField.visible = location == "academy"
-	# Hotspot marks are academy geometry. They must not float over the inn or
-	# the bamboo while world interaction is disabled there.
-	$World/Hotspots.visible = location == "academy"
+	var academy: bool = location == "academy"
+	$World/LectureHall.visible = academy
+	$World/DrillGround.visible = academy
+	$World/SpiritField.visible = academy
+	$World/InnCounter.visible = location == "inn"
+	$World/InnRooms.visible = location == "inn"
+	$World/InnYard.visible = location == "inn"
+	$World/BambooEdge.visible = location == "bamboo"
+	$World/BambooPath.visible = location == "bamboo"
+	$World/BambooDen.visible = location == "bamboo"
+	$World/Hotspots/LectureHallSpot.visible = academy
+	$World/Hotspots/DrillGroundSpot.visible = academy
+	$World/Hotspots/SpiritFieldSpot.visible = academy
+	$World/Hotspots/InnSpots.visible = location == "inn"
+	$World/Hotspots/BambooSpots.visible = location == "bamboo"
+	# Location changes teleport to a safe spawn: the scene owns layout, the
+	# session owns which location is active.
+	if location != _last_visual_location:
+		_last_visual_location = location
+		if LOCATION_SPAWNS.has(location):
+			_player.position = LOCATION_SPAWNS[location]
+			_player.velocity = Vector2.ZERO

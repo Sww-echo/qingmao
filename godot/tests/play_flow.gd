@@ -17,6 +17,10 @@ var _counts: Dictionary = {}
 var _rejections: PackedStringArray = []
 var _last_revision: int = -1
 var _last_action: Dictionary = {}
+## W5: run the same scene-driven flow for each policy. Default stays war-ready
+## so the documented command is unchanged.
+var _strategy: String = OS.get_environment("QINGMAO_FLOW_STRATEGY") \
+	if OS.get_environment("QINGMAO_FLOW_STRATEGY") in V1Policies.STRATEGIES else "war-ready"
 
 func _initialize() -> void:
 	_run()
@@ -50,6 +54,7 @@ func _run() -> void:
 	_expect(_play.get_node("%TrainButton").disabled == false, "training is enabled on day one")
 	_expect(_play.get_node("%ScoutButton").disabled, "scouting is disabled away from the bamboo")
 	await _check_panel_and_location_contract()
+	await _check_location_contract()
 	await _check_pause_contract()
 
 	var guard: int = 0
@@ -59,7 +64,7 @@ func _run() -> void:
 			_fail("run did not finish within 400 UI actions")
 			break
 		var view: Dictionary = _session.snapshot_view()
-		var action: Dictionary = V1Policies.choose("war-ready", view, _catalog)
+		var action: Dictionary = V1Policies.choose(_strategy, view, _catalog)
 		if action.is_empty():
 			_fail("policy returned no action on day %d" % int(view.state.day))
 			break
@@ -97,13 +102,23 @@ func _run() -> void:
 	var final_view: Dictionary = _session.snapshot_view()
 	_expect(final_view.get("endingView", null) != null, "the UI run reaches an ending")
 	_expect(_rejections.is_empty(), "no UI command was rejected (%s)" % "; ".join(_rejections))
-	# W4 requires events, work, training and day end to run through the real rules.
-	for kind: String in ["OPEN_EVENT", "CHOOSE", "WORK", "TRAIN", "END_DAY", "COMBAT"]:
-		_expect(int(_counts.get(kind, 0)) > 0, "the UI run used %s at least once" % kind)
+	# Every policy must exercise events, work and day end through the real rules.
+	for kind: String in ["OPEN_EVENT", "CHOOSE", "WORK", "END_DAY"]:
+		_expect(int(_counts.get(kind, 0)) > 0, "%s UI run used %s at least once" % [_strategy, kind])
+	if _strategy == "war-ready":
+		_expect(int(_counts.get("TRAIN", 0)) > 0, "war-ready UI run trained")
+		_expect(int(_counts.get("COMBAT", 0)) > 0, "war-ready UI run fought")
 	if final_view.get("endingView", null) != null:
 		var ending: Dictionary = final_view.endingView
-		_expect(String(ending.outcome) == "survived", "war-ready UI run survives (outcome=%s)" % ending.outcome)
-		_expect(String(ending.id) == "held-the-line", "war-ready UI run holds the line (ending=%s)" % ending.id)
+		var expected_id: String = {"war-ready": "held-the-line", "network": "shelter-secured", "labor": "overrun"}[_strategy]
+		var expected_outcome: String = "death" if _strategy == "labor" else "survived"
+		_expect(String(ending.outcome) == expected_outcome,
+			"%s UI run outcome=%s (expected %s)" % [_strategy, ending.outcome, expected_outcome])
+		_expect(String(ending.id) == expected_id,
+			"%s UI run ending=%s (expected %s)" % [_strategy, ending.id, expected_id])
+		_expect(not (ending.reasons as Array).is_empty(), "%s ending explains reasons" % _strategy)
+	if final_view.get("endingView", null) != null:
+		var ending: Dictionary = final_view.endingView
 		_expect(_play.get_node("%EndingCenter").visible, "ending modal is shown")
 		_expect(String(_play.get_node("%EndingBody").text).contains("原因"), "ending modal explains reasons")
 	# The final state must be on disk and readable.
@@ -134,7 +149,8 @@ func _run() -> void:
 			_expect(int(reloaded_view.maxQi) == int(final_view.maxQi), "reloaded maxQi matches")
 			_expect(int(reloaded_view.upkeep) == int(final_view.upkeep), "reloaded upkeep matches")
 		resumed.queue_free()
-	print("W4 UI flow: %d UI actions, %d checks, %d failures" % [_steps, _checks, _failures.size()])
+	print("W4 UI flow %s: %d UI actions, %d checks, %d failures" % [
+		_strategy, _steps, _checks, _failures.size()])
 	_finish()
 
 ## The explain panel belongs to the academy world view; leaving the academy
@@ -151,11 +167,14 @@ func _check_panel_and_location_contract() -> void:
 	await process_frame
 	_expect(not _play.get_node("%ExplainPanel").visible, "leaving the academy closes the explain panel")
 	_expect(not _play.get_node("%Player").input_locked, "the avatar is unlocked after the panel closes")
-	_expect(not _play.get_node("World/Hotspots").visible, "academy hotspots are hidden outside the academy")
+	_expect(not _play.get_node("World/Hotspots/LectureHallSpot").visible,
+		"academy hotspots are hidden outside the academy")
+	_expect(_play.get_node("World/Hotspots/InnSpots").visible, "inn hotspots are visible in the inn")
 	_play.get_node("%TravelAcademy").pressed.emit()
 	await process_frame
 	await process_frame
-	_expect(_play.get_node("World/Hotspots").visible, "academy hotspots return with the academy")
+	_expect(_play.get_node("World/Hotspots/LectureHallSpot").visible,
+		"academy hotspots return with the academy")
 	_expect(not _play.get_node("%Player").input_locked, "the avatar stays unlocked back in the academy")
 	# A prompt built while standing on a hotspot must not survive the location
 	# change (the avatar never moves, so no focus-cleared signal fires).
@@ -169,6 +188,61 @@ func _check_panel_and_location_contract() -> void:
 	_play.get_node("%TravelAcademy").pressed.emit()
 	await process_frame
 	await process_frame
+
+## W5: each location has its own geometry, hotspots and safe spawn point.
+func _check_location_contract() -> void:
+	var player: Node2D = _play.get_node("%Player")
+	for location: String in ["inn", "bamboo", "academy"]:
+		_play.get_node("%Travel" + location.capitalize()).pressed.emit()
+		await process_frame
+		await process_frame
+		var state: Dictionary = _session.snapshot_view().state
+		_expect(String(state.location) == location, "travel reaches %s" % location)
+		var spawn: Vector2 = _play.LOCATION_SPAWNS[location]
+		_expect(_play.get_node("%Player").position.is_equal_approx(spawn),
+			"player spawns at the safe point in %s" % location)
+		var inn: bool = location == "inn"
+		var bamboo: bool = location == "bamboo"
+		var academy: bool = location == "academy"
+		_expect(_play.get_node("World/InnCounter").visible == inn, "inn counter follows the inn")
+		_expect(_play.get_node("World/BambooEdge").visible == bamboo, "bamboo edge follows the bamboo")
+		_expect(_play.get_node("World/LectureHall").visible == academy, "academy hall follows the academy")
+		_expect(_play.get_node("World/Hotspots/InnSpots").visible == inn, "inn hotspots follow the inn")
+		_expect(_play.get_node("World/Hotspots/BambooSpots").visible == bamboo, "bamboo hotspots follow the bamboo")
+		var visible_ids: PackedStringArray = []
+		for hotspot in _play.get_tree().get_nodes_in_group("interactable"):
+			if hotspot.is_visible_in_tree():
+				visible_ids.append(String(hotspot.target_id))
+		_expect(visible_ids.size() == (2 if inn else (3 if bamboo else 3)),
+			"only %s hotspots are interactable (%s)" % [location, ", ".join(visible_ids)])
+		var expected_target: String = {"inn": "inn.counter", "bamboo": "bamboo.edge", "academy": "academy.lecture"}[location]
+		var target_hotspot: Node2D = null
+		for hotspot in _play.get_tree().get_nodes_in_group("interactable"):
+			if hotspot.target_id == expected_target and hotspot.is_visible_in_tree():
+				target_hotspot = hotspot
+				break
+		_expect(target_hotspot != null, "%s hotspot is registered" % location)
+		if target_hotspot != null:
+			# Standing on the hotspot must focus it and E must open its panel.
+			player.position = target_hotspot.position
+			for frame: int in range(4):
+				await physics_frame
+				await process_frame
+			_expect(_play.get_node("%Prompt").visible, "%s hotspot shows an interaction prompt" % location)
+			_key(KEY_E)
+			await process_frame
+			await process_frame
+			_expect(_play.get_node("%ExplainPanel").visible, "%s hotspot opens the explain panel" % location)
+			if _play.get_node("%ExplainPanel").visible:
+				_play._close_panel()
+				await process_frame
+	# The relation/risk readout is a projection of state, not UI math.
+	var relations: Dictionary = _session.snapshot_view().state.relations
+	var line: String = String(_play.get_node("%RelationLine").text)
+	_expect(line.contains("巡山队长 %d" % int(relations.get("guard-captain", 0))),
+		"relation line shows the guard captain")
+	_expect(line.contains("客栈掌柜 %d" % int(relations.get("innkeeper", 0))),
+		"relation line shows the innkeeper")
 
 ## Pause owns the screen: neither Tab nor a force-focused HUD button may reach
 ## the daily actions behind it.

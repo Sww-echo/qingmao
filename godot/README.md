@@ -44,8 +44,12 @@ npm run godot:sync-content
 # 全部九套件：基础、规则回放、session_semantics / save_faults
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/run_all.gd
 
-# W4：用真实场景控件跑完第 1 日（事件/蛊/战斗/日结/存档重载，非规则直调）
+# W4/W5：用真实场景控件跑完一局（事件/蛊/战斗/日结/存档重载，非规则直调）
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/play_flow.gd
+
+# W5：按策略跑同一套场景控件流程（war-ready / network / labor）
+QINGMAO_FLOW_STRATEGY=network \
+  ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/play_flow.gd
 
 # W4：标题/种子/暂停返回/继续的完整组合根流程
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/title_flow.gd
@@ -170,6 +174,10 @@ godot/
 **W3 新增**：命令去重、revision、完整拒绝结果、不可变视图、初始快照与自动保存、
 current/backup 恢复及 tmp 中断诊断。真实窗口经自动键鼠输入验证跨进程继续，
 不冒充真人完整试玩。见 [W3 证据](../.trellis/tasks/10-18-godot-domain-foundation/w3-session-save-evidence.md)。
+
+**W5 第一增量**：三地点世界几何与安全出生点；每地点稳定热点（学堂 3、客栈 2、竹林 3），
+非当前地点热点不能聚焦/点击；HUD 只读展示巡山队长、客栈掌柜、嫌疑与暴露；同一场景流程
+可按 `war-ready` / `network` / `labor` 三种策略运行。
 
 **W4 新增**：标题种子输入；可玩的第 1 日 HUD（生命/真元/元石/行动/地点/供养）；地点移动；
 事件列表与通用选项模态；蛊管理（装备/封存/唤醒）；回合战斗（意图/伤害预览与七种行动）；

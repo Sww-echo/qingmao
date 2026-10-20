@@ -25,7 +25,7 @@
     ".trellis/tasks/10-18-godot-playable-slice/design.md",
     ".trellis/tasks/10-18-godot-playable-slice/implement.md"
   ],
-  "notes": "2026-10-20 W4 可玩第 1 日已实现并验证：标题种子/继续、HUD、三地点移动、事件/蛊/战斗/日结/暂停/结局模态，模态动作白名单与键盘焦点隔离。自动化：9 套件 6761 检查、play_flow 83 检查、title_flow 31 检查均 0 失败；play_flow 为场景控件驱动，不是真人键鼠。窗口截图拍摄于修复前，修复后的模态隔离与滚动布局以 headless 回归验证。W5 三地点场景化、19 事件真人三局与 V2 尚未实施。",
+  "notes": "2026-10-20 W4 完成并已推送远程；当前 W5 第一增量已实施：三地点几何/热点、安全出生点、关系/风险 HUD、非当前地点热点过滤。9 套件 6761 检查、war-ready 120、network 118、labor 118、title 31 均 0 失败。W5 gate 仍需真人三局、窗口级重载与修复后截图。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
@@ -47,6 +47,50 @@
       "implementation_committed": true,
       "prior_window_screenshots": true,
       "implementation_commit": "8251747"
+    },
+    "w5": {
+      "status": "first-increment-verified",
+      "startedAt": "2026-10-20",
+      "plan": [
+        "TRAVEL 后切换地点几何并把玩家放到安全出生点",
+        "HUD 只读展示两关系、嫌疑与暴露",
+        "三地点真实控件可达性与禁用原因一致",
+        "战备成功、借势成功、劳作失败三局记录",
+        "W5 gate 证据落盘后交 W6"
+      ],
+      "plannedScenarioSeats": {
+        "academy": {
+          "role": "讲堂/演武场/灵田",
+          "events": 9
+        },
+        "inn": {
+          "role": "柜台/客房/账册",
+          "events": 7
+        },
+        "bamboo": {
+          "role": "林缘/小径/巡山",
+          "events": 3
+        }
+      },
+      "notInScope": [
+        "原著章节复刻",
+        "唯一解/隐藏好感度",
+        "165日完整篇",
+        "正式美术"
+      ],
+      "evidence": ".trellis/tasks/10-18-godot-playable-slice/w5-playable-evidence.md",
+      "suite_checks": "6761/6761",
+      "play_flow_checks": {
+        "war-ready": 120,
+        "network": 118,
+        "labor": 118
+      },
+      "title_flow_checks": 31,
+      "location_switch_verified": true,
+      "relation_hud_verified": true,
+      "human_playtest": false,
+      "window_verified_after_fix": false,
+      "evidence_commit": null
     }
   }
 }

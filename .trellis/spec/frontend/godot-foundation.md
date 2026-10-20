@@ -290,3 +290,21 @@ acceptance. The versioned UI handoff is documented in `godot/README.md` section 
   and asserts modal isolation; `tests/title_flow.gd` covers main -> title ->
   new run -> autosave -> title -> continue. Headless tests do not replace
   native window/human playtest evidence.
+
+## 11. W5 location handoff
+
+- `GameState.location` stays the only location truth. Scenes react to the
+  projected view; `TRAVEL` success (not a scene teleport) drives geometry,
+  hotspots and spawn point selection.
+- Each location owns its own visible geometry and hotspot set. Hotspots carry
+  stable `target_id`s (`academy.*`, `inn.*`, `bamboo.*`); hidden hotspots must
+  not be focusable, clickable or reachable via `E`. Filter by
+  `is_visible_in_tree()` in `InteractionController`, do not rely on the
+  avatar's enter/exit signals alone.
+- Location changes re-place the avatar at `LOCATION_SPAWNS`; no camera or
+  position is saved. The explain panel records the location it was opened in
+  and closes on any location change.
+- Relationship/risk readouts are display-only projections of `view.state`
+  (`relations`, `suspicion`, `exposures`). Never recompute them in the scene.
+- `tests/play_flow.gd` accepts `QINGMAO_FLOW_STRATEGY=war-ready|network|labor`
+  and asserts each location's geometry, spawn, hotspot count and readout.

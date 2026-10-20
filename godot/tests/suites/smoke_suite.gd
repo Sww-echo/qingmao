@@ -103,7 +103,9 @@ func _check_play_scene() -> void:
 	var ids: PackedStringArray = []
 	for hotspot in _tree.get_nodes_in_group("interactable"):
 		ids.append(hotspot.target_id)
-	_check.expect(ids.size() == 3, "expected 3 interactables, found %d" % ids.size())
+	# W5: 3 academy + 2 inn + 3 bamboo hotspots, all registered but
+	# visibility-filtered by the interaction controller.
+	_check.expect(ids.size() == 8, "expected 8 interactables, found %d" % ids.size())
 	_check.expect(not ids.has(""), "an interactable declares an empty target_id")
 	var seen: Dictionary = {}
 	for id in ids:

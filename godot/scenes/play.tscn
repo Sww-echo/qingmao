@@ -70,6 +70,30 @@ polygon = PackedVector2Array(860, 90, 1380, 90, 1380, 420, 860, 420)
 color = Color(0.18, 0.29, 0.21, 1)
 polygon = PackedVector2Array(140, 640, 620, 640, 620, 960, 140, 960)
 
+[node name="InnCounter" type="Polygon2D" parent="World"]
+color = Color(0.36, 0.26, 0.17, 1)
+polygon = PackedVector2Array(150, 150, 610, 150, 610, 300, 150, 300)
+
+[node name="InnRooms" type="Polygon2D" parent="World"]
+color = Color(0.28, 0.21, 0.16, 1)
+polygon = PackedVector2Array(780, 120, 1330, 120, 1330, 470, 780, 470)
+
+[node name="InnYard" type="Polygon2D" parent="World"]
+color = Color(0.24, 0.2, 0.15, 1)
+polygon = PackedVector2Array(220, 600, 900, 600, 900, 960, 220, 960)
+
+[node name="BambooEdge" type="Polygon2D" parent="World"]
+color = Color(0.13, 0.3, 0.19, 1)
+polygon = PackedVector2Array(90, 110, 1190, 110, 1190, 360, 90, 360)
+
+[node name="BambooPath" type="Polygon2D" parent="World"]
+color = Color(0.2, 0.24, 0.17, 1)
+polygon = PackedVector2Array(360, 300, 900, 300, 980, 1000, 300, 1000)
+
+[node name="BambooDen" type="Polygon2D" parent="World"]
+color = Color(0.16, 0.22, 0.16, 1)
+polygon = PackedVector2Array(900, 620, 1360, 620, 1360, 980, 900, 980)
+
 [node name="Player" type="CharacterBody2D" parent="World"]
 unique_name_in_owner = true
 position = Vector2(900, 580)
@@ -132,6 +156,82 @@ color = Color(0.42, 0.66, 0.44, 0.35)
 polygon = PackedVector2Array(-70, -70, 70, -70, 70, 70, -70, 70)
 
 [node name="Shape" type="CollisionShape2D" parent="World/Hotspots/SpiritFieldSpot"]
+shape = SubResource("RectangleShape2D_hotspot")
+
+[node name="InnSpots" type="Node2D" parent="World/Hotspots"]
+visible = false
+
+[node name="InnCounterSpot" type="Area2D" parent="World/Hotspots/InnSpots"]
+position = Vector2(380, 225)
+script = ExtResource("3_hotspot")
+target_id = "inn.counter"
+display_name = "客栈柜台"
+description = "掌柜在此核账、收药草、谈庇护。"
+
+[node name="Mark" type="Polygon2D" parent="World/Hotspots/InnSpots/InnCounterSpot"]
+color = Color(0.7, 0.56, 0.32, 0.35)
+polygon = PackedVector2Array(-70, -70, 70, -70, 70, 70, -70, 70)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Hotspots/InnSpots/InnCounterSpot"]
+shape = SubResource("RectangleShape2D_hotspot")
+
+[node name="InnRoomSpot" type="Area2D" parent="World/Hotspots/InnSpots"]
+position = Vector2(1050, 290)
+script = ExtResource("3_hotspot")
+target_id = "inn.rooms"
+display_name = "客房"
+description = "客房可暂歇，也可谈下庇护细节。"
+
+[node name="Mark" type="Polygon2D" parent="World/Hotspots/InnSpots/InnRoomSpot"]
+color = Color(0.62, 0.47, 0.34, 0.35)
+polygon = PackedVector2Array(-70, -70, 70, -70, 70, 70, -70, 70)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Hotspots/InnSpots/InnRoomSpot"]
+shape = SubResource("RectangleShape2D_hotspot")
+
+[node name="BambooSpots" type="Node2D" parent="World/Hotspots"]
+visible = false
+
+[node name="BambooEdgeSpot" type="Area2D" parent="World/Hotspots/BambooSpots"]
+position = Vector2(520, 230)
+script = ExtResource("3_hotspot")
+target_id = "bamboo.edge"
+display_name = "林缘"
+description = "林缘能看见狼迹与越界痕迹。"
+
+[node name="Mark" type="Polygon2D" parent="World/Hotspots/BambooSpots/BambooEdgeSpot"]
+color = Color(0.42, 0.66, 0.44, 0.35)
+polygon = PackedVector2Array(-70, -70, 70, -70, 70, 70, -70, 70)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Hotspots/BambooSpots/BambooEdgeSpot"]
+shape = SubResource("RectangleShape2D_hotspot")
+
+[node name="BambooPathSpot" type="Area2D" parent="World/Hotspots/BambooSpots"]
+position = Vector2(640, 800)
+script = ExtResource("3_hotspot")
+target_id = "bamboo.path"
+display_name = "巡山小径"
+description = "巡山队从这里进山，落单山狼也在此出没。"
+
+[node name="Mark" type="Polygon2D" parent="World/Hotspots/BambooSpots/BambooPathSpot"]
+color = Color(0.5, 0.7, 0.46, 0.35)
+polygon = PackedVector2Array(-70, -70, 70, -70, 70, 70, -70, 70)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Hotspots/BambooSpots/BambooPathSpot"]
+shape = SubResource("RectangleShape2D_hotspot")
+
+[node name="BambooDenSpot" type="Area2D" parent="World/Hotspots/BambooSpots"]
+position = Vector2(1130, 800)
+script = ExtResource("3_hotspot")
+target_id = "bamboo.den"
+display_name = "狼群旧巢"
+description = "旧巢附近线索更多，也更容易留下痕迹。"
+
+[node name="Mark" type="Polygon2D" parent="World/Hotspots/BambooSpots/BambooDenSpot"]
+color = Color(0.4, 0.55, 0.38, 0.35)
+polygon = PackedVector2Array(-70, -70, 70, -70, 70, 70, -70, 70)
+
+[node name="Shape" type="CollisionShape2D" parent="World/Hotspots/BambooSpots/BambooDenSpot"]
 shape = SubResource("RectangleShape2D_hotspot")
 
 [node name="UI" type="CanvasLayer" parent="."]
@@ -386,6 +486,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 34)
 text = "蛊虫"
+
+[node name="RelationLine" type="Label" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.74, 0.78, 1)
+theme_override_font_sizes/font_size = 14
+text = "巡山队长 0 · 客栈掌柜 0 · 嫌疑 0 · 暴露 0"
+autowrap_mode = 3
 
 [node name="Utilities" type="HBoxContainer" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
 layout_mode = 2

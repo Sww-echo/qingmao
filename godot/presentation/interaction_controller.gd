@@ -27,6 +27,7 @@ func register(area: Area2D) -> void:
 	area.body_entered.connect(_on_body_entered.bind(area))
 	area.body_exited.connect(_on_body_exited.bind(area))
 	area.input_event.connect(_on_area_input_event.bind(area))
+	area.visibility_changed.connect(_prune_hidden.bind(area))
 
 
 func _on_body_entered(body: Node2D, area: Area2D) -> void:
@@ -46,7 +47,7 @@ func _on_body_exited(body: Node2D, area: Area2D) -> void:
 func _on_area_input_event(
 	_viewport: Node, event: InputEvent, _shape_idx: int, area: Area2D
 ) -> void:
-	if not enabled:
+	if not enabled or not area.is_visible_in_tree():
 		return
 	if event is InputEventMouseButton and event.pressed \
 			and event.button_index == MOUSE_BUTTON_LEFT:
@@ -55,15 +56,30 @@ func _on_area_input_event(
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not enabled or _focused == null:
+	if not enabled or _focused == null or not _focused.is_visible_in_tree():
 		return
 	if event.is_action_pressed("interact"):
 		get_viewport().set_input_as_handled()
 		_emit_request(_focused)
 
 
+## Hidden hotspots (other locations) must not keep focus in the candidate list.
+func _prune_hidden(area: Area2D) -> void:
+	if area.is_visible_in_tree() or not _candidates.has(area):
+		return
+	_candidates.erase(area)
+	_refresh()
+
+
 func _refresh() -> void:
-	var next: Area2D = _candidates[0] if not _candidates.is_empty() else null
+	var next: Area2D = null
+	for candidate: Area2D in _candidates:
+		if candidate.is_visible_in_tree():
+			next = candidate
+			break
+	if next != null and _candidates.size() > 1:
+		_candidates.erase(next)
+		_candidates.push_front(next)
 	if next == _focused:
 		return
 	_focused = next
