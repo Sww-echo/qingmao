@@ -30,6 +30,10 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 "$GODOT_BIN" --headless --path godot --script res://tests/title_flow.gd
 "$GODOT_BIN" --headless --path godot --script res://tests/reload_flow.gd
 "$GODOT_BIN" --headless --path godot --script res://tests/event_coverage.gd
+
+# 两进程窗口级重开：event / combat / day-end
+QINGMAO_RELOAD_SCENARIO=combat QINGMAO_RELOAD_MODE=write ...
+QINGMAO_RELOAD_SCENARIO=combat QINGMAO_RELOAD_MODE=read  ...
 ```
 
 | 验证 | 结果 |
@@ -47,10 +51,11 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 | 720p 布局 | 会话面板、滚动容器、结束此日按钮、行记均在视口内 |
 | 真实窗口截图 | 1280×720 OpenGL3，三地点/蛊/事件/暂停/日结/战斗/结局共 10 张，`artifacts/godot/w5/` |
 | 1080p 缩放 | 1920×1080 OpenGL3 窗口跑同一截图脚本；10 张输出在 `artifacts/godot/w5-1080/`，布局与 720p 一致、未裁切 |
-| 窗口级进程重开 | write/read 两进程：runId `5b339459…`、revision 1、`briefing` 模态与选项一致；18 checks / 0 failures |
+| 窗口级进程重开 | event（21 checks）、combat（17）、day-end（16）三组 write/read 两进程均 0 失败；revision/runId/模态/状态与落盘一致，日结不重放 |
 | 输入韧性 | 双击行动只结算一次、暂停/日结阻断 HUD、双击结束此日只进一天；10 checks / 0 failures |
 
-`play_flow` 通过 `pressed.emit()` 驱动真实控件，但仍不是真人键鼠试玩。
+`play_flow` 通过 `pressed.emit()` 驱动真实控件；三策略也已在 1280×720 真实窗口中
+各跑完一局（war-ready 120、network 118、labor 118 checks），但仍不是真人键鼠试玩。
 
 ## 3. 内容覆盖
 
@@ -63,8 +68,8 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 - 真人键鼠完成战备成功、借势成功、劳作失败三局并记录；当前为场景控件自动驱动。
 - 19 事件已逐一经通用事件 UI 打开并核对选项状态；仍未逐事件真实点击结算（自动策略覆盖
   18 个，`crisis-arrival` 由第 14 日日结进入）。
-- 窗口级进程重开已在事件态验证；战斗/日结态的窗口级重开仍需补，UI 级四恢复点已由
-  `tests/reload_flow.gd` 覆盖，W3 `save_faults` 覆盖规则/存档接口。
+- 窗口级进程重开已在事件/战斗/日结三态验证；结局态由 `reload_flow` 的新会话渲染覆盖，
+  W3 `save_faults` 覆盖规则/存档接口。
 - 已用沙箱外临时 Xvfb（1280×720，OpenGL3）重跑 `capture_w5.gd`：三地点、蛊、事件、
   暂停、日结、战斗、结局共 10 张真实窗口截图，输出在 `artifacts/godot/w5/`（被忽略）。
   为避免误判方向，用红/蓝角标测试确认 `get_image()` 行 0 就是引擎顶部，因此不翻转。

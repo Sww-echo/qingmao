@@ -25,7 +25,7 @@
     ".trellis/tasks/10-18-godot-playable-slice/design.md",
     ".trellis/tasks/10-18-godot-playable-slice/implement.md"
   ],
-  "notes": "2026-10-20 W4/W5 已推送。W5 收尾：窗口级进程重开（事件态 18 checks）、输入韧性（10 checks）、1280x720 与 1920x1080 真实 OpenGL3 窗口截图各 10 张。剩余：战斗/日结态窗口重开、真人键鼠三局；随后 W5 gate 交 W6。",
+  "notes": "2026-10-20 W4/W5 已推送。W5 收尾完成：event/combat/day-end 三组窗口级两进程重开（54 checks）、输入韧性（10）、三策略真实窗口整局（120/118/118）、1280x720 与 1920x1080 窗口截图各 10 张。剩余：真人键鼠复看；W5 gate 可交评审。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
@@ -49,7 +49,7 @@
       "implementation_commit": "8251747"
     },
     "w5": {
-      "status": "finalizing-window-verified",
+      "status": "gate-ready-for-review",
       "startedAt": "2026-10-20",
       "plan": [
         "TRAVEL 后切换地点几何并把玩家放到安全出生点",
@@ -108,13 +108,25 @@
       "window_screenshots": true,
       "window_screenshot_dir": "artifacts/godot/w5/",
       "window_reload": {
-        "mode": "write/read process restart",
-        "checks": 18,
-        "state": "event/briefing"
+        "event": {
+          "checks": 21
+        },
+        "combat": {
+          "checks": 17
+        },
+        "day-end": {
+          "checks": 16
+        },
+        "state": "windowed write/read processes, 0 failures"
       },
       "input_robustness_checks": 10,
       "window_screenshots_1080": true,
-      "window_screenshot_dir_1080": "artifacts/godot/w5-1080/"
+      "window_screenshot_dir_1080": "artifacts/godot/w5-1080/",
+      "windowed_play_flow": {
+        "war-ready": 120,
+        "network": 118,
+        "labor": 118
+      }
     }
   }
 }
