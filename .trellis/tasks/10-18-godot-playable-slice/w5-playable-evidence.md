@@ -46,6 +46,7 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 | 全部 19 事件 | `event_coverage` 153 checks / 0 failures；每个事件都由同一通用事件模态打开，选项启用态与 `actionOptions` 一致 |
 | 720p 布局 | 会话面板、滚动容器、结束此日按钮、行记均在视口内 |
 | 真实窗口截图 | 1280×720 OpenGL3，三地点/蛊/事件/暂停/日结/战斗/结局共 10 张，`artifacts/godot/w5/` |
+| 1080p 缩放 | 1920×1080 OpenGL3 窗口跑同一截图脚本；10 张输出在 `artifacts/godot/w5-1080/`，布局与 720p 一致、未裁切 |
 | 窗口级进程重开 | write/read 两进程：runId `5b339459…`、revision 1、`briefing` 模态与选项一致；18 checks / 0 failures |
 | 输入韧性 | 双击行动只结算一次、暂停/日结阻断 HUD、双击结束此日只进一天；10 checks / 0 failures |
 
@@ -67,6 +68,7 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 - 已用沙箱外临时 Xvfb（1280×720，OpenGL3）重跑 `capture_w5.gd`：三地点、蛊、事件、
   暂停、日结、战斗、结局共 10 张真实窗口截图，输出在 `artifacts/godot/w5/`（被忽略）。
   为避免误判方向，用红/蓝角标测试确认 `get_image()` 行 0 就是引擎顶部，因此不翻转。
+  另在 1920×1080 的 Xvfb 上跑同一脚本，确认窗口缩放后布局未裁切。
 - 真人键鼠三局仍待补；自动窗口输入不等于真人试玩。
 - 720p/1080p 修复后窗口截图（当前截图早于 W4 review 修复）。
 - 连点/失焦/重入的实机走查。

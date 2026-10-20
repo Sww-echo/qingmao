@@ -25,7 +25,7 @@
     ".trellis/tasks/10-18-godot-playable-slice/design.md",
     ".trellis/tasks/10-18-godot-playable-slice/implement.md"
   ],
-  "notes": "2026-10-20 W4/W5 已推送。W5 收尾已完成：窗口级进程重开（事件态 18 checks）、输入韧性（10 checks）、真实 1280x720 OpenGL3 窗口截图 10 张。剩余：战斗/日结态窗口重开、真人键鼠三局；随后 W5 gate 交 W6。",
+  "notes": "2026-10-20 W4/W5 已推送。W5 收尾：窗口级进程重开（事件态 18 checks）、输入韧性（10 checks）、1280x720 与 1920x1080 真实 OpenGL3 窗口截图各 10 张。剩余：战斗/日结态窗口重开、真人键鼠三局；随后 W5 gate 交 W6。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
@@ -112,7 +112,9 @@
         "checks": 18,
         "state": "event/briefing"
       },
-      "input_robustness_checks": 10
+      "input_robustness_checks": 10,
+      "window_screenshots_1080": true,
+      "window_screenshot_dir_1080": "artifacts/godot/w5-1080/"
     }
   }
 }
