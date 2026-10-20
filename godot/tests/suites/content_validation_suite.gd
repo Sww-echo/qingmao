@@ -38,9 +38,18 @@ func run(_tree: SceneTree) -> Dictionary:
 	check.expect(loaded.ok, "ContentLoader accepts and verifies bundled prototype content")
 	if loaded.ok:
 		check.expect(loaded.content_sha256.length() == 64, "ContentLoader reports the content SHA256")
-	check.expect(not LOADER.load_pack("qingmao14-v2").ok, "ContentLoader rejects the unimplemented V2 pack")
+	var v2: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://content/generated/qingmao14-v2/content.json"))
+	var v2_errors: PackedStringArray = VALIDATOR.validate(v2)
+	check.expect(v2_errors.is_empty(), "frozen V2 content accepted: " + "; ".join(v2_errors))
+	_v2_negatives(check, v2)
+	var loaded_v2: Dictionary = LOADER.load_pack("qingmao14-v2")
+	check.expect(loaded_v2.ok, "ContentLoader accepts and verifies bundled V2 content")
+	if loaded_v2.ok:
+		check.expect(loaded_v2.catalog.is_v2() and loaded_v2.catalog.data.events.size() == 28,
+			"V2 catalog exposes 28 events and V2 versions")
+		check.expect(loaded_v2.catalog.has_id("enemies", "crisis-alpha"), "V2 catalog has the phase-two enemy")
 	var verified: Dictionary = LOADER.verify_all()
-	check.expect(verified.ok and verified.get("packs", []).size() == 1, "all bundled packs verify")
+	check.expect(verified.ok and verified.get("packs", []).size() == 2, "all bundled packs verify")
 	return check.result()
 
 
@@ -150,6 +159,60 @@ func _simple_negatives(check: RefCounted, original: Dictionary) -> void:
 	content.events[0].choices[0].effects = [{"kind": "relation", "id": "innkeeper", "amount": {}}]
 	_reject(check, content, "malformed effect amount does not crash monotone audit")
 
+
+func _v2_negatives(check: RefCounted, original: Dictionary) -> void:
+	var content: Dictionary = original.duplicate(true)
+	content.scenarioId = "qingmao-fourteen-day-prototype"
+	content.rulesVersion = "prototype-rules-1"
+	content.contentVersion = "prototype-content-1"
+	_reject(check, content, "V2 content with a V1 tuple")
+	content = original.duplicate(true)
+	content.parameters.erase("inquiryThreshold")
+	_reject(check, content, "V2 missing a new parameter", "inquiryThreshold")
+	content = original.duplicate(true)
+	content.parameters.inquiryThreshold = 1.5
+	_reject(check, content, "V2 fractional threshold")
+	content = original.duplicate(true)
+	content.parameters.fortifyTurns = 3
+	_reject(check, content, "V2 out-of-range fortify turns")
+	content = original.duplicate(true)
+	content.enemies.pop_back()
+	_reject(check, content, "V2 missing the phase-two enemy")
+	content = original.duplicate(true)
+	_find_enemy(content, "crisis-pack")["next"] = "missing-enemy"
+	_reject(check, content, "V2 next points at an unknown enemy")
+	content = original.duplicate(true)
+	_find_enemy(content, "crisis-alpha")["next"] = "crisis-pack"
+	_reject(check, content, "V2 terminal phase chains back")
+	content = original.duplicate(true)
+	content.exposures.pop_back()
+	_reject(check, content, "V2 missing the inquiry exposure")
+	content = original.duplicate(true)
+	_find_event(content, "briefing").choices[0].effects.append({"kind": "flag", "id": "crisis-arrived"})
+	_reject(check, content, "V2 content forges a reserved arrival flag")
+	content = original.duplicate(true)
+	_find_event(content, "briefing").choices[0].effects.append({"kind": "exposure", "id": "inquiry-unresolved", "source": "forged"})
+	_reject(check, content, "V2 content forges the inquiry exposure")
+	content = original.duplicate(true)
+	_find_enemy(content, "crisis-alpha").hpMin = _find_enemy(content, "crisis-alpha").hpMax + 1
+	_reject(check, content, "V2 reversed phase-two HP")
+	content = original.duplicate(true)
+	_find_event(content, "final-march").choices[0].requirements = []
+	_find_event(content, "final-freight").choices[0].requirements = []
+	# Mutual exclusion is a content contract; removing it must still pass schema
+	# but is checked explicitly here as a regression guard.
+	var errors: PackedStringArray = VALIDATOR.validate(content)
+	check.expect(errors.is_empty(), "schema alone does not encode the final duty exclusivity")
+	check.expect(_find_event(original, "final-march").choices[0].requirements[0].present == false,
+		"final-march excludes final-freight")
+	check.expect(_find_event(original, "final-freight").choices[0].requirements[0].present == false,
+		"final-freight excludes final-march")
+
+func _find_enemy(content: Dictionary, id: String) -> Dictionary:
+	for enemy: Dictionary in content.enemies:
+		if enemy.id == id:
+			return enemy
+	return {}
 
 func _graph_cases(check: RefCounted, original: Dictionary) -> void:
 	var content: Dictionary = original.duplicate(true)

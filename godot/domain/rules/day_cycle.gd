@@ -15,6 +15,12 @@ static func apply(state: GameState, catalog: ContentCatalog) -> void:
 			state.inventory[id].mode = "active" if can_feed else "dormant"
 	Rules._log(state, "upkeep", "供养%d元石；全体未封存蛊清醒，卸装不减免。" % cost if can_feed else "应付%d，余额%d不足；本轮不扣款，未封存蛊全部休眠。安全劳作和休整仍可用。" % [cost, state.resources["stones"]])
 	if state.day == int(parameters["days"]):
+		# D1: unresolved inquiry becomes one persistent exposure after the final
+		# upkeep, before the forced crisis opens.
+		if catalog.is_v2() and state.flags.has("inquiry-due") \
+				and not state.completed_events.has("inquiry") and not Queries.has_exposure(state, "inquiry-unresolved"):
+			V1Effects.apply(state, {"kind": "exposure", "id": "inquiry-unresolved", "source": "学堂盘问未了结"}, "inquiry", catalog)
+			Rules._log(state, "risk", "学堂盘问拖到狼群临门仍未了结，留下一条持久痕迹。")
 		Rules._flag(state, "crisis-arrived")
 		state.crisis = "decision"
 		state.active_event = "crisis-arrival"
@@ -28,6 +34,12 @@ static func apply(state: GameState, catalog: ContentCatalog) -> void:
 	state.actions = int(parameters["actionsPerDay"])
 	state.hp = mini(int(parameters["startingHp"]), state.hp + int(parameters["nightlyHealing"]))
 	state.qi = Queries.max_qi(state, catalog)
+	# D1: trigger before decay, using the pre-decay suspicion value.
+	if catalog.is_v2() and state.suspicion >= int(parameters["inquiryThreshold"]) \
+			and not state.flags.has("inquiry-due") \
+			and not state.completed_events.has("inquiry") and not state.missed_events.has("inquiry"):
+		Rules._flag(state, "inquiry-due")
+		Rules._log(state, "risk", "疑心达到%d，学堂将在第8日后传唤盘问。" % int(parameters["inquiryThreshold"]))
 	state.suspicion = maxi(0, state.suspicion - int(parameters["suspicionDecay"]))
 	state.upkeep_due.clear()
 	for definition: Dictionary in catalog.data["gu"]:

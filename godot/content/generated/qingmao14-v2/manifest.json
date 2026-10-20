@@ -1,0 +1,15 @@
+{
+  "contentVersion": "qingmao-content-2",
+  "files": [
+    {
+      "kind": "content",
+      "path": "res://content/generated/qingmao14-v2/content.json",
+      "sha256": "70c04afba159e88ae7848ec3ca4f972ba3789ddddb176f66e75f70efbc410b0a",
+      "source": "shared/scenarios/qingmao14-v2/content.json"
+    }
+  ],
+  "formatVersion": 1,
+  "packId": "qingmao14-v2",
+  "rulesVersion": "qingmao-rules-2",
+  "scenarioId": "qingmao-fourteen-day-v2"
+}

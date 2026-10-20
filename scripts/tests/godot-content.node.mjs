@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -29,6 +30,14 @@ async function snapshot(root) {
   await visit('godot');
   return result;
 }
+
+test('V2 content is valid, and V1 still rejects V2 extensions', () => {
+  const v2 = JSON.parse(readFileSync(join(ROOT, 'shared/scenarios/qingmao14-v2/content.json'), 'utf8'));
+  assert.deepEqual(validateGodotContent(v2), []);
+  const broken = structuredClone(v2);
+  broken.parameters.fortifyTurns = 3;
+  assert.ok(validateGodotContent(broken).length > 0);
+});
 
 test('V1 delegates to the frozen validator, rejects unsupported versions and schema extensions', () => {
   assert.deepEqual(validateGodotContent(PROTOTYPE_CONTENT), []);
@@ -106,6 +115,11 @@ test('check detects changed manifest, missing outputs, stale files, and never cr
   await assert.rejects(syncGodotContent({ root, check: true }), /missing/);
   await assert.rejects(readdir(join(root, 'godot')), /ENOENT/);
   await syncGodotContent({ root });
+  const all = await syncGodotContent({ root, pack: 'all' });
+  assert.equal(all.files, 7, 'all packs copy two manifests and five V1 files');
+  assert.equal(await readFile(join(root, 'godot/content/generated/qingmao14-v2/content.json'), 'utf8'),
+    await readFile(join(root, 'shared/scenarios/qingmao14-v2/content.json'), 'utf8'));
+  await syncGodotContent({ root });
   const manifest = join(root, 'godot/content/generated/prototype/manifest.json');
   await writeFile(manifest, '{}\n');
   await assert.rejects(syncGodotContent({ root, check: true }), /drift/);
@@ -117,21 +131,23 @@ test('check detects changed manifest, missing outputs, stale files, and never cr
   await assert.rejects(syncGodotContent({ root, check: true }), /unexpected/);
 });
 
-test('bad source hash fails before any writes; unavailable V2/all/unknown packs fail', async t => {
+test('bad source hash fails before any writes; V2/all sync and unknown packs fail', async t => {
   const root = await sandbox(t);
   await writeFile(join(root, 'shared/prototype/manifest.json'), '{}\n');
   await assert.rejects(syncGodotContent({ root }), /source hashes/);
   await assert.rejects(readdir(join(root, 'godot')), /ENOENT/);
-  for (const pack of ['qingmao14-v2', 'all', 'no-such-pack']) {
-    await assert.rejects(syncGodotContent({ root, pack }), /pack|W6/);
-  }
+  await assert.rejects(syncGodotContent({ root, pack: 'no-such-pack' }), /pack/);
+  const v2 = await syncGodotContent({ root, pack: 'qingmao14-v2' });
+  assert.equal(v2.files, 2, 'V2 copies content and its manifest');
+  // `all` must fail because the shared V1 source manifest is still corrupt.
+  await assert.rejects(syncGodotContent({ root, pack: 'all' }), /source hashes/);
 });
 
 test('CLI rejects unknown, duplicate, missing and conflicting values without writes', async () => {
   for (const args of [
     ['--unknown'], ['--pack'], ['--pack', '--check'],
     ['--pack', 'prototype', '--pack', 'prototype'], ['--check', '--check'],
-    ['--pack', 'all'], ['--pack', 'qingmao14-v2'], ['--pack', 'unknown'],
+    ['--pack', 'unknown'],
     ['--pack=prototype'],
   ]) {
     const result = spawnSync(process.execPath, ['scripts/godot-sync-content.mjs', ...args], { cwd: ROOT, encoding: 'utf8' });

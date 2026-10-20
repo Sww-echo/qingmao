@@ -1,0 +1,1321 @@
+{
+  "contentVersion": "qingmao-content-2",
+  "enemies": [
+    {
+      "hpMax": 24,
+      "hpMin": 18,
+      "id": "scout-wolf",
+      "intents": [
+        {
+          "damage": 5,
+          "label": "扑咬"
+        },
+        {
+          "damage": 8,
+          "label": "蓄力猛扑"
+        },
+        {
+          "damage": 3,
+          "label": "绕行轻咬"
+        }
+      ],
+      "name": "落单山狼",
+      "rewardStones": 10
+    },
+    {
+      "hpMax": 34,
+      "hpMin": 30,
+      "id": "crisis-pack",
+      "intents": [
+        {
+          "damage": 6,
+          "label": "前锋扑咬"
+        },
+        {
+          "damage": 10,
+          "label": "群狼猛扑"
+        },
+        {
+          "damage": 4,
+          "label": "侧翼试探"
+        }
+      ],
+      "name": "竹林狼群·前锋",
+      "next": "crisis-alpha",
+      "rewardStones": 0
+    },
+    {
+      "hpMax": 40,
+      "hpMin": 34,
+      "id": "crisis-alpha",
+      "intents": [
+        {
+          "damage": 8,
+          "label": "头狼撕咬"
+        },
+        {
+          "damage": 12,
+          "label": "蓄势扑杀"
+        },
+        {
+          "damage": 5,
+          "label": "扫尾"
+        }
+      ],
+      "name": "头狼",
+      "rewardStones": 0
+    }
+  ],
+  "events": [
+    {
+      "actionCost": 0,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "id": "briefed",
+              "kind": "flag"
+            }
+          ],
+          "id": "acknowledge",
+          "label": "记下期限和两种准备方向",
+          "requirements": [],
+          "risk": "免费查看。第3日后未领月光仍可劳作，但会失去学堂赠蛊窗口。"
+        }
+      ],
+      "description": "你已开窍，一转丙等四成四。第14日日暮狼群将抵达。可备战，也可侦察并落实两位人物的庇护安排。钱能供养和补给，不能代替这些准备。",
+      "fromDay": 1,
+      "id": "briefing",
+      "location": "academy",
+      "requirements": [],
+      "throughDay": 3,
+      "title": "十四日守望"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "id": "moonlight",
+              "kind": "gu"
+            }
+          ],
+          "id": "receive",
+          "label": "花1行动领取并装备",
+          "requirements": [],
+          "risk": "每日日暮1元石供养；缺钱会休眠。"
+        }
+      ],
+      "description": "学堂发放并协助炼化月光蛊。炼化持有就有每日供养，卸装不会免责；可以花行动封存。",
+      "fromDay": 1,
+      "id": "moonlight-issue",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 3,
+      "title": "领取本命月光"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "amount": 4,
+              "id": "stones",
+              "kind": "resource"
+            },
+            {
+              "amount": 2,
+              "id": "innkeeper",
+              "kind": "relation"
+            }
+          ],
+          "id": "help",
+          "label": "搬完这批货",
+          "requirements": [],
+          "risk": "一次委托，过期不再补发。"
+        }
+      ],
+      "description": "有限的一批到货需要清点搬运，付钱也记人情。",
+      "fromDay": 1,
+      "id": "inn-introduction",
+      "location": "inn",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 4,
+      "title": "替掌柜搬货"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "amount": 4,
+              "id": "stones",
+              "kind": "resource"
+            },
+            {
+              "amount": 1,
+              "id": "guard-captain",
+              "kind": "relation"
+            },
+            {
+              "id": "patrol-contract",
+              "kind": "flag"
+            }
+          ],
+          "id": "enrol",
+          "label": "送信并登记候补",
+          "requirements": [],
+          "risk": "狼群前锋在第4至7日出现；接委托不强制迎战，后面还有补给任务。"
+        }
+      ],
+      "description": "巡山队长需要可靠的送信人，也愿意接纳以后参加巡山的人。",
+      "fromDay": 2,
+      "id": "academy-commission",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 5,
+      "title": "接下巡山口信"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "amount": 6,
+              "id": "stones",
+              "kind": "resource"
+            },
+            {
+              "amount": 2,
+              "id": "innkeeper",
+              "kind": "relation"
+            }
+          ],
+          "id": "balance",
+          "label": "核账交付",
+          "requirements": [],
+          "risk": "只有这批账册可领报酬，暂缓不领奖。"
+        }
+      ],
+      "description": "掌柜将这一批物资的账册交给熟人，整理后可取得后续委托。",
+      "fromDay": 2,
+      "id": "supply-ledger",
+      "location": "inn",
+      "requirements": [
+        {
+          "id": "innkeeper",
+          "kind": "relation",
+          "min": 2
+        }
+      ],
+      "throughDay": 6,
+      "title": "核对客栈账册"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "stones": 8
+          },
+          "effects": [
+            {
+              "id": "jade-skin",
+              "kind": "gu"
+            }
+          ],
+          "id": "buy-jade",
+          "label": "支付8元石炼化玉皮",
+          "requirements": [],
+          "risk": "多承担1元石每日供养；只有装备、清醒时才减伤。"
+        }
+      ],
+      "description": "教习有一只玉皮蛊可转让。能减伤，但维持也要钱。",
+      "fromDay": 5,
+      "id": "jade-offer",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 9,
+      "title": "学堂防护蛊"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "stones": 8
+          },
+          "effects": [
+            {
+              "id": "ear-grass",
+              "kind": "gu"
+            }
+          ],
+          "id": "buy-ears",
+          "label": "支付8元石炼化地听草",
+          "requirements": [],
+          "risk": "多承担1元石每日供养；侦察及危机时必须清醒装备。"
+        }
+      ],
+      "description": "熟客转让地听肉耳草，用于探知竹林动静。",
+      "fromDay": 5,
+      "id": "eargrass-offer",
+      "location": "inn",
+      "requirements": [
+        {
+          "id": "innkeeper",
+          "kind": "relation",
+          "min": 2
+        }
+      ],
+      "throughDay": 10,
+      "title": "侦察蛊转让"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "stones": 6
+          },
+          "effects": [
+            {
+              "id": "liquor-worm",
+              "kind": "gu"
+            }
+          ],
+          "id": "buy-liquor",
+          "label": "支付6元石炼化酒虫",
+          "requirements": [],
+          "risk": "多承担1元石每日供养；省行动的收益要与购价和饲养比较。"
+        }
+      ],
+      "description": "一只独立试玩情境中的酒虫可用于提纯真元，提升修炼效率。",
+      "fromDay": 5,
+      "id": "liquor-offer",
+      "location": "inn",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 8,
+      "title": "温养酒虫"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "qi": 3
+          },
+          "effects": [
+            {
+              "amount": 3,
+              "kind": "clues"
+            }
+          ],
+          "id": "listen",
+          "label": "借地听草确认狼迹",
+          "requirements": [
+            {
+              "id": "ear-grass",
+              "kind": "gu",
+              "usable": true
+            }
+          ],
+          "risk": "固定获得3情报，无随机伤害。"
+        },
+        {
+          "costs": {
+            "qi": 3
+          },
+          "effects": [
+            {
+              "amount": 2,
+              "kind": "clues"
+            },
+            {
+              "amount": -3,
+              "kind": "hp"
+            },
+            {
+              "amount": 3,
+              "kind": "suspicion"
+            },
+            {
+              "id": "unlicensed-survey",
+              "kind": "exposure",
+              "source": "林缘狼迹：徒步越界"
+            }
+          ],
+          "id": "trespass",
+          "label": "徒步越界追踪",
+          "requirements": [],
+          "risk": "必受3伤害并留下持久暴露；关注衰减不能消除暴露。"
+        }
+      ],
+      "description": "林缘足迹显示狼群的往返方向。",
+      "fromDay": 3,
+      "id": "bamboo-signs",
+      "location": "bamboo",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 7,
+      "title": "林缘狼迹"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "enemyId": "scout-wolf",
+              "kind": "battle",
+              "purpose": "patrol"
+            }
+          ],
+          "id": "intervene",
+          "label": "进入回合战斗救援",
+          "requirements": [],
+          "risk": "山狼生命18–24，意图依次5/8/3伤害。撤退失2元石并受6伤（地听草减4），没有胜利报酬。"
+        }
+      ],
+      "description": "一只落单山狼堵住巡山队。胜利才取得10元石及队长信任。",
+      "fromDay": 5,
+      "id": "patrol-rescue",
+      "location": "bamboo",
+      "requirements": [
+        {
+          "id": "patrol-contract",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 9,
+      "title": "巡山队遇险"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "amount": 3,
+              "id": "herbs",
+              "kind": "resource"
+            }
+          ],
+          "id": "sort-herbs",
+          "label": "花1行动换3药草",
+          "requirements": [],
+          "risk": "药草携带上限6，超出部分留在药圃；不会兑成额外报酬。"
+        }
+      ],
+      "description": "帮教习整理药圃，领取一批疗伤药草。",
+      "fromDay": 4,
+      "id": "healer-herbs",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 10,
+      "title": "教习药圃"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "stones": 4
+          },
+          "effects": [
+            {
+              "amount": 2,
+              "id": "guard-captain",
+              "kind": "relation"
+            },
+            {
+              "id": "guard-supplied",
+              "kind": "flag"
+            }
+          ],
+          "id": "deliver",
+          "label": "付4元石并运送补给",
+          "requirements": [],
+          "risk": "这笔投入不退；后续守望任务要求队长关系至少3。"
+        }
+      ],
+      "description": "送信人可以认购并运送一批守望补给，赢得具体信任。",
+      "fromDay": 5,
+      "id": "academy-service",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "guard-captain",
+          "kind": "relation",
+          "min": 1
+        }
+      ],
+      "throughDay": 9,
+      "title": "交付守望补给"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "amount": 1,
+              "kind": "clues"
+            },
+            {
+              "amount": 1,
+              "id": "innkeeper",
+              "kind": "relation"
+            }
+          ],
+          "id": "cross-check",
+          "label": "核对路线口供",
+          "requirements": [],
+          "risk": "只给这次独立证词，不重复领奖。"
+        }
+      ],
+      "description": "用已验证的狼迹与向导交叉核对，形成可用情报。",
+      "fromDay": 6,
+      "id": "guide-report",
+      "location": "inn",
+      "requirements": [
+        {
+          "kind": "clues",
+          "min": 2
+        },
+        {
+          "id": "innkeeper",
+          "kind": "relation",
+          "min": 3
+        }
+      ],
+      "throughDay": 10,
+      "title": "向导口供"
+    },
+    {
+      "actionCost": 0,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "id": "warned",
+              "kind": "flag"
+            }
+          ],
+          "id": "read-alarm",
+          "label": "核对筹备清单",
+          "requirements": [],
+          "risk": "庇护需求强度为8–12，准备值=情报+队长关系−暴露数。低于实际强度会被截住，转入受伤后的战斗。"
+        }
+      ],
+      "description": "第14日日暮狼群抵达。正面应对需要修为、有效攻击与防护蛊和补给；庇护要地听草、路线、备粮、契约及两位人物支持。",
+      "fromDay": 8,
+      "id": "alarm",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 14,
+      "title": "狼群预警"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "qi": 2
+          },
+          "effects": [
+            {
+              "amount": 2,
+              "kind": "clues"
+            },
+            {
+              "id": "route-chart",
+              "kind": "flag"
+            }
+          ],
+          "id": "mark-route",
+          "label": "用地听草确认并标记路线",
+          "requirements": [
+            {
+              "id": "ear-grass",
+              "kind": "gu",
+              "usable": true
+            }
+          ],
+          "risk": "路线只在本局有效；最终撤离仍需有效侦察蛊。"
+        }
+      ],
+      "description": "听清林间动静后在安全点设置识别标记。",
+      "fromDay": 8,
+      "id": "signal-markers",
+      "location": "bamboo",
+      "requirements": [
+        {
+          "kind": "clues",
+          "min": 2
+        }
+      ],
+      "throughDay": 12,
+      "title": "设置撤离信号"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "stones": 8
+          },
+          "effects": [
+            {
+              "id": "shelter-pledged",
+              "kind": "flag"
+            },
+            {
+              "amount": 1,
+              "id": "innkeeper",
+              "kind": "relation"
+            }
+          ],
+          "id": "pledge",
+          "label": "付8元石立下庇护约定",
+          "requirements": [],
+          "risk": "第12日前还须交付2药草作为备粮药资；危机时另付6元石护送费。"
+        }
+      ],
+      "description": "掌柜愿意留出藏身处，但必须先落实费用及后续供粮。",
+      "fromDay": 8,
+      "id": "shelter-pledge",
+      "location": "inn",
+      "requirements": [
+        {
+          "id": "innkeeper",
+          "kind": "relation",
+          "min": 4
+        },
+        {
+          "kind": "clues",
+          "min": 3
+        }
+      ],
+      "throughDay": 11,
+      "title": "落实客栈庇护"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "herbs": 1
+          },
+          "effects": [
+            {
+              "amount": 2,
+              "id": "guard-captain",
+              "kind": "relation"
+            },
+            {
+              "amount": 4,
+              "id": "stones",
+              "kind": "resource"
+            },
+            {
+              "id": "watch-served",
+              "kind": "flag"
+            }
+          ],
+          "id": "serve",
+          "label": "带1药草完成班次",
+          "requirements": [],
+          "risk": "这是需要交付的具体安排，单纯囤钱不能代替。"
+        }
+      ],
+      "description": "队长把一个真实守望班次交给你，完成后愿为你的撤离作担保。",
+      "fromDay": 9,
+      "id": "watch-duty",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "guard-captain",
+          "kind": "relation",
+          "min": 3
+        }
+      ],
+      "throughDay": 12,
+      "title": "完成守望班次"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "herbs": 2
+          },
+          "effects": [
+            {
+              "id": "shelter-stocked",
+              "kind": "flag"
+            },
+            {
+              "amount": 1,
+              "id": "innkeeper",
+              "kind": "relation"
+            }
+          ],
+          "id": "stock",
+          "label": "交付2药草",
+          "requirements": [],
+          "risk": "不能只付订金而忽略交付；截止第12日。"
+        }
+      ],
+      "description": "将约定药资交付给掌柜，庇护所才真正可用。",
+      "fromDay": 9,
+      "id": "shelter-stock",
+      "location": "inn",
+      "requirements": [
+        {
+          "id": "shelter-pledged",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 12,
+      "title": "庇护所备粮"
+    },
+    {
+      "actionCost": 0,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "kind": "crisis",
+              "response": "fight"
+            }
+          ],
+          "id": "stand",
+          "label": "正面守住通道",
+          "requirements": [],
+          "risk": "敌人生命60–76，意图6/10/4/8伤害循环；每条未处理暴露再加2。缺修为、防护或清醒蛊会明显增加伤亡。战斗每类补给最多用3次，背包容量有限。"
+        },
+        {
+          "costs": {
+            "stones": 6
+          },
+          "effects": [
+            {
+              "kind": "crisis",
+              "response": "shelter"
+            }
+          ],
+          "id": "take-shelter",
+          "label": "履约支付6元石，按信号撤入庇护所",
+          "requirements": [
+            {
+              "id": "ear-grass",
+              "kind": "gu",
+              "usable": true
+            },
+            {
+              "kind": "clues",
+              "min": 5
+            },
+            {
+              "id": "guard-captain",
+              "kind": "relation",
+              "min": 3
+            },
+            {
+              "id": "innkeeper",
+              "kind": "relation",
+              "min": 4
+            },
+            {
+              "id": "route-chart",
+              "kind": "flag",
+              "present": true
+            },
+            {
+              "id": "watch-served",
+              "kind": "flag",
+              "present": true
+            },
+            {
+              "id": "shelter-stocked",
+              "kind": "flag",
+              "present": true
+            }
+          ],
+          "risk": "准备值=情报+队长关系−暴露数，需求强度8–12。成功失去护送费；不足时受10伤害并被迫迎战，没有退款。"
+        }
+      ],
+      "description": "最后一轮供养已经结清；战斗及危机选择不再收日程行动，不能在此时买蛊、训练或领过期委托。",
+      "fromDay": 14,
+      "id": "crisis-arrival",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "crisis-arrived",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 14,
+      "title": "第十四日：狼群抵达"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "amount": 4,
+              "id": "stones",
+              "kind": "resource"
+            },
+            {
+              "amount": 2,
+              "kind": "suspicion"
+            }
+          ],
+          "id": "overtime",
+          "label": "连夜补一班巡山",
+          "requirements": [],
+          "risk": "快钱与安分的取舍：+4元石，疑心+2。"
+        }
+      ],
+      "description": "队里缺人，加急夜巡给现钱，但会引来更多关注。",
+      "fromDay": 8,
+      "id": "patrol-overtime",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "guard-captain",
+          "kind": "relation",
+          "min": 2
+        }
+      ],
+      "throughDay": 11,
+      "title": "夜巡加急"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "qi": 3
+          },
+          "effects": [
+            {
+              "id": "drilled",
+              "kind": "flag"
+            }
+          ],
+          "id": "drill",
+          "label": "报名演武试招",
+          "requirements": [
+            {
+              "kind": "cultivation",
+              "min": 18
+            }
+          ],
+          "risk": "危机战开场获得一次免费攻击；优先月刃，真元不足则普攻。"
+        }
+      ],
+      "description": "教习要看真本事，修为够才允许试招。",
+      "fromDay": 7,
+      "id": "academy-drill",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 11,
+      "title": "演武试招"
+    },
+    {
+      "actionCost": 0,
+      "choices": [
+        {
+          "costs": {
+            "stones": 6
+          },
+          "effects": [
+            {
+              "amount": -6,
+              "kind": "suspicion"
+            }
+          ],
+          "id": "pay-off",
+          "label": "使钱打点",
+          "requirements": [],
+          "risk": "了结盘问；花6元石，疑心−6。"
+        },
+        {
+          "costs": {},
+          "effects": [
+            {
+              "amount": -2,
+              "id": "guard-captain",
+              "kind": "relation"
+            },
+            {
+              "amount": -6,
+              "kind": "suspicion"
+            }
+          ],
+          "id": "call-favor",
+          "label": "托人情",
+          "requirements": [
+            {
+              "id": "guard-captain",
+              "kind": "relation",
+              "min": 2
+            }
+          ],
+          "risk": "了结盘问；队长关系−2，疑心−6。"
+        }
+      ],
+      "description": "你被叫去问话。拖到狼潮来临前不处理，会留下一条持久暴露。",
+      "fromDay": 8,
+      "id": "inquiry",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "inquiry-due",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 14,
+      "title": "学堂盘问"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "id": "safe-route",
+              "kind": "flag"
+            },
+            {
+              "amount": 1,
+              "id": "guard-captain",
+              "kind": "relation"
+            }
+          ],
+          "id": "review",
+          "label": "带地听草复核撤离路线",
+          "requirements": [
+            {
+              "id": "ear-grass",
+              "kind": "gu",
+              "usable": true
+            },
+            {
+              "kind": "clues",
+              "min": 6
+            }
+          ],
+          "risk": "危机庇护需求−1，队长关系+1。"
+        }
+      ],
+      "description": "情报足够时，可以提前把撤离路线复核一遍。",
+      "fromDay": 9,
+      "id": "route-review",
+      "location": "bamboo",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 13,
+      "title": "复核退路"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "stones": 8
+          },
+          "effects": [
+            {
+              "id": "fortified",
+              "kind": "flag"
+            }
+          ],
+          "id": "fortify",
+          "label": "出钱加固客栈后院",
+          "requirements": [],
+          "risk": "危机战前两回合敌方伤害−2；仅阶段一前两回合。"
+        }
+      ],
+      "description": "掌柜愿意让你加固后院，但要先出工料钱。",
+      "fromDay": 10,
+      "id": "fortify",
+      "location": "inn",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 13,
+      "title": "加固栈院"
+    },
+    {
+      "actionCost": 0,
+      "choices": [
+        {
+          "costs": {
+            "stones": 5
+          },
+          "effects": [
+            {
+              "amount": 3,
+              "id": "herbs",
+              "kind": "resource"
+            }
+          ],
+          "id": "buy-herbs",
+          "label": "年市批量收药草",
+          "requirements": [],
+          "risk": "批量折价：5元石换3药草（单买需6元石）。"
+        }
+      ],
+      "description": "年市最后几天，药材摊开始清货。",
+      "fromDay": 11,
+      "id": "market-herbs",
+      "location": "inn",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 13,
+      "title": "年市·药材"
+    },
+    {
+      "actionCost": 0,
+      "choices": [
+        {
+          "costs": {
+            "stones": 7
+          },
+          "effects": [
+            {
+              "amount": 3,
+              "id": "wine",
+              "kind": "resource"
+            }
+          ],
+          "id": "buy-wine",
+          "label": "年市批量封坛",
+          "requirements": [],
+          "risk": "批量折价：7元石换3清酒（单买需9元石）。"
+        }
+      ],
+      "description": "封坛酒在年市尾段折价出清。",
+      "fromDay": 11,
+      "id": "market-wine",
+      "location": "inn",
+      "requirements": [
+        {
+          "id": "briefed",
+          "kind": "flag",
+          "present": true
+        }
+      ],
+      "throughDay": 13,
+      "title": "年市·封坛"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {},
+          "effects": [
+            {
+              "id": "final-march",
+              "kind": "flag"
+            },
+            {
+              "enemyId": "scout-wolf",
+              "kind": "battle",
+              "purpose": "patrol"
+            }
+          ],
+          "id": "march",
+          "label": "随队进山巡最后一趟",
+          "requirements": [
+            {
+              "id": "final-freight",
+              "kind": "flag",
+              "present": false
+            }
+          ],
+          "risk": "先立互斥旗标再开战；胜利按巡逻结算，撤退不解除互斥。"
+        }
+      ],
+      "description": "队长要带人巡最后一趟；与押运年货只能选一边。",
+      "fromDay": 11,
+      "id": "final-march",
+      "location": "academy",
+      "requirements": [
+        {
+          "id": "guard-captain",
+          "kind": "relation",
+          "min": 3
+        }
+      ],
+      "throughDay": 13,
+      "title": "随队巡山"
+    },
+    {
+      "actionCost": 1,
+      "choices": [
+        {
+          "costs": {
+            "herbs": 1
+          },
+          "effects": [
+            {
+              "id": "final-freight",
+              "kind": "flag"
+            },
+            {
+              "amount": 7,
+              "id": "stones",
+              "kind": "resource"
+            },
+            {
+              "amount": 2,
+              "id": "innkeeper",
+              "kind": "relation"
+            }
+          ],
+          "id": "freight",
+          "label": "替掌柜押运年货",
+          "requirements": [
+            {
+              "id": "final-march",
+              "kind": "flag",
+              "present": false
+            }
+          ],
+          "risk": "交付1药草，换7元石与掌柜关系+2；与巡山互斥。"
+        }
+      ],
+      "description": "掌柜有一批年货要押；与随队巡山只能选一边。",
+      "fromDay": 11,
+      "id": "final-freight",
+      "location": "inn",
+      "requirements": [
+        {
+          "id": "innkeeper",
+          "kind": "relation",
+          "min": 3
+        }
+      ],
+      "throughDay": 13,
+      "title": "押运年货"
+    }
+  ],
+  "exposures": [
+    {
+      "consequence": "所有山狼战斗的每次敌方伤害+2，庇护准备值−1；关注自然衰减不清除此痕迹。",
+      "id": "unlicensed-survey",
+      "remedy": "客栈花1行动和4元石处理物证。",
+      "source": "无地听蛊越界勘察"
+    },
+    {
+      "consequence": "庇护准备值−1，危机每次敌方基础伤害+2；进入危机后不能销案。",
+      "id": "inquiry-unresolved",
+      "remedy": "第14日前完成学堂盘问（使钱打点或托人情）。",
+      "source": "学堂盘问未了结"
+    }
+  ],
+  "gu": [
+    {
+      "description": "月刃伤害8，每6修为再加2；一击耗3真元。",
+      "id": "moonlight",
+      "name": "月光蛊",
+      "power": 8,
+      "qiCost": 3,
+      "role": "attack",
+      "upkeep": 1
+    },
+    {
+      "description": "有效时每次受击减伤2；主动催动再获得8点当回合护盾。",
+      "id": "jade-skin",
+      "name": "玉皮蛊",
+      "power": 2,
+      "qiCost": 2,
+      "role": "guard",
+      "upkeep": 1
+    },
+    {
+      "description": "竹林侦察多得1情报且避开随机遇敌；开辟信号路线，撤退少受4伤害。",
+      "id": "ear-grass",
+      "name": "地听肉耳草",
+      "power": 2,
+      "qiCost": 2,
+      "role": "scout",
+      "upkeep": 1
+    },
+    {
+      "description": "每次修炼额外获得2修为；仍需日常供养。",
+      "id": "liquor-worm",
+      "name": "酒虫",
+      "power": 2,
+      "qiCost": 0,
+      "role": "growth",
+      "upkeep": 1
+    }
+  ],
+  "locations": [
+    {
+      "description": "劳作、修炼、护卫委托与战备。普通走动不耗行动。",
+      "id": "academy",
+      "name": "学堂"
+    },
+    {
+      "description": "劳作、买补给、经营店主人情和筹备庇护。",
+      "id": "inn",
+      "name": "客栈"
+    },
+    {
+      "description": "侦察与巡山。侦察会耗真元；无侦察蛊时可能受伤、留下越界痕迹或遇敌。",
+      "id": "bamboo",
+      "name": "竹林"
+    }
+  ],
+  "parameters": {
+    "actionsPerDay": 3,
+    "clearExposureCost": 4,
+    "clueCap": 8,
+    "crisisThreatMax": 12,
+    "crisisThreatMin": 8,
+    "cultivationCap": 60,
+    "cultivationStep": 12,
+    "days": 14,
+    "fortifyDamageReduction": 2,
+    "fortifyTurns": 2,
+    "herbCarryLimit": 6,
+    "herbHealing": 10,
+    "herbPrice": 2,
+    "inquiryThreshold": 4,
+    "laborIncome": 2,
+    "liquorTrainingBonus": 2,
+    "maxQiBonusPerStep": 2,
+    "nightlyHealing": 4,
+    "phaseBreatherQi": 3,
+    "retreatDamage": 6,
+    "retreatStoneLoss": 2,
+    "scoutProtection": 4,
+    "scoutQi": 3,
+    "sealCost": 1,
+    "shelterBuyoutMaxGap": 2,
+    "shelterBuyoutStonePerPoint": 4,
+    "shelterCost": 6,
+    "shelterRouteDiscount": 1,
+    "startingHerbs": 2,
+    "startingHp": 28,
+    "startingQi": 12,
+    "startingStones": 12,
+    "suspicionDecay": 1,
+    "trainingGain": 3,
+    "trainingQi": 3,
+    "wakeDormantCost": 1,
+    "wakeSealedCost": 2,
+    "wineCarryLimit": 3,
+    "winePrice": 3,
+    "wineQi": 6
+  },
+  "relations": [
+    {
+      "id": "guard-captain",
+      "name": "巡山队长",
+      "purpose": "有限的巡山、补给和守望委托；信任能支持庇护撤离。"
+    },
+    {
+      "id": "innkeeper",
+      "name": "客栈掌柜",
+      "purpose": "账册、口信和物资委托；落实庇护契约，不能仅凭关系值免费避险。"
+    }
+  ],
+  "rulesVersion": "qingmao-rules-2",
+  "scenarioId": "qingmao-fourteen-day-v2"
+}

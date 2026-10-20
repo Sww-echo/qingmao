@@ -11,6 +11,7 @@ const SUITES: Dictionary = {
 	"v1_replay": "res://tests/suites/v1_replay_suite.gd",
 	"session_semantics": "res://tests/suites/session_semantics_suite.gd",
 	"save_faults": "res://tests/suites/save_faults_suite.gd",
+	"combat_v2": "res://tests/suites/combat_v2_suite.gd",
 }
 
 var _ran: bool = false
@@ -69,6 +70,8 @@ func _required_input_error(suite_name: String) -> String:
 		paths.append("res://content/generated/prototype/content.json")
 	if suite_name == "content_validation":
 		paths.append("res://content/generated/prototype/manifest.json")
+	if suite_name == "combat_v2":
+		paths.append("res://content/generated/qingmao14-v2/content.json")
 	if suite_name in ["state_codec", "v1_replay", "save_faults"]:
 		for strategy: String in ["war-ready", "network", "labor"]:
 			paths.append("res://tests/fixtures/prototype/%s-42.json" % strategy)

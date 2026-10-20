@@ -19,7 +19,7 @@ const LOG_KINDS: PackedStringArray = [
 static func decode(value: Variant, catalog: ContentCatalog) -> Dictionary:
 	if catalog == null:
 		return _fail("state: content catalog is required")
-	if not _is_v1(catalog):
+	if not _is_supported(catalog):
 		return _fail("state: unsupported content version")
 	var error: String = _shape(value, FIELDS, "state")
 	if not error.is_empty():
@@ -123,10 +123,13 @@ static func encode(state: GameState, catalog: ContentCatalog) -> Dictionary:
 	return result
 
 
-static func _is_v1(catalog: ContentCatalog) -> bool:
-	return catalog.data.get("scenarioId") == "qingmao-fourteen-day-prototype" \
-		and catalog.data.get("rulesVersion") == "prototype-rules-1" \
-		and catalog.data.get("contentVersion") == "prototype-content-1"
+static func _is_supported(catalog: ContentCatalog) -> bool:
+	var tuple: String = "%s|%s|%s" % [
+		catalog.data.get("scenarioId", ""), catalog.data.get("rulesVersion", ""),
+		catalog.data.get("contentVersion", ""),
+	]
+	return tuple == "qingmao-fourteen-day-prototype|prototype-rules-1|prototype-content-1" \
+		or tuple == "qingmao-fourteen-day-v2|qingmao-rules-2|qingmao-content-2"
 
 
 static func _shape(value: Variant, keys: PackedStringArray, path: String) -> String:
@@ -186,6 +189,8 @@ static func _flags_error(value: Variant, catalog: ContentCatalog) -> String:
 	if not value is Array:
 		return "state.flags: expected an array"
 	var known: Dictionary = {"crisis-arrived": true, "patrol-cleared": true}
+	if catalog.data.get("scenarioId") == "qingmao-fourteen-day-v2":
+		known["inquiry-due"] = true
 	for event: Dictionary in catalog.data["events"]:
 		for choice: Dictionary in event["choices"]:
 			for effect: Dictionary in choice["effects"]:

@@ -39,7 +39,51 @@ func run(_tree: SceneTree) -> Dictionary:
 		_negative_states(initial, catalog)
 		_model_boundary(initial, catalog)
 	_action_cases(catalog)
+	_v2_codec_cases()
 	return _result()
+
+## V2 state must round-trip phase-two combat, inquiry flags/exposures, while the
+## V1 catalog keeps rejecting them.
+func _v2_codec_cases() -> void:
+	var v2_content: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://content/generated/qingmao14-v2/content.json"))
+	if not _expect(v2_content is Dictionary, "frozen V2 content must be readable"):
+		return
+	var v2_catalog := ContentCatalog.new(v2_content)
+	var state: GameState = Rules.create(42, v2_catalog)
+	_expect(state != null, "V2 state starts from the V2 catalog")
+	state.flags.append("inquiry-due")
+	var inquiry := GameState.ExposureState.new()
+	inquiry.id = "inquiry-unresolved"
+	inquiry.source = "学堂盘问未了结"
+	inquiry.day = 1
+	state.exposures.append(inquiry)
+	state.combat = GameState.CombatState.new()
+	state.combat.enemy_id = "crisis-alpha"
+	state.combat.purpose = "crisis"
+	state.combat.enemy_hp = 34
+	state.combat.turn = 1
+	state.combat.herbs_used = 2
+	state.combat.wine_used = 1
+	var encoded: Dictionary = StateCodec.encode(state, v2_catalog)
+	_expect(encoded.ok, "V2 state encodes: %s" % encoded.get("error", ""))
+	if encoded.ok:
+		_expect(encoded.data.combat.enemyId == "crisis-alpha", "V2 encoding keeps the phase-two enemy")
+		var decoded: Dictionary = StateCodec.decode(encoded.data, v2_catalog)
+		_expect(decoded.ok, "V2 state decodes")
+		if decoded.ok:
+			_expect(decoded.state.flags.has("inquiry-due"), "V2 keeps the inquiry flag")
+			_expect(decoded.state.combat.enemy_id == "crisis-alpha", "V2 restores the phase-two combat")
+	var v1_content: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://content/generated/prototype/content.json"))
+	var v1_catalog := ContentCatalog.new(v1_content)
+	var v1_state: GameState = Rules.create(42, v1_catalog)
+	v1_state.combat = GameState.CombatState.new()
+	v1_state.combat.enemy_id = "crisis-alpha"
+	v1_state.combat.purpose = "crisis"
+	v1_state.combat.enemy_hp = 34
+	_expect(not StateCodec.encode(v1_state, v1_catalog).ok, "V1 rejects the V2 enemy")
+	v1_state.combat.enemy_id = "scout-wolf"
+	v1_state.flags.append("inquiry-due")
+	_expect(not StateCodec.encode(v1_state, v1_catalog).ok, "V1 rejects the V2 inquiry flag")
 
 
 func _round_trip(data: Dictionary, catalog: ContentCatalog, label: String) -> void:

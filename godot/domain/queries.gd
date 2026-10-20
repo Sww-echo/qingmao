@@ -60,11 +60,23 @@ static func combat_forecast(state: GameState, catalog: ContentCatalog) -> Varian
 	var intent: Dictionary = enemy["intents"][state.combat.turn % enemy["intents"].size()]
 	var damage: int = int(intent["damage"]) + state.exposures.size() * 2
 	var passive: int = int(catalog.by_id["gu"]["jade-skin"]["power"]) if is_gu_usable(state, "jade-skin") else 0
+	var reduction: int = fortify_reduction(state, catalog, state.combat.enemy_id)
 	return {
 		"enemyHp": state.combat.enemy_hp, "intent": intent["label"],
-		"incomingDamage": maxi(0, damage - passive - state.combat.guard),
-		"defendingDamage": maxi(0, damage - passive - state.combat.guard - 6),
+		"incomingDamage": maxi(0, damage - passive - state.combat.guard - reduction),
+		"defendingDamage": maxi(0, damage - passive - state.combat.guard - 6 - reduction),
 	}
+
+
+## D5: only the first crisis phase and the first `fortifyTurns` enemy turns.
+static func fortify_reduction(state: GameState, catalog: ContentCatalog, enemy_id: String) -> int:
+	if not catalog.is_v2() or state.combat == null or state.combat.purpose != "crisis":
+		return 0
+	if enemy_id != "crisis-pack" or not state.flags.has("fortified"):
+		return 0
+	if state.combat.turn >= int(catalog.parameters["fortifyTurns"]):
+		return 0
+	return int(catalog.parameters["fortifyDamageReduction"])
 
 
 static func action_options(state: GameState, catalog: ContentCatalog) -> Array[Dictionary]:

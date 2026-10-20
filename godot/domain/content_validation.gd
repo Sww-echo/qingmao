@@ -1,12 +1,31 @@
 class_name ContentValidation
 extends RefCounted
-## Strict V1 content boundary, mirrored from the frozen TypeScript validator.
+## Strict versioned content boundary. V1 is mirrored from the frozen TypeScript
+## validator; V2 is the W6 schema with a deliberately small set of extensions.
 
 const VERSIONS: Dictionary = {
 	"scenarioId": "qingmao-fourteen-day-prototype",
 	"rulesVersion": "prototype-rules-1",
 	"contentVersion": "prototype-content-1",
 }
+const V2_VERSIONS: Dictionary = {
+	"scenarioId": "qingmao-fourteen-day-v2",
+	"rulesVersion": "qingmao-rules-2",
+	"contentVersion": "qingmao-content-2",
+}
+const V2_PARAMETER_RANGES: Dictionary = {
+	"inquiryThreshold": [1, 100],
+	"phaseBreatherQi": [0, 100],
+	"shelterRouteDiscount": [0, 100000],
+	"shelterBuyoutMaxGap": [0, 2],
+	"shelterBuyoutStonePerPoint": [1, 100000],
+	"fortifyTurns": [0, 2],
+	"fortifyDamageReduction": [0, 100],
+}
+const V2_NEW_EVENTS: PackedStringArray = [
+	"patrol-overtime", "academy-drill", "inquiry", "route-review", "fortify",
+	"market-herbs", "market-wine", "final-march", "final-freight",
+]
 const PARAMETER_NAMES: PackedStringArray = [
 	"days", "actionsPerDay", "startingHp", "startingQi", "startingStones", "startingHerbs",
 	"laborIncome", "trainingQi", "trainingGain", "liquorTrainingBonus", "cultivationCap",
@@ -38,11 +57,15 @@ func _validate(content: Variant) -> PackedStringArray:
 	if not content is Dictionary:
 		_fail("content", "expected an object")
 		return _errors
-	for key: String in VERSIONS:
-		if content.get(key) != VERSIONS[key]:
-			_fail("content." + key, "unsupported content version")
-	if not _errors.is_empty():
+	if _tuple(content) == _tuple(V2_VERSIONS):
+		return _validate_v2(content)
+	if _tuple(content) != _tuple(VERSIONS):
+		_fail("content", "unsupported content version tuple")
 		return _errors
+	return _validate_v1(content)
+
+
+func _validate_v1(content: Variant) -> PackedStringArray:
 	_keys(content, ["scenarioId", "rulesVersion", "contentVersion", "parameters", "locations", "gu", "relations", "exposures", "enemies", "events"], "content")
 	var parameters: Dictionary = content.get("parameters", {}) if content.get("parameters") is Dictionary else {}
 	if not content.get("parameters") is Dictionary:
@@ -81,6 +104,120 @@ func _validate(content: Variant) -> PackedStringArray:
 	_dependencies(sections.events)
 	_monotone(sections.events, parameters)
 	return _errors
+
+
+func _validate_v2(content: Dictionary) -> PackedStringArray:
+	_keys(content, ["scenarioId", "rulesVersion", "contentVersion", "parameters", "locations", "gu", "relations", "exposures", "enemies", "events"], "content")
+	var parameters: Dictionary = content.get("parameters", {}) if content.get("parameters") is Dictionary else {}
+	if not content.get("parameters") is Dictionary:
+		_fail("parameters", "expected an object")
+	else:
+		var allowed: Array = PARAMETER_NAMES.duplicate()
+		for key in V2_PARAMETER_RANGES:
+			allowed.append(key)
+		_keys(parameters, allowed, "parameters")
+		for key in PARAMETER_NAMES:
+			_number(parameters.get(key), "parameters." + key, 1)
+		for key: String in V2_PARAMETER_RANGES:
+			var bounds: Array = V2_PARAMETER_RANGES[key]
+			_number(parameters.get(key), "parameters." + key, int(bounds[0]), int(bounds[1]))
+		if parameters.get("days") != 14 or parameters.get("actionsPerDay") != 3:
+			_fail("parameters", "V2 requires fourteen days and three actions per day")
+		if _integer(parameters.get("crisisThreatMin")) and _integer(parameters.get("crisisThreatMax")) and parameters.crisisThreatMin > parameters.crisisThreatMax:
+			_fail("parameters", "crisis threat range is reversed")
+		if _integer(parameters.get("shelterRouteDiscount")) and _integer(parameters.get("crisisThreatMin")) and parameters.shelterRouteDiscount > parameters.crisisThreatMin:
+			_fail("parameters.shelterRouteDiscount", "exceeds crisisThreatMin")
+	var sections: Dictionary = {}
+	for section in ["locations", "gu", "relations", "exposures", "enemies", "events"]:
+		sections[section] = _indexed(content.get(section), section)
+		_ids[section] = _ids_of(sections[section])
+	var canonical: Dictionary = {
+		"locations": ["academy", "inn", "bamboo"],
+		"gu": ["moonlight", "jade-skin", "ear-grass", "liquor-worm"],
+		"relations": ["guard-captain", "innkeeper"],
+		"enemies": ["scout-wolf", "crisis-pack", "crisis-alpha"],
+	}
+	for section: String in canonical:
+		var expected: Array = canonical[section]
+		if sections[section].size() != expected.size() or not _contains_all(_ids[section], expected):
+			_fail(section, "V2 requires exactly " + ", ".join(expected))
+	if sections.events.size() != 28:
+		_fail("events", "V2 requires exactly 28 events")
+	for id in V2_NEW_EVENTS:
+		if not _ids.events.has(id):
+			_fail("events", "missing V2 event " + id)
+	if sections.exposures.size() != 2 or not _contains_all(_ids.exposures, ["unlicensed-survey", "inquiry-unresolved"]):
+		_fail("exposures", "V2 requires exactly unlicensed-survey and inquiry-unresolved")
+	for item: Dictionary in sections.enemies:
+		var path: String = "enemies." + str(item.get("id"))
+		_keys(item, ["id", "name", "hpMin", "hpMax", "intents", "rewardStones", "next"], path)
+		_string(item.get("name"), path + ".name")
+		_number(item.get("hpMin"), path + ".hpMin", 1)
+		_number(item.get("hpMax"), path + ".hpMax", 1)
+		_number(item.get("rewardStones"), path + ".rewardStones")
+		if _integer(item.get("hpMin")) and _integer(item.get("hpMax")) and item.hpMin > item.hpMax:
+			_fail(path, "HP range is reversed")
+		var intents: Array[Dictionary] = _list(item.get("intents"), path + ".intents")
+		if intents.is_empty():
+			_fail(path + ".intents", "at least one intent is required")
+		for intent: Dictionary in intents:
+			_keys(intent, ["label", "damage"], path + ".intents")
+			_string(intent.get("label"), path + ".intent.label")
+			_number(intent.get("damage"), path + ".intent.damage")
+		if item.has("next"):
+			if item.get("id") != "crisis-pack" or item.get("next") != "crisis-alpha":
+				_fail(path + ".next", "only crisis-pack -> crisis-alpha is allowed")
+	for event: Dictionary in sections.events:
+		for choice: Dictionary in event.get("choices", []):
+			for effect: Dictionary in choice.get("effects", []):
+				if effect.get("kind") == "flag" and ["crisis-arrived", "inquiry-due"].has(effect.get("id")):
+					_fail("events." + str(event.get("id")), "reserved engine flag " + str(effect.get("id")))
+				if effect.get("kind") == "exposure" and effect.get("id") == "inquiry-unresolved":
+					_fail("events." + str(event.get("id")), "inquiry-unresolved is engine-generated")
+	# Reuse the frozen V1 validator on a detached V1-compatible shadow. V2-only
+	# fields are checked above; this keeps schema, graph and monotone audits in
+	# one place and guarantees the reused events keep V1 semantics.
+	var shadow: Dictionary = content.duplicate(true)
+	shadow.scenarioId = VERSIONS.scenarioId
+	shadow.rulesVersion = VERSIONS.rulesVersion
+	shadow.contentVersion = VERSIONS.contentVersion
+	var shadow_parameters: Dictionary = {}
+	for key in PARAMETER_NAMES:
+		shadow_parameters[key] = parameters.get(key)
+	shadow.parameters = shadow_parameters
+	var shadow_enemies: Array = []
+	for enemy: Dictionary in sections.enemies:
+		if enemy.get("id") == "crisis-alpha":
+			continue
+		var copy: Dictionary = enemy.duplicate(true)
+		copy.erase("next")
+		shadow_enemies.append(copy)
+	shadow.enemies = shadow_enemies
+	var shadow_exposures: Array = []
+	for exposure: Dictionary in sections.exposures:
+		if exposure.get("id") == "inquiry-unresolved":
+			continue
+		shadow_exposures.append(exposure.duplicate(true))
+	shadow.exposures = shadow_exposures
+	var shadow_events: Array = []
+	for event: Dictionary in sections.events:
+		shadow_events.append(event.duplicate(true))
+	shadow_events.append({
+		"id": "engine-inquiry-root", "title": "engine inquiry root", "location": "academy",
+		"fromDay": 1, "throughDay": 14, "actionCost": 0, "requirements": [],
+		"description": "Synthetic engine producer used only for schema/graph validation.",
+		"choices": [{"id": "emit", "label": "emit", "costs": {}, "requirements": [],
+			"effects": [{"kind": "flag", "id": "inquiry-due"}], "risk": "engine only"}],
+	})
+	shadow.events = shadow_events
+	var shadow_errors: PackedStringArray = ContentValidation.new()._validate_v1(shadow)
+	for error in shadow_errors:
+		_fail("v2-shadow", error)
+	return _errors
+
+
+static func _tuple(value: Dictionary) -> String:
+	return "%s|%s|%s" % [value.get("scenarioId", ""), value.get("rulesVersion", ""), value.get("contentVersion", "")]
 
 
 func _definitions(sections: Dictionary) -> void:

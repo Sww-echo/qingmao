@@ -7,18 +7,30 @@ const Validator = preload("res://domain/content_validation.gd")
 const Catalog = preload("res://domain/content_catalog.gd")
 const GENERATED_ROOT := "res://content/generated"
 const MAX_CONTENT_BYTES := 2 * 1024 * 1024
-const VERSIONS := {
-	"scenarioId": "qingmao-fourteen-day-prototype",
-	"rulesVersion": "prototype-rules-1",
-	"contentVersion": "prototype-content-1",
+const PACKS := {
+	"prototype": {
+		"scenarioId": "qingmao-fourteen-day-prototype",
+		"rulesVersion": "prototype-rules-1",
+		"contentVersion": "prototype-content-1",
+		"source": "shared/prototype/content.json",
+		"files": 4,
+	},
+	"qingmao14-v2": {
+		"scenarioId": "qingmao-fourteen-day-v2",
+		"rulesVersion": "qingmao-rules-2",
+		"contentVersion": "qingmao-content-2",
+		"source": "shared/scenarios/qingmao14-v2/content.json",
+		"files": 1,
+	},
 }
 const MANIFEST_KEYS := ["formatVersion", "packId", "scenarioId", "rulesVersion", "contentVersion", "files"]
 const FILE_KEYS := ["source", "path", "kind", "sha256"]
 
 
 static func load_pack(pack_id: String = "prototype") -> Dictionary:
-	if pack_id != "prototype":
-		return _failure("Unsupported built-in pack: %s (V2 is a W6 deliverable)" % pack_id)
+	if not PACKS.has(pack_id):
+		return _failure("Unsupported built-in pack: %s" % pack_id)
+	var expected_versions: Dictionary = PACKS[pack_id]
 	var base := "%s/%s" % [GENERATED_ROOT, pack_id]
 	var manifest_result := _read_json("%s/manifest.json" % base)
 	if not manifest_result.ok:
@@ -30,11 +42,11 @@ static func load_pack(pack_id: String = "prototype") -> Dictionary:
 		return _failure("%s: unsupported manifest format" % base)
 	if manifest.packId != pack_id:
 		return _failure("%s: manifest packId mismatch" % base)
-	for key in VERSIONS:
-		if manifest[key] != VERSIONS[key]:
+	for key in ["scenarioId", "rulesVersion", "contentVersion"]:
+		if manifest[key] != expected_versions[key]:
 			return _failure("%s: manifest version mismatch at %s" % [base, key])
-	if not manifest.files is Array or manifest.files.size() != 4:
-		return _failure("%s: expected one content file and three fixtures" % base)
+	if not manifest.files is Array or manifest.files.size() != int(expected_versions.files):
+		return _failure("%s: expected %d manifest files" % [base, int(expected_versions.files)])
 	var seen := {}
 	var content: Variant = null
 	var content_sha256 := ""
@@ -49,7 +61,7 @@ static func load_pack(pack_id: String = "prototype") -> Dictionary:
 		if seen.has(entry.path):
 			return _failure("%s: duplicate manifest path" % base)
 		seen[entry.path] = true
-		var source := "shared/prototype/content.json"
+		var source: String = expected_versions.source
 		if entry.kind == "content":
 			if content != null or entry.path != "%s/content.json" % base or entry.source != source:
 				return _failure("%s: invalid content resource mapping" % base)
@@ -61,6 +73,8 @@ static func load_pack(pack_id: String = "prototype") -> Dictionary:
 			if entry.sha256 != content_sha256:
 				return _failure("%s: content SHA256 mismatch" % entry.path)
 		elif entry.kind == "fixture":
+			if pack_id != "prototype":
+				return _failure("%s: V2 has no fixture records" % base)
 			var filename: String = entry.path.get_file()
 			if filename not in ["war-ready-42.json", "network-42.json", "labor-42.json"]:
 				return _failure("%s: unknown fixture" % base)

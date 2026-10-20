@@ -1,0 +1,43 @@
+{
+  "id": "godot-v2-gameplay",
+  "name": "godot-v2-gameplay",
+  "title": "Godot V2 版本化内容与规则增量",
+  "description": "实现 V2 内容源、双端版本化校验、D1–D5 规则增量与独立测试；V1 冻结对照不变。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "codex",
+  "assignee": "codex",
+  "createdAt": "2026-10-20",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "initial-import",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "10-18-godot-playable-slice",
+  "relatedFiles": [],
+  "notes": "2026-10-20 W6 第一增量完成：V2 内容（28事件/3敌人/40参数）、双端版本化校验、sync/loader/state_codec、D1–D5 与 combat_v2。10 套件 6821 checks 0 失败；Node 内容工具 9/9（2 项需 GODOT_BIN 跳过）；--pack all --check 通过，V1 生成物未变。下一增量：V2 启动参数/UI 展示、开发集调参与消融、留出集首跑。",
+  "meta": {
+    "w6": {
+      "status": "first-increment-verified",
+      "evidence": ".trellis/tasks/10-20-godot-v2-gameplay/w6-v2-content-rules-evidence.md",
+      "scenario": "qingmao-fourteen-day-v2",
+      "events": 28,
+      "enemies": 3,
+      "parameters": 40,
+      "contentSha256": "a9380526cb52d10f8b0e26e48be105a4cfa51bf6dfadfb4ca97f7ff08a5a417a",
+      "suiteChecks": "6821/6821",
+      "combatV2Checks": 33,
+      "nodeTests": "9/9",
+      "v1ArtifactsUnchanged": true,
+      "balanceTuning": false,
+      "holdoutRun": false,
+      "uiAdded": false
+    }
+  }
+}

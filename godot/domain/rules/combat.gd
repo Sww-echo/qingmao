@@ -13,6 +13,9 @@ static func start_battle(state: GameState, enemy_id: String, purpose: String, ca
 	if purpose == "crisis":
 		state.crisis = "fighting"
 	Rules._log(state, "combat", "%s接战，生命%d。意图和每次伤害在行动前可查。" % [enemy["name"], combat.enemy_hp])
+	# D4: drilled gives one free opening strike in crisis battles only.
+	if purpose == "crisis" and catalog.is_v2() and state.flags.has("drilled"):
+		_opening_strike(state, catalog)
 
 
 static func die(state: GameState, reason: String) -> void:
@@ -80,26 +83,7 @@ static func apply(state: GameState, move: String, catalog: ContentCatalog) -> vo
 	var count: String = "combat:%s" % move
 	state.action_counts[count] = state.action_counts.get(count, 0) + 1
 	if combat.enemy_hp == 0:
-		state.combat = null
-		var enemy: Dictionary = catalog.by_id["enemies"][combat.enemy_id]
-		if combat.purpose != "survey":
-			Rules._resource_delta(state, "stones", int(enemy["rewardStones"]), "combat-victory", catalog)
-		if combat.purpose == "patrol":
-			state.relations["guard-captain"] = mini(100, state.relations["guard-captain"] + 3)
-			Rules._flag(state, "patrol-cleared")
-			Rules._log(state, "combat", "救援胜利：获得10元石和队长关系+3，敌人不再出手。")
-		elif combat.purpose == "survey":
-			Rules._log(state, "combat", "驱走侦察途中遇到的山狼；保留已采情报和药草，无巡山委托报酬或队长关系奖励。")
-		else:
-			state.crisis = "resolved"
-			state.ending = GameState.EndingState.new()
-			state.ending.id = "held-the-line"
-			state.ending.outcome = "survived"
-			state.ending.reasons.assign([
-				"修为%d决定月刃伤害和真元容量；%s完成击退。" % [state.cultivation, "清醒月光蛊" if Queries.is_gu_usable(state, "moonlight") else "普通攻击"],
-				"%s，剩余%d生命；本场使用药草%d份、酒%d份。" % ["清醒玉皮蛊降低连续受伤" if Queries.is_gu_usable(state, "jade-skin") else "没有玉皮减伤", state.hp, combat.herbs_used, combat.wine_used],
-			])
-			Rules._log(state, "crisis", " ".join(state.ending.reasons))
+		_resolve_defeat(state, catalog, combat)
 		return
 	# Defensive moves change guard, so recalculate damage without changing the published intent.
 	var incoming: int = int(Queries.combat_forecast(state, catalog)["incomingDamage"])
@@ -107,3 +91,67 @@ static func apply(state: GameState, move: String, catalog: ContentCatalog) -> vo
 	combat.guard = 0
 	combat.turn += 1
 	Rules._log(state, "combat", "%s造成%d伤害；%s造成%d伤害，剩余生命%d。" % [move, damage, forecast["intent"], incoming, state.hp])
+
+
+## D3 shared defeat path: phase transition first, then the normal V1 victory.
+static func _resolve_defeat(state: GameState, catalog: ContentCatalog, combat: GameState.CombatState) -> void:
+	var enemy: Dictionary = catalog.by_id["enemies"][combat.enemy_id]
+	if catalog.is_v2() and enemy.has("next"):
+		var next_id: String = String(enemy["next"])
+		var next_enemy: Dictionary = catalog.by_id["enemies"].get(next_id, {})
+		if not next_enemy.is_empty():
+			state.combat = GameState.CombatState.new()
+			state.combat.enemy_id = next_id
+			state.combat.purpose = combat.purpose
+			state.combat.enemy_hp = int(next_enemy["hpMin"]) + floori(
+				Rules._draw(state) * (int(next_enemy["hpMax"]) - int(next_enemy["hpMin"]) + 1))
+			state.combat.turn = combat.turn
+			state.combat.guard = 0
+			state.combat.herbs_used = combat.herbs_used
+			state.combat.wine_used = combat.wine_used
+			state.qi = mini(Queries.max_qi(state, catalog), state.qi + int(catalog.parameters["phaseBreatherQi"]))
+			Rules._log(state, "combat", "%s倒下；喘息回气，%s接战，生命%d。" % [
+				enemy["name"], next_enemy["name"], state.combat.enemy_hp,
+			])
+			return
+	state.combat = null
+	if combat.purpose != "survey":
+		Rules._resource_delta(state, "stones", int(enemy["rewardStones"]), "combat-victory", catalog)
+	if combat.purpose == "patrol":
+		state.relations["guard-captain"] = mini(100, state.relations["guard-captain"] + 3)
+		Rules._flag(state, "patrol-cleared")
+		Rules._log(state, "combat", "救援胜利：获得10元石和队长关系+3，敌人不再出手。")
+	elif combat.purpose == "survey":
+		Rules._log(state, "combat", "驱走侦察途中遇到的山狼；保留已采情报和药草，无巡山委托报酬或队长关系奖励。")
+	else:
+		state.crisis = "resolved"
+		state.ending = GameState.EndingState.new()
+		state.ending.id = "held-the-line"
+		state.ending.outcome = "survived"
+		state.ending.reasons.assign([
+			"修为%d决定月刃伤害和真元容量；%s完成击退。" % [state.cultivation, "清醒月光蛊" if Queries.is_gu_usable(state, "moonlight") else "普通攻击"],
+			"%s，剩余%d生命；本场使用药草%d份、酒%d份。" % ["清醒玉皮蛊降低连续受伤" if Queries.is_gu_usable(state, "jade-skin") else "没有玉皮减伤", state.hp, combat.herbs_used, combat.wine_used],
+		])
+		Rules._log(state, "crisis", " ".join(state.ending.reasons))
+
+
+## D4 free opening strike. It shares the normal damage path but never triggers
+## the enemy response or consumes a daily action.
+static func _opening_strike(state: GameState, catalog: ContentCatalog) -> void:
+	var combat: GameState.CombatState = state.combat
+	if combat == null:
+		return
+	var moonlight: bool = Queries.is_gu_usable(state, "moonlight")
+	var cost: int = int(catalog.by_id["gu"]["moonlight"]["qiCost"])
+	var move: String = "moonlight" if moonlight and state.qi >= cost else "attack"
+	var damage: int = 0
+	if move == "moonlight":
+		state.qi -= cost
+		damage = int(catalog.by_id["gu"]["moonlight"]["power"]) + floori(float(state.cultivation) / 6) * 2
+	else:
+		damage = 3 + floori(float(state.cultivation) / 6)
+		state.qi = mini(Queries.max_qi(state, catalog), state.qi + 1)
+	combat.enemy_hp = maxi(0, combat.enemy_hp - damage)
+	Rules._log(state, "combat", "演武先手：%s造成%d伤害。" % ["月刃" if move == "moonlight" else "普通攻击", damage])
+	if combat.enemy_hp == 0:
+		_resolve_defeat(state, catalog, combat)

@@ -43,13 +43,26 @@ static func apply(state: GameState, effect: Dictionary, source: String, catalog:
 				V1Combat.start_battle(state, "crisis-pack", "crisis", catalog)
 			else:
 				var demand: int = int(parameters["crisisThreatMin"]) + floori(Rules._draw(state) * (int(parameters["crisisThreatMax"]) - int(parameters["crisisThreatMin"]) + 1))
+				var reduced: bool = catalog.is_v2() and state.flags.has("safe-route")
+				if reduced:
+					demand = maxi(0, demand - int(parameters["shelterRouteDiscount"]))
 				var readiness: int = state.clues + state.relations["guard-captain"] - state.exposures.size()
+				if readiness < demand and catalog.is_v2():
+					var gap: int = demand - readiness
+					var price: int = gap * int(parameters["shelterBuyoutStonePerPoint"])
+					if gap <= int(parameters["shelterBuyoutMaxGap"]) and state.resources["stones"] >= price:
+						Rules._resource_delta(state, "stones", -price, "shelter-buyout", catalog)
+						readiness = demand
+						Rules._log(state, "risk", "庇护准备差%d点，破财%d元石补齐。狼群已至，钱换来的只是这一次体面。" % [gap, price])
 				if readiness >= demand:
 					state.ending = GameState.EndingState.new()
 					state.ending.id = "shelter-secured"
 					state.ending.outcome = "survived"
 					state.ending.reasons.assign([
-						"地听草与路线标记发挥作用：情报%d＋队长关系%d−暴露%d＝准备%d，覆盖本次需求%d。" % [state.clues, state.relations["guard-captain"], state.exposures.size(), readiness, demand],
+						"地听草与路线标记发挥作用：情报%d＋队长关系%d−暴露%d＝准备%d，覆盖本次需求%d%s。" % [
+							state.clues, state.relations["guard-captain"], state.exposures.size(), readiness, demand,
+							"（复核退路使需求−%d）" % int(parameters["shelterRouteDiscount"]) if reduced else "",
+						],
 						"掌柜庇护、已交付药资与已完成守望班次兑现，支付6元石护送费后安全撤入。",
 					])
 					state.crisis = "resolved"
