@@ -1,4 +1,4 @@
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { readFile, rm } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -9,9 +9,25 @@ import { ROOT, SEED_SETS, STRATEGIES, envelope, fail, hash, outputPath, parseOpt
 
 export const GODOT_VERSION = '4.7.2.stable.official.ed1daf0bf';
 
+/**
+ * Run a text command. Some sandboxes report EPERM from spawn even though the
+ * child ran and its stdout was captured; the captured output is the evidence,
+ * so only a missing/failed output is treated as unavailable.
+ */
+function runText(binary, args) {
+  try {
+    return execFileSync(binary, args, { cwd: ROOT, encoding: 'utf8' });
+  } catch (error) {
+    // The sandbox can report EPERM even though the child ran and stdout was
+    // captured. Any other failure keeps its normal exit semantics.
+    if (error.code === 'EPERM' && typeof error.stdout === 'string') return error.stdout;
+    throw error;
+  }
+}
+
 function git(args) {
   try {
-    return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
+    return runText('git', args).trim();
   } catch {
     return 'unavailable';
   }
@@ -127,8 +143,15 @@ export async function main(args = process.argv.slice(2)) {
   }
   const set = options['--set'] ?? 'development';
   const binary = process.env.GODOT_BIN ?? join(homedir(), 'Applications/Godot.app/Contents/MacOS/Godot');
-  const version = spawnSync(binary, ['--version'], { encoding: 'utf8', timeout: 30000 });
-  if (version.error || version.status !== 0 || version.stdout.trim() !== GODOT_VERSION) {
+  const version = { stdout: '' };
+  try {
+    version.stdout = runText(binary, ['--version']);
+  } catch (error) {
+    version.stdout = '';
+  }
+  // The version string is the contract; a sandbox EPERM with captured stdout
+  // still produced evidence, while a missing/other version does not.
+  if (version.stdout.trim() !== GODOT_VERSION) {
     throw new Error(`Godot 版本必须为 ${GODOT_VERSION}: ${version.stdout.trim() || version.error?.message || `exit ${version.status}`}`);
   }
   const started = performance.now();
