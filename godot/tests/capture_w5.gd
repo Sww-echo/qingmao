@@ -114,8 +114,7 @@ func _settle(frames: int) -> void:
 
 func _shot(name: String) -> void:
 	var image: Image = root.get_texture().get_image()
-	# OpenGL readback is bottom-up on some Linux/X11 drivers; store upright PNGs
-	# so screenshots can be reviewed without external post-processing.
-	image.flip_y()
+	# Verified with a red/blue corner marker: get_image() row 0 is the engine
+	# top edge on this OpenGL/X11 driver, so no flip is applied.
 	var path: String = _out.path_join(name + ".png")
 	print("SHOT %s error=%s" % [path, image.save_png(path)])
