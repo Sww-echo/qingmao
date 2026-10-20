@@ -85,7 +85,7 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 复核后：9 套件 6761 检查、war-ready 120、network 118、labor 118、reload 27、
 title 31 均 0 失败；`QINGMAO_FLOW_STRATEGY` 路径与 720p 布局回归通过。
 
-���保留的 review 备注（未在本轮改）：
+仍保留的 review 备注（未在本轮改）：
 
 - `SaveService.flush_pending()` 失败后不恢复 `_pending`；当前会明确报错并在标题显示
   “上次保存失败”，但内存中的待写快照会被丢弃。修复涉及存档重试语义与故障用例，
