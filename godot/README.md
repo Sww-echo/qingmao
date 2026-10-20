@@ -53,6 +53,19 @@ npm run godot:sync-content
 # W5：19 个事件逐一通过通用事件 UI 检查（无逐事件写代码）
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/event_coverage.gd
 
+# W5：双击/模态/结束此日输入韧性
+~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/input_robustness.gd
+
+# W5：两进程窗口级重开（write 进程保存事件态，read 进程从标题继续）
+QINGMAO_RELOAD_MODE=write QINGMAO_RELOAD_ROOT=/tmp/w5-reload \
+  ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/w5_window_reload.gd
+QINGMAO_RELOAD_MODE=read  QINGMAO_RELOAD_ROOT=/tmp/w5-reload \
+  ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/w5_window_reload.gd
+
+# W5：真实窗口截图（需要可用 X11/桌面；输出被 .gitignore 忽略）
+QINGMAO_CAPTURE_OUT=artifacts/godot/w5 \
+  ~/Applications/Godot.app/Contents/MacOS/Godot --path godot --script res://tests/capture_w5.gd
+
 # W5：按策略跑同一套场景控件流程（war-ready / network / labor）
 QINGMAO_FLOW_STRATEGY=network \
   ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/play_flow.gd
