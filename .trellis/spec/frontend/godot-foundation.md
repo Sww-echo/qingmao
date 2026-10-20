@@ -266,3 +266,27 @@ followed by a fresh verifier process. SaveFaults also checks four golden recover
 points on real disk with complete state equality and the next action, real
 tampering, and switches during I/O. Native automated input is not human playtest
 acceptance. The versioned UI handoff is documented in `godot/README.md` section 7.
+
+## 10. W4 UI handoff (playable day 1)
+
+- Scenes submit dictionary actions through `GameSession.dispatch` only. They
+  never read `GameState`, call `Rules`, or recompute legality; disabled reasons
+  come from `view.actionOptions`.
+- A modal derived from state owns both pointer and keyboard input. While pause,
+  day review or ending is visible, no HUD action may commit; event, gu and
+  combat modals accept only their own action types. Mirror this in
+  `_modal_action_allowed` and disable `focus_behavior_recursive` on the HUD
+  panels so Tab/Enter cannot reach hidden controls.
+- The day review is keyed by revision and dismissed only by its own button;
+  it must render before a final-day crisis event.
+- Location changes happen in the session, not by scene teleport. On location
+  change close the academy explain panel, clear/rebuild the hotspot prompt and
+  hide academy-only hotspot geometry; release `player.input_locked`.
+- The session panel scrolls in a `ScrollContainer` with `follow_focus`; the
+  action column must fit 1280x720 without requiring the window to grow.
+- Seed parsing is ASCII digits only, rejects more than 10 significant digits
+  before `int()`, and accepts exactly 0..4294967295.
+- Tests: `tests/play_flow.gd` drives real controls through a full war-ready run
+  and asserts modal isolation; `tests/title_flow.gd` covers main -> title ->
+  new run -> autosave -> title -> continue. Headless tests do not replace
+  native window/human playtest evidence.

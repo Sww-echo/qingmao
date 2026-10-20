@@ -3,7 +3,7 @@
   "name": "godot-playable-slice",
   "title": "Godot 试玩：三地点探索与危机闭环",
   "description": "完成学堂、客栈、竹林三个可交互场景及事件、蛊虫、回合战斗、危机预警与结算，形成可从新局玩到结局的十四日试玩。",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": "playable-slice",
   "package": null,
@@ -25,14 +25,27 @@
     ".trellis/tasks/10-18-godot-playable-slice/design.md",
     ".trellis/tasks/10-18-godot-playable-slice/implement.md"
   ],
-  "notes": "2026-10-18 最新用户要求先创建详细Godot架构/玩法计划；P1既有证据保留，P2–P4按本版评审后开工，当前未启动。",
+  "notes": "2026-10-20 W4 可玩第 1 日已实现并验证：标题种子/继续、HUD、三地点移动、事件/蛊/战斗/日结/暂停/结局模态，模态动作白名单与键盘焦点隔离。自动化：9 套件 6761 检查、play_flow 83 检查、title_flow 31 检查均 0 失败；play_flow 为场景控件驱动，不是真人键鼠。窗口截图拍摄于修复前，修复后的模态隔离与滚动布局以 headless 回归验证。W5 三地点场景化、19 事件真人三局与 V2 尚未实施。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
-    "planning_review": "awaiting-architecture-review",
-    "implementation_authorized": false,
+    "planning_review": "approved-2026-10-18",
+    "implementation_authorized": true,
     "architecture_plan": ".trellis/tasks/10-18-godot-architecture-plan",
-    "latest_review_status": "awaiting-review",
-    "prior_planning_review": "approved-2026-10-18"
+    "latest_review_status": "w4-automated-verified",
+    "prior_planning_review": "approved-2026-10-18",
+    "implementation_plan": ".trellis/tasks/10-18-godot-impl-redesign",
+    "w4": {
+      "status": "verified-awaiting-review",
+      "evidence": ".trellis/tasks/10-18-godot-playable-slice/w4-day1-evidence.md",
+      "suite_checks": "6761/6761",
+      "play_flow_checks": 83,
+      "title_flow_checks": 31,
+      "human_playtest": false,
+      "linux_window_verified": false,
+      "modal_isolation_verified": true,
+      "implementation_committed": false,
+      "prior_window_screenshots": true
+    }
   }
 }
