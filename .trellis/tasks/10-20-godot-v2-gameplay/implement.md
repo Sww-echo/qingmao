@@ -26,8 +26,8 @@
 
 - [x] `content_validation`：两 pack 正例 + V2 负例（91 checks）。
 - [x] `state_codec`：V2 阶段二/询问暴露往返；V1 拒绝（1760 checks）。
-- [x] 新增 `combat_v2` 套件并加入 runner（33 checks）。
-- [x] V1 九套件、play_flow、event_coverage、reload_flow 全绿（6821 checks）。
+- [x] 新增 `combat_v2` 套件并加入 runner（43 checks，含 V2 动作解码回归）。
+- [x] V1 九套件、play_flow、event_coverage、reload_flow 全绿（6831 checks）。
 - [x] `--pack all --check` 与 `git diff` 证明 V1 生成物未变。
 - [x] 证据 `w6-v2-content-rules-evidence.md`。
 
@@ -35,4 +35,5 @@
 
 - 退出：双端 V2 校验、D1–D5、V1 回归全部通过；V1 哈希不变。
 - 回退：关闭 V2 pack 即回 V1；不改 V1 内容/夹具/对照。
-- 明确不做：平衡调参、留出集首跑、UI 新控件（这些在 W6 后半/W7）。
+- 已加开发启动参数 `--pack=qingmao14-v2`，未新增标题控件。
+- 明确不做：平衡调参、留出集首跑、专门 UI 新控件（这些在 W6 后半/W7）。

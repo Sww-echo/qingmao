@@ -21,7 +21,7 @@
   "children": [],
   "parent": "10-18-godot-playable-slice",
   "relatedFiles": [],
-  "notes": "2026-10-20 W6 第一增量完成：V2 内容（28事件/3敌人/40参数）、双端版本化校验、sync/loader/state_codec、D1–D5 与 combat_v2。10 套件 6821 checks 0 失败；Node 内容工具 9/9（2 项需 GODOT_BIN 跳过）；--pack all --check 通过，V1 生成物未变。下一增量：V2 启动参数/UI 展示、开发集调参与消融、留出集首跑。",
+  "notes": "2026-10-20 W6 第一增量完成：V2 内容（28事件/3敌人/40参数）、双端版本化校验、sync/loader/state_codec、D1–D5、combat_v2 与 pack 启动参数。10 套件 6831 checks 0 失败；Node 内容工具 9/9（2 项需 GODOT_BIN 跳过）；--pack all --check 通过，V1 生成物未变。Review 修复了 V2 动作解码硬编码 V1 的 bug。下一增量：V2 开发集调参与消融、留出集首跑。",
   "meta": {
     "w6": {
       "status": "first-increment-verified",
@@ -30,14 +30,16 @@
       "events": 28,
       "enemies": 3,
       "parameters": 40,
-      "contentSha256": "a9380526cb52d10f8b0e26e48be105a4cfa51bf6dfadfb4ca97f7ff08a5a417a",
-      "suiteChecks": "6821/6821",
-      "combatV2Checks": 33,
+      "contentSha256": "70c04afba159e88ae7848ec3ca4f972ba3789ddddb176f66e75f70efbc410b0a",
+      "suiteChecks": "6831/6831",
+      "combatV2Checks": 43,
       "nodeTests": "9/9",
       "v1ArtifactsUnchanged": true,
       "balanceTuning": false,
       "holdoutRun": false,
-      "uiAdded": false
+      "uiAdded": false,
+      "packSwitchChecks": 16,
+      "packStartup": true
     }
   }
 }

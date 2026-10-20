@@ -24,15 +24,28 @@ var _save_service: SaveService
 var _router: ScreenRouter
 var save_root: String = SaveService.ROOT
 var _storage_warning: String = ""
+## Development-only pack selector. Default stays V1; `--pack=qingmao14-v2`
+## selects the W6 pack without adding a title-screen control.
+var pack_id: String = "prototype"
 
 
 func _ready() -> void:
 	var arguments := OS.get_cmdline_user_args()
-	if not arguments.is_empty():
-		if arguments.size() != 1 or arguments[0] != "--verify-content":
-			printerr("Unsupported startup arguments: %s" % " ".join(arguments))
+	var verify_content: bool = false
+	for argument: String in arguments:
+		if argument == "--verify-content":
+			verify_content = true
+		elif argument.begins_with("--pack="):
+			pack_id = argument.trim_prefix("--pack=")
+		else:
+			printerr("Unsupported startup argument: %s" % argument)
 			get_tree().quit(2)
 			return
+	if verify_content and not arguments.is_empty() and arguments.size() != 1:
+		printerr("--verify-content cannot be combined with --pack")
+		get_tree().quit(2)
+		return
+	if verify_content:
 		var verified := ContentLoaderScript.verify_all()
 		if not verified.ok:
 			printerr(verified.error)
@@ -44,7 +57,7 @@ func _ready() -> void:
 			])
 		get_tree().quit(0)
 		return
-	var loaded := ContentLoaderScript.load_pack()
+	var loaded := ContentLoaderScript.load_pack(pack_id)
 	if not loaded.ok:
 		push_error(loaded.error)
 		get_tree().quit(1)

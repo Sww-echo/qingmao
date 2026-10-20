@@ -44,6 +44,12 @@ npm run godot:sync-content
 # 全部九套件：基础、规则回放、session_semantics / save_faults
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/run_all.gd
 
+# W6：以 V2 pack 启动（默认仍是 prototype V1；无新增标题控件）
+~/Applications/Godot.app/Contents/MacOS/Godot --path godot -- --pack=qingmao14-v2
+
+# W6：V2 组合根流程（标题、开局、自动存档、继续、独立槽位）
+~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/w6_pack_switch.gd
+
 # W4/W5：用真实场景控件跑完一局（事件/蛊/战斗/日结/存档重载，非规则直调）
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/play_flow.gd
 
@@ -173,8 +179,9 @@ godot/
 - manifest 的 `files` 包含 `source`、`path`（`res://`）、`sha256`、`kind`。运行时读取并验证
   `content`；所有摘要必须为 64 位小写十六进制。`fixture` 仅供开发，导出不读测试资源。
   版本三元组必须精确匹配 V1。
-- `--pack prototype` 为默认；`qingmao14-v2` 和 `all` 留给 W6，当前明确失败，不静默降级。
-  未知/重复/缺值选项失败。`--check` 不创建目录、不修复漂移；多余生成文件也报错。
+- `--pack prototype` 为默认；`qingmao14-v2` 加载 W6 手写 pack，`all` 同步/校验两包。
+  V1 生成物逐字节不变；未知/重复/缺值选项失败。`--check` 不创建目录、不修复漂移；
+  多余生成文件也报错。
 - `CanonicalJson.encode` 返回 `{ok,text,bytes}` 或 `{ok:false,error}`；数组保序、
   两空格缩进、尾随 LF、安全整数十进制和 UTF-8；SHA256 对字节计算。
 - `StateCodec.decode(data,catalog)` / `encode(state,catalog)` 在转换前检查整数性与范围，

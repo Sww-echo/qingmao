@@ -25,9 +25,12 @@ var move: String = ""
 static func decode(value: Variant, catalog: ContentCatalog, active_event: String = "") -> Dictionary:
 	if catalog == null:
 		return _fail("action: content catalog is required")
-	if catalog.data.get("scenarioId") != "qingmao-fourteen-day-prototype" \
-		or catalog.data.get("rulesVersion") != "prototype-rules-1" \
-		or catalog.data.get("contentVersion") != "prototype-content-1":
+	var tuple: String = "%s|%s|%s" % [
+		catalog.data.get("scenarioId", ""), catalog.data.get("rulesVersion", ""),
+		catalog.data.get("contentVersion", ""),
+	]
+	if tuple != "qingmao-fourteen-day-prototype|prototype-rules-1|prototype-content-1" \
+			and tuple != "qingmao-fourteen-day-v2|qingmao-rules-2|qingmao-content-2":
 		return _fail("action: unsupported content version")
 	if not value is Dictionary:
 		return _fail("action: expected an object")

@@ -17,6 +17,7 @@ func run(_tree: SceneTree) -> Dictionary:
 	_d3_phase_chain()
 	_d4_opening_strike()
 	_d5_fortify()
+	_action_codec()
 	return _result()
 
 func _d1_inquiry() -> void:
@@ -182,6 +183,25 @@ func _d5_fortify() -> void:
 	patrol.flags.append("fortified")
 	_expect(int(Queries.combat_forecast(patrol, _catalog).incomingDamage) == 5,
 		"D5 does not apply outside crisis")
+
+## Regression: V2 actions must decode under the V2 tuple. This caught a real
+## bug where GameAction.decode still refused every V2 click as shape-invalid.
+func _action_codec() -> void:
+	for action: Dictionary in [
+		{"type": "OPEN_EVENT", "eventId": "briefing"},
+		{"type": "CHOOSE", "choiceId": "acknowledge"},
+		{"type": "TRAVEL", "location": "inn"},
+		{"type": "COMBAT", "move": "moonlight"},
+	]:
+		var decoded: Dictionary = GameAction.decode(action, _catalog)
+		_expect(decoded.ok, "V2 action decodes: %s %s" % [action, decoded.get("error", "")])
+		if decoded.ok:
+			_expect(decoded.action.to_data() == action, "V2 action round-trips: %s" % action)
+	var v1_loaded: Dictionary = ContentLoader.load_pack("prototype")
+	_expect(v1_loaded.ok, "V1 pack still loads")
+	if v1_loaded.ok:
+		_expect(not GameAction.decode({"type": "OPEN_EVENT", "eventId": "inquiry"}, v1_loaded.catalog).ok,
+			"V1 still rejects V2-only event IDs")
 
 func _shelter_state() -> GameState:
 	var state: GameState = Rules.create(42, _catalog)

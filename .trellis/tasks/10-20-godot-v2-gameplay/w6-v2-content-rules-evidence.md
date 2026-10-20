@@ -12,7 +12,7 @@
 | rulesVersion | `qingmao-rules-2` |
 | contentVersion | `qingmao-content-2` |
 | 事件 / 敌人 / 参数 | 28 / 3 / 40 |
-| contentSha256 | `a9380526cb52d10f8b0e26e48be105a4cfa51bf6dfadfb4ca97f7ff08a5a417a` |
+| contentSha256 | `70c04afba159e88ae7848ec3ca4f972ba3789ddddb176f66e75f70efbc410b0a` |
 | 新增参数 | inquiryThreshold、phaseBreatherQi、shelterRouteDiscount、shelterBuyoutMaxGap、shelterBuyoutStonePerPoint、fortifyTurns、fortifyDamageReduction |
 | 新增敌人 | `crisis-alpha`；`crisis-pack.next = crisis-alpha` |
 | 新增暴露 | `inquiry-unresolved`（仅引擎生成） |
@@ -49,7 +49,7 @@ node scripts/godot-sync-content.mjs --pack all --check
 | D1 盘问 | `V1DayCycle.apply` | 阈值前/后、只触发一次、第 14 日未了结生成唯一暴露、已完成不生成 |
 | D2 借势 | `V1Effects` shelter 分支 | safe-route 折扣、gap≤2 补钱、ledger、gap 超限转战斗、不误扣 |
 | D3 双阶段 | `V1Combat._resolve_defeat` | 阶段切换、喘息封顶、护体清零、turn/药酒连续、终局胜利 |
-| D4 先手 | `V1Combat._opening_strike` | 月刃/普攻回退、不占回合、非危机不触��� |
+| D4 先手 | `V1Combat._opening_strike` | 月刃/普攻回退、不占回合、非危机不触发 |
 | D5 加固 | `Queries.fortify_reduction` | turn=0/1 生效、turn=2 停止、阶段二/普通战不生效、预览=实伤 |
 
 ## 5. 自动验证（Linux x86_64）
@@ -63,17 +63,29 @@ node scripts/godot-sync-content.mjs --pack all --check
 
 | 验证 | 结果 |
 | --- | --- |
-| 全部 10 套件 | 6821 checks / 0 failures |
+| 全部 10 套件 | 6831 checks / 0 failures |
 | `state_codec` | 1760 checks；V2 阶段二/盘问暴露往返，V1 拒绝 |
 | `content_validation` | 91 checks；双 pack 正例 + V2 负例 |
-| `combat_v2` | 33 checks；D1–D5 |
+| `combat_v2` | 43 checks；D1–D5 + V2 动作解码回归 |
 | Node 内容工具 | 9 tests：7 pass / 0 fail / 2 skipped（跳过需 GODOT_BIN 的进程级用例） |
 | `--pack all --check` | 7 文件一致；V1 生成物 `git diff` 为空 |
+| `w6_pack_switch` | 16 checks；`pack_id`/`—pack=` 载入 V2、独立槽位、继续恢复、V2 事件可打开 |
 
 ## 6. 未做 / 风险
 
 - 未调平衡、未跑开发集 1–100、未登记/首跑留出集 20001–20100。
-- 未新增 UI：V2 启动参数/pack 选择、盘问与阶段二窗口展示属于下一增量。
+- 已提供开发启动参数 `--pack=qingmao14-v2`（无新增标题控件）；盘问/阶段二的
+  专门展示仍属于下一增量。
 - V2 数值仍是设计假设；战斗难度、后段非劳作密度与两路线胜率需 W6 后半验证。
 - `V1Combat` 仍由脚本名沿用 V1；V2 分支只在 `catalog.is_v2()` 下生效，
-  未改 V1 内容/���具/对照。
+  未改 V1 内容/夹具/对照。
+
+## 7. Review 发现与修复
+
+1. **V2 动作全部被拒绝**：`GameAction.decode` 仍硬编码 V1 三元组，导致 V2 界面点击
+   返回 `shape-invalid`。改为按 V1/V2 版本表路由，并新增 `combat_v2` 动作解码回归。
+2. **V2 无法从组合根启动**：`main.gd` 固定 `load_pack()`。新增 `pack_id` 与
+   `--pack=<id>` 开发参数；默认仍为 V1，启动参数与 `--verify-content` 互斥。
+3. **README 仍写 V2 留给 W6 / 版本三元组必须匹配 V1**：改为两包版本表与可执行命令。
+4. **证据中的 contentSha256 过期**：按最终 canonical 源重新计算为
+   `70c04afba159e88ae7848ec3ca4f972ba3789ddddb176f66e75f70efbc410b0a`。
