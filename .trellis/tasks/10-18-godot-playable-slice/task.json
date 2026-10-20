@@ -15,7 +15,7 @@
   "branch": null,
   "base_branch": "initial-import",
   "worktree_path": null,
-  "commit": null,
+  "commit": "8251747",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -44,8 +44,9 @@
       "human_playtest": false,
       "linux_window_verified": false,
       "modal_isolation_verified": true,
-      "implementation_committed": false,
-      "prior_window_screenshots": true
+      "implementation_committed": true,
+      "prior_window_screenshots": true,
+      "implementation_commit": "8251747"
     }
   }
 }
