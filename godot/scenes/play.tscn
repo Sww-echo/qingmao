@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scenes/play.gd" id="1_play"]
 [ext_resource type="Script" path="res://presentation/player.gd" id="2_player"]
@@ -17,6 +17,33 @@ content_margin_top = 8.0
 content_margin_right = 14.0
 content_margin_bottom = 8.0
 bg_color = Color(0.06, 0.07, 0.09, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 20.0
+bg_color = Color(0.1, 0.11, 0.13, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.36, 0.22, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_left"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.06, 0.07, 0.09, 0.78)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -125,7 +152,7 @@ anchor_right = 1.0
 offset_left = 16.0
 offset_top = 12.0
 offset_right = -16.0
-offset_bottom = 60.0
+offset_bottom = 64.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
@@ -133,20 +160,65 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
 [node name="StatusLine" type="Label" parent="UI/Root/StatusBar"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "架构演示"
+text = "真实规则 · 可玩第 1 日（三地点场景属 W5）"
+autowrap_mode = 3
+
+[node name="LogPanel" type="PanelContainer" parent="UI/Root"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 76.0
+offset_right = 356.0
+offset_bottom = -16.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_left")
+
+[node name="Margin" type="MarginContainer" parent="UI/Root/LogPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="Body" type="VBoxContainer" parent="UI/Root/LogPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LogTitle" type="Label" parent="UI/Root/LogPanel/Margin/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "行记"
+
+[node name="LogHint" type="Label" parent="UI/Root/LogPanel/Margin/Body"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.66, 0.72, 1)
+theme_override_font_sizes/font_size = 15
+text = "每次有效操作都会记入并自动保存。"
+autowrap_mode = 3
+
+[node name="LogList" type="RichTextLabel" parent="UI/Root/LogPanel/Margin/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+selection_enabled = true
 
 [node name="SessionPanel" type="PanelContainer" parent="UI/Root"]
 layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = -174.0
+offset_left = -576.0
+offset_top = 76.0
 offset_right = -16.0
 offset_bottom = -16.0
-grow_vertical = 0
-grow_horizontal = 2
+grow_horizontal = 0
+grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
 
 [node name="Margin" type="MarginContainer" parent="UI/Root/SessionPanel"]
@@ -156,47 +228,191 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 10
 
-[node name="Body" type="VBoxContainer" parent="UI/Root/SessionPanel/Margin"]
+[node name="Scroll" type="ScrollContainer" parent="UI/Root/SessionPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 6
+follow_focus = true
+horizontal_scroll_mode = 0
 
-[node name="SessionHud" type="Label" parent="UI/Root/SessionPanel/Margin/Body"]
+[node name="Body" type="VBoxContainer" parent="UI/Root/SessionPanel/Margin/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="SessionHud" type="Label" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "第1日 · 行动3 · 生命28/28 · 真元12/12 · 元石12 · revision 0"
+theme_override_font_sizes/font_size = 16
+text = "第1日 · 行动3 · 生命28/28 · 真元12/12"
 autowrap_mode = 3
 
-[node name="SaveStatus" type="Label" parent="UI/Root/SessionPanel/Margin/Body"]
+[node name="SaveStatus" type="Label" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.62, 0.72, 0.66, 1)
+theme_override_font_sizes/font_size = 15
 text = "尚未保存"
 autowrap_mode = 3
 
-[node name="LastEvent" type="Label" parent="UI/Root/SessionPanel/Margin/Body"]
+[node name="LocationName" type="Label" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "学堂"
+
+[node name="LocationDesc" type="Label" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.74, 0.78, 1)
+theme_override_font_sizes/font_size = 15
 text = ""
 autowrap_mode = 3
 
-[node name="Actions" type="HBoxContainer" parent="UI/Root/SessionPanel/Margin/Body"]
+[node name="TravelHeader" type="Label" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.72, 0.45, 1)
+theme_override_font_sizes/font_size = 16
+text = "移动（不耗行动）"
+
+[node name="TravelRow" type="HBoxContainer" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="WorkButton" type="Button" parent="UI/Root/SessionPanel/Margin/Body/Actions"]
+[node name="TravelAcademy" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/TravelRow"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "学堂"
+
+[node name="TravelInn" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/TravelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "客栈"
+
+[node name="TravelBamboo" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/TravelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "竹林"
+
+[node name="EventsHeader" type="Label" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.72, 0.45, 1)
+theme_override_font_sizes/font_size = 16
+text = "此处机会"
+
+[node name="EventList" type="VBoxContainer" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ActionsHeader" type="Label" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.72, 0.45, 1)
+theme_override_font_sizes/font_size = 16
+text = "日常行动"
+
+[node name="Actions" type="GridContainer" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 2
+
+[node name="WorkButton" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
 text = "安全劳作"
 
-[node name="RestButton" type="Button" parent="UI/Root/SessionPanel/Margin/Body/Actions"]
+[node name="TrainButton" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/Actions"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "歇息"
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "演武修行"
 
-[node name="EndDayButton" type="Button" parent="UI/Root/SessionPanel/Margin/Body/Actions"]
+[node name="ScoutButton" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/Actions"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "竹林侦查"
+
+[node name="RestButton" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "歇息调息"
+
+[node name="EndDayButton" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
 text = "结束此日"
+
+[node name="SuppliesHeader" type="Label" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.72, 0.45, 1)
+theme_override_font_sizes/font_size = 16
+text = "补给与物证"
+
+[node name="Supplies" type="HBoxContainer" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BuyHerbsButton" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/Supplies"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "购买药草"
+
+[node name="BuyWineButton" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/Supplies"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "购买清酒"
+
+[node name="GuButton" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/Supplies"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "蛊虫"
+
+[node name="Utilities" type="HBoxContainer" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ClearExposureButton" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/Utilities"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "处理物证"
+
+[node name="PauseButton" type="Button" parent="UI/Root/SessionPanel/Margin/Scroll/Body/Utilities"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+text = "暂停"
+
+[node name="LastEvent" type="Label" parent="UI/Root/SessionPanel/Margin/Scroll/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.9, 0.86, 0.72, 1)
+theme_override_font_sizes/font_size = 15
+text = ""
+autowrap_mode = 3
 
 [node name="Prompt" type="Label" parent="UI/Root"]
 unique_name_in_owner = true
@@ -266,3 +482,280 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.62, 0.66, 0.72, 1)
 text = "按 E 或 Esc 关闭"
 horizontal_alignment = 1
+
+[node name="ModalLayer" type="Control" parent="UI/Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Dim" type="ColorRect" parent="UI/Root/ModalLayer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.62)
+
+[node name="EventCenter" type="CenterContainer" parent="UI/Root/ModalLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EventModal" type="PanelContainer" parent="UI/Root/ModalLayer/EventCenter"]
+custom_minimum_size = Vector2(760, 520)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Body" type="VBoxContainer" parent="UI/Root/ModalLayer/EventCenter/EventModal"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="EventTitle" type="Label" parent="UI/Root/ModalLayer/EventCenter/EventModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "事件"
+
+[node name="EventMeta" type="Label" parent="UI/Root/ModalLayer/EventCenter/EventModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.72, 0.45, 1)
+theme_override_font_sizes/font_size = 15
+text = ""
+
+[node name="EventDesc" type="Label" parent="UI/Root/ModalLayer/EventCenter/EventModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 17
+autowrap_mode = 3
+text = ""
+
+[node name="EventChoices" type="VBoxContainer" parent="UI/Root/ModalLayer/EventCenter/EventModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EventDismissButton" type="Button" parent="UI/Root/ModalLayer/EventCenter/EventModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 34)
+text = "收起事件（不消耗行动）"
+
+[node name="GuCenter" type="CenterContainer" parent="UI/Root/ModalLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GuModal" type="PanelContainer" parent="UI/Root/ModalLayer/GuCenter"]
+custom_minimum_size = Vector2(720, 520)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Body" type="VBoxContainer" parent="UI/Root/ModalLayer/GuCenter/GuModal"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GuTitle" type="Label" parent="UI/Root/ModalLayer/GuCenter/GuModal/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "蛊虫"
+
+[node name="GuList" type="VBoxContainer" parent="UI/Root/ModalLayer/GuCenter/GuModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="GuCloseButton" type="Button" parent="UI/Root/ModalLayer/GuCenter/GuModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 34)
+text = "关闭"
+
+[node name="CombatCenter" type="CenterContainer" parent="UI/Root/ModalLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CombatModal" type="PanelContainer" parent="UI/Root/ModalLayer/CombatCenter"]
+custom_minimum_size = Vector2(760, 500)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Body" type="VBoxContainer" parent="UI/Root/ModalLayer/CombatCenter/CombatModal"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CombatTitle" type="Label" parent="UI/Root/ModalLayer/CombatCenter/CombatModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "战斗"
+
+[node name="CombatForecast" type="Label" parent="UI/Root/ModalLayer/CombatCenter/CombatModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+autowrap_mode = 3
+text = ""
+
+[node name="CombatHint" type="Label" parent="UI/Root/ModalLayer/CombatCenter/CombatModal/Body"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.72, 0.45, 1)
+theme_override_font_sizes/font_size = 15
+text = "敌人的下一招已展示。撤退会付出代价，但不是死路。"
+autowrap_mode = 3
+
+[node name="CombatActions" type="VBoxContainer" parent="UI/Root/ModalLayer/CombatCenter/CombatModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="DayReviewCenter" type="CenterContainer" parent="UI/Root/ModalLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DayReviewModal" type="PanelContainer" parent="UI/Root/ModalLayer/DayReviewCenter"]
+custom_minimum_size = Vector2(700, 460)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Body" type="VBoxContainer" parent="UI/Root/ModalLayer/DayReviewCenter/DayReviewModal"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DayReviewTitle" type="Label" parent="UI/Root/ModalLayer/DayReviewCenter/DayReviewModal/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "日暮结算"
+
+[node name="DayReviewBody" type="RichTextLabel" parent="UI/Root/ModalLayer/DayReviewCenter/DayReviewModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = ""
+
+[node name="DayReviewContinue" type="Button" parent="UI/Root/ModalLayer/DayReviewCenter/DayReviewModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "继续"
+
+[node name="PauseCenter" type="CenterContainer" parent="UI/Root/ModalLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PauseModal" type="PanelContainer" parent="UI/Root/ModalLayer/PauseCenter"]
+custom_minimum_size = Vector2(480, 340)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Body" type="VBoxContainer" parent="UI/Root/ModalLayer/PauseCenter/PauseModal"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PauseTitle" type="Label" parent="UI/Root/ModalLayer/PauseCenter/PauseModal/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "暂停"
+horizontal_alignment = 1
+
+[node name="PauseStatus" type="Label" parent="UI/Root/ModalLayer/PauseCenter/PauseModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.74, 0.78, 1)
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="PauseResume" type="Button" parent="UI/Root/ModalLayer/PauseCenter/PauseModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "继续游戏"
+
+[node name="PauseTitleReturn" type="Button" parent="UI/Root/ModalLayer/PauseCenter/PauseModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "保存并返回标题"
+
+[node name="PauseQuit" type="Button" parent="UI/Root/ModalLayer/PauseCenter/PauseModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "退出游戏"
+
+[node name="EndingCenter" type="CenterContainer" parent="UI/Root/ModalLayer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EndingModal" type="PanelContainer" parent="UI/Root/ModalLayer/EndingCenter"]
+custom_minimum_size = Vector2(720, 480)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Body" type="VBoxContainer" parent="UI/Root/ModalLayer/EndingCenter/EndingModal"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="EndingTitle" type="Label" parent="UI/Root/ModalLayer/EndingCenter/EndingModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "结局"
+
+[node name="EndingBody" type="RichTextLabel" parent="UI/Root/ModalLayer/EndingCenter/EndingModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+
+[node name="EndingReturn" type="Button" parent="UI/Root/ModalLayer/EndingCenter/EndingModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+text = "返回标题"

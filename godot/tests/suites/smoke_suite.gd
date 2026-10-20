@@ -75,6 +75,11 @@ func _check_title_scene() -> void:
 		"Center/Column/SaveStatus", "Center/Column/QuitButton",
 	]:
 		_check.expect(title.get_node_or_null(path) != null, "title scene is missing %s" % path)
+	# Seeds are uint32; a long paste must be rejected before int() can overflow.
+	for bad: String in ["99999999999999999999", "4294967296", "-1", "12a"]:
+		var parsed: Dictionary = title._parse_seed(bad)
+		_check.expect(not parsed.get("ok", true), "seed %s must be rejected" % bad)
+	_check.expect(title._parse_seed("0000042").get("value", -1) == 42, "leading zeroes parse as their numeric value")
 	title.queue_free()
 
 
@@ -88,11 +93,11 @@ func _check_play_scene() -> void:
 	_check.expect(play.get_node_or_null("World/Player") != null, "play scene is missing World/Player")
 	_check.expect(play.get_node_or_null("World/InteractionController") != null, "play scene is missing World/InteractionController")
 	for path in [
-		"UI/Root/SessionPanel/Margin/Body/SessionHud",
-		"UI/Root/SessionPanel/Margin/Body/SaveStatus",
-		"UI/Root/SessionPanel/Margin/Body/Actions/WorkButton",
-		"UI/Root/SessionPanel/Margin/Body/Actions/RestButton",
-		"UI/Root/SessionPanel/Margin/Body/Actions/EndDayButton",
+		"UI/Root/SessionPanel/Margin/Scroll/Body/SessionHud",
+		"UI/Root/SessionPanel/Margin/Scroll/Body/SaveStatus",
+		"UI/Root/SessionPanel/Margin/Scroll/Body/Actions/WorkButton",
+		"UI/Root/SessionPanel/Margin/Scroll/Body/Actions/RestButton",
+		"UI/Root/SessionPanel/Margin/Scroll/Body/Actions/EndDayButton",
 	]:
 		_check.expect(play.get_node_or_null(path) != null, "play scene is missing %s" % path)
 	var ids: PackedStringArray = []
@@ -107,5 +112,5 @@ func _check_play_scene() -> void:
 	var status := play.get_node_or_null("UI/Root/StatusBar/StatusLine")
 	_check.expect(status != null, "play scene is missing the status line")
 	if status != null:
-		_check.expect(status.text.contains("架构演示"), "status line must state that this is an architecture demo")
+		_check.expect(status.text.contains("可玩第 1 日"), "status line must state the playable W4 scope")
 	play.queue_free()

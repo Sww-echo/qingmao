@@ -67,7 +67,7 @@ static func combat_forecast(state: GameState, catalog: ContentCatalog) -> Varian
 	}
 
 
-static func legal_actions(state: GameState, catalog: ContentCatalog) -> Array[Dictionary]:
+static func action_options(state: GameState, catalog: ContentCatalog) -> Array[Dictionary]:
 	var candidates: Array[Dictionary] = []
 	for location: Dictionary in catalog.data["locations"]:
 		candidates.append({"type": "TRAVEL", "location": location["id"]})
@@ -90,10 +90,21 @@ static func legal_actions(state: GameState, catalog: ContentCatalog) -> Array[Di
 	if state.active_event != null and catalog.has_id("events", state.active_event):
 		for choice: Dictionary in catalog.by_id["events"][state.active_event]["choices"]:
 			candidates.append({"type": "CHOOSE", "choiceId": choice["id"]})
-	var legal: Array[Dictionary] = []
+	var options: Array[Dictionary] = []
 	for action: Dictionary in candidates:
-		if Rules.validate(state, action, catalog)["ok"]:
-			legal.append(action)
+		var error: Variant = V1Requirements.action_error(state, action, catalog)
+		options.append({
+			"action": action, "ok": error == null,
+			"reason": "" if error == null else String(error),
+		})
+	return options
+
+
+static func legal_actions(state: GameState, catalog: ContentCatalog) -> Array[Dictionary]:
+	var legal: Array[Dictionary] = []
+	for option: Dictionary in action_options(state, catalog):
+		if option["ok"]:
+			legal.append(option["action"])
 	return legal
 
 
@@ -102,9 +113,32 @@ static func public_view(state: GameState, catalog: ContentCatalog) -> Dictionary
 	public_state.erase("seed")
 	public_state.erase("rng")
 	public_state.erase("rngDraws")
+	var event_titles: Dictionary = {}
+	for event: Dictionary in catalog.data["events"]:
+		event_titles[event["id"]] = event["title"]
 	return {
 		"state": public_state, "availableEvents": available_events(state, catalog),
-		"legalActions": legal_actions(state, catalog), "combatForecast": combat_forecast(state, catalog),
+		"legalActions": legal_actions(state, catalog), "actionOptions": action_options(state, catalog),
+		"combatForecast": combat_forecast(state, catalog),
+		"activeEvent": catalog.definition("events", state.active_event) if state.active_event != null else null,
+		"locations": catalog.data["locations"].duplicate(true),
+		"gu": catalog.data["gu"].duplicate(true),
+		"relations": catalog.data["relations"].duplicate(true),
+		"enemies": catalog.data["enemies"].duplicate(true),
+		"eventTitles": event_titles,
+		# Display-only cost hints. The UI must still submit actions and let the
+		# rules decide legality; these numbers never replace validation.
+		"costs": {
+			"laborIncome": int(catalog.parameters["laborIncome"]),
+			"trainingQi": int(catalog.parameters["trainingQi"]),
+			"scoutQi": int(catalog.parameters["scoutQi"]),
+			"herbPrice": int(catalog.parameters["herbPrice"]),
+			"winePrice": int(catalog.parameters["winePrice"]),
+			"clearExposureCost": int(catalog.parameters["clearExposureCost"]),
+			"sealCost": int(catalog.parameters["sealCost"]),
+			"wakeSealedCost": int(catalog.parameters["wakeSealedCost"]),
+			"wakeDormantCost": int(catalog.parameters["wakeDormantCost"]),
+		},
 		"maxHp": int(catalog.parameters["startingHp"]), "maxQi": max_qi(state, catalog),
 		"upkeep": upkeep(state, catalog),
 	}

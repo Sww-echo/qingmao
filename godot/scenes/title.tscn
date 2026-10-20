@@ -61,18 +61,40 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
 
 [node name="BannerText" type="Label" parent="Center/Column/Banner"]
 layout_mode = 2
-text = "架构演示"
+text = "十四日试玩 · 第 1 日"
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="Center/Column"]
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
+[node name="SeedLabel" type="Label" parent="Center/Column"]
+layout_mode = 2
+text = "本局种子（0–4294967295）"
+horizontal_alignment = 1
+
+[node name="SeedInput" type="LineEdit" parent="Center/Column"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 44)
+layout_mode = 2
+text = "42"
+placeholder_text = "42"
+alignment = 1
+max_length = 10
+
+[node name="SeedError" type="Label" parent="Center/Column"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.55, 0.45, 1)
+text = ""
+horizontal_alignment = 1
+
 [node name="StartButton" type="Button" parent="Center/Column"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 48)
 layout_mode = 2
-text = "新局（固定种子 42）"
+text = "开始新局"
 
 [node name="ContinueButton" type="Button" parent="Center/Column"]
 unique_name_in_owner = true
@@ -82,6 +104,7 @@ disabled = true
 text = "继续（暂无有效存档）"
 
 [node name="ImportButton" type="Button" parent="Center/Column"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 44)
 layout_mode = 2
 disabled = true

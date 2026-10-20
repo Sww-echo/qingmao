@@ -1,14 +1,13 @@
 ; Engine configuration file.
-; Qingmao Mountain — Godot 4 architecture demo (W0).
-; This project is a parallel rewrite shell. It intentionally contains NO game rules yet.
-; See .trellis/tasks/10-18-godot-architecture-plan/implement.md (W0).
+; Qingmao Mountain — Godot 4 architecture demo (W4: playable day 1).
+; See .trellis/tasks/10-18-godot-playable-slice/implement.md (W4).
 
 config_version=5
 
 [application]
 
-config/name="青茅山 · 架构演示"
-config/description="Godot 4 架构演示：W3 会话、存档与恢复"
+config/name="青茅山 · 可玩第一日"
+config/description="Godot 4 重写：W4 可玩第 1 日（会话、存档、事件、战斗与日结 UI）"
 run/main_scene="res://bootstrap/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"

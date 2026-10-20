@@ -1,8 +1,9 @@
 # 青茅山 · Godot 4 工程
 
 本目录是与现有 React 版本**并行**的 Godot 4 工程。W1/W2 提供严格 V1 数据边界和规则，
-W3 接入唯一 GameSession、独立存档与恢复，以及标题继续和最小行动 HUD。
-**目前仍是架构演示，完整事件、战斗和可玩流程 UI 属于 W4/W5。**
+W3 接入唯一 GameSession、独立存档与恢复，W4 把标题、地点、事件、蛊、战斗与日结接到
+真实会话，形成可亲手玩通的第 1 日。
+**完整三地点/19 事件/三局试玩仍属 W5。**
 
 最新批准方案见 [实现重设计](../.trellis/tasks/10-18-godot-impl-redesign/README.md)，
 实施包见 [implement.md](../.trellis/tasks/10-18-godot-impl-redesign/implement.md)。
@@ -26,6 +27,10 @@ W3 接入唯一 GameSession、独立存档与恢复，以及标题继续和最�
 
 未改动任何系统默认配置来掩盖问题；引擎装在用户目录，模板装在用户 Godot 目录。
 
+W4 期间的自动化 UI 流程与窗口截图在 Linux x86_64 上补测，使用同一
+`4.7.2.stable.official.ed1daf0bf` 二进制（SHA512 与官方一致），渲染仍为 Compatibility。
+Linux 下用 `GODOT_BIN` 指向解压后的可执行文件即可复用下列命令。
+
 ## 2. 运行
 
 ```sh
@@ -38,6 +43,12 @@ npm run godot:sync-content
 
 # 全部九套件：基础、规则回放、session_semantics / save_faults
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/run_all.gd
+
+# W4：用真实场景控件跑完第 1 日（事件/蛊/战斗/日结/存档重载，非规则直调）
+~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/play_flow.gd
+
+# W4：标题/种子/暂停返回/继续的完整组合根流程
+~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/title_flow.gd
 
 # 单套件；通过退出 0，断言失败 1，参数/环境错误 2
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot \
@@ -68,7 +79,8 @@ QINGMAO_CAPTURE_OUT=/tmp/w0-evidence \
   ~/Applications/Godot.app/Contents/MacOS/Godot --path godot res://tests/capture_w0.tscn
 ```
 
-操作：`WASD` / 方向键移动，`E` 与目标交互，`Esc` 关闭面板 / 返回标题。
+操作：标题页可输入 0–4294967295 的种子并开始新局；`WASD` / 方向键移动，`E` 与目标交互，
+`Esc` 按优先级关闭当前模态（战斗不可跳过）/ 打开暂停 / 返回标题。
 
 ## 3. 导出
 
@@ -111,7 +123,7 @@ godot/
   application/           # GameSession / ViewProjector / SaveService
   infrastructure/        # canonical JSON / codecs / 内容加载 / desktop 与 Web stores
   presentation/          # 占位角色、交互目标、交互控制器（无规则）
-  scenes/                # title / play（学堂占位地点）
+  scenes/                # title（种子输入）/ play（真实会话 HUD、模态与学堂场景）
   ui/app_theme.tres      # 全局主题：Noto Sans SC
   assets/fonts/          # 字体 + 授权清单（见其中 README.md）
   content/generated/     # sync 脚本生成 V1 content + manifest，禁止手改
@@ -137,6 +149,8 @@ godot/
   严格检查字段、枚举和所选目录引用；显式映射完整 camelCase 状态，不裁剪日志/账本/RNG。
 - `Rules.create/validate/apply` 和 `Queries.public_view` 执行完整 V1 规则；接受时在深克隆上
   结算，拒绝时状态/RNG/日志/账本均不变。公开视图剔除 seed/rng/rngDraws。
+- 模态由状态派生：暂停、日结、结局期间拒绝 HUD 动作；事件模态只接受 CHOOSE/DISMISS_EVENT，
+  蛊面板只接受 EQUIP/GU_MODE，战斗只接受 COMBAT。键盘焦点被限制在当前模态内。
 - `rules_unit` 检查非法操作与日结/战斗边界，`v1_replay` 对三条 seed42 夹具逐步全状态比较。
   `godot:compare` 产出 `artifacts/godot/v1-expected-<set>.json` 并驱动 Godot，报告为
   `v1-compare-<set>.json`；首差保留实测快照及自动导出的 TS 参考轨迹和 JSON 路径。
@@ -157,7 +171,16 @@ godot/
 current/backup 恢复及 tmp 中断诊断。真实窗口经自动键鼠输入验证跨进程继续，
 不冒充真人完整试玩。见 [W3 证据](../.trellis/tasks/10-18-godot-domain-foundation/w3-session-save-evidence.md)。
 
-**未做**：完整事件与战斗 UI、种子输入、导入/导出控件（W4/W5）、V2（W6）、体验验收和发行（W7/W8）。
+**W4 新增**：标题种子输入；可玩的第 1 日 HUD（生命/真元/元石/行动/地点/供养）；地点移动；
+事件列表与通用选项模态；蛊管理（装备/封存/唤醒）；回合战斗（意图/伤害预览与七种行动）；
+日结回顾（账目、错过事件、承诺、危机）；暂停、保存状态与结局模态。所有按钮只提交动作，
+拒绝原因来自投影；界面不计算规则。模态会同时锁住鼠标与键盘焦点，日结/暂停期间不能用
+HUD 抢跑；离开学堂会关闭说明面板并隐藏学堂热点。自动化 UI 流程见 `tests/play_flow.gd`，
+组合根流程见 `tests/title_flow.gd`，证据见
+[W4 证据](../.trellis/tasks/10-18-godot-playable-slice/w4-day1-evidence.md)。
+
+**未做**：三地点场景化与全部 19 事件的真人完整三局（W5）、V2（W6）、体验验收和发行（W7/W8）。
+导入/导出控件仍在 W8 计划内，未在 W4 实现。
 
 ## 7. 会话接口冻结（v1，W3）
 
