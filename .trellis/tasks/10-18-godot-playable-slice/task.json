@@ -25,7 +25,7 @@
     ".trellis/tasks/10-18-godot-playable-slice/design.md",
     ".trellis/tasks/10-18-godot-playable-slice/implement.md"
   ],
-  "notes": "2026-10-20 W4 完成并已推送远程；当前 W5 第一增量已实施：三地点几何/热点、安全出生点、关系/风险 HUD、非当前地点热点过滤。9 套件 6761 检查、war-ready 120、network 118、labor 118、title 31 均 0 失败。W5 gate 仍需真人三局、窗口级重载与修复后截图。",
+  "notes": "2026-10-20 W4 完成并已推送远程；W5 第一增量已实施并推送（三地点几何/热点、安全出生点、关系/风险 HUD、非当前地点热点过滤）。9 套件 6761 检查、war-ready 120、network 118、labor 118、title 31、reload_flow 27 均 0 失败。W5 gate 仍需真人三局与窗口级进程重开；当前沙箱无法新建 X 套接字，窗口证据待补。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
@@ -90,7 +90,9 @@
       "relation_hud_verified": true,
       "human_playtest": false,
       "window_verified_after_fix": false,
-      "evidence_commit": null
+      "evidence_commit": null,
+      "reload_flow_checks": 27,
+      "ui_recovery_points_verified": true
     }
   }
 }

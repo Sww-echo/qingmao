@@ -47,6 +47,9 @@ npm run godot:sync-content
 # W4/W5：用真实场景控件跑完一局（事件/蛊/战斗/日结/存档重载，非规则直调）
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/play_flow.gd
 
+# W5：四个恢复点（事件/战斗/日结/结局）载入新会话并渲染，含 720p 布局
+~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/reload_flow.gd
+
 # W5：按策略跑同一套场景控件流程（war-ready / network / labor）
 QINGMAO_FLOW_STRATEGY=network \
   ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/play_flow.gd

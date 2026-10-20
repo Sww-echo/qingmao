@@ -28,6 +28,7 @@ QINGMAO_FLOW_STRATEGY=war-ready "$GODOT_BIN" --headless --path godot --script re
 QINGMAO_FLOW_STRATEGY=network   "$GODOT_BIN" --headless --path godot --script res://tests/play_flow.gd
 QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script res://tests/play_flow.gd
 "$GODOT_BIN" --headless --path godot --script res://tests/title_flow.gd
+"$GODOT_BIN" --headless --path godot --script res://tests/reload_flow.gd
 ```
 
 | 验证 | 结果 |
@@ -40,6 +41,8 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 | 三地点场景 | 每地点几何/热点随 `TRAVEL` 切换；玩家落在安全出生点 |
 | 热点可达 | 学堂 3、客栈 2、竹林 3；非当前地点热点不可交互 |
 | 关系 HUD | 巡山队长/客栈掌柜/嫌疑/暴露与 `view.state` 一致 |
+| 恢复点渲染 | 事件/战斗/日结/结局各载入新会话：modal 由状态恢复，日结不重放账目，战斗七种行动与意图可见 |
+| 720p 布局 | 会话面板、滚动容器、结束此日按钮、行记均在视口内 |
 
 `play_flow` 通过 `pressed.emit()` 驱动真实控件，但仍不是真人键鼠试玩。
 
@@ -52,8 +55,10 @@ QINGMAO_FLOW_STRATEGY=labor     "$GODOT_BIN" --headless --path godot --script re
 ## 4. 尚未完成（W5 gate 剩余）
 
 - 真人键鼠完成战备成功、借势成功、劳作失败三局并记录；当前为场景控件自动驱动。
-- 事件中/战斗中/日结后的真实进程重开与 UI 重载走查；W3 `save_faults` 的四恢复点
-  已覆盖规则/存档接口，但未在本轮重新做窗口级演练。
+- 事件中/战斗中/日结后的**窗口级进程**重开与实机走查；UI 级四恢复点已由
+  `tests/reload_flow.gd` 覆盖，W3 `save_faults` 覆盖规则/存档接口。
+- 本轮沙箱无法新建 X 套接字（Xvfb bind 失败），修复后的窗口截图与真人键鼠三局待补；
+  `tests/capture_w5.gd` 已准备好，可在有真实显示的环境直接产出三地点/模态截图。
 - 720p/1080p 修复后窗口截图（当前截图早于 W4 review 修复）。
 - 连点/失焦/重入的实机走查。
 - W5 gate 评审与 `w5-playable-evidence.md` 的最终版本。
