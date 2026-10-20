@@ -80,6 +80,10 @@ QINGMAO_CAPTURE_OUT=artifacts/godot/w5 \
 QINGMAO_FLOW_STRATEGY=network \
   ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/play_flow.gd
 
+# W6：同一场景控件流程跑 V2 pack（V1 策略仅作接线冒烟，不是 V2 平衡结论）
+QINGMAO_FLOW_PACK=qingmao14-v2 QINGMAO_FLOW_STRATEGY=war-ready \
+  ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/play_flow.gd
+
 # W4：标题/种子/暂停返回/继续的完整组合根流程
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/title_flow.gd
 
@@ -178,7 +182,7 @@ godot/
   `shared/prototype/manifest.json` 及其四份源文件，验证后复制原始字节并生成 Godot manifest。
 - manifest 的 `files` 包含 `source`、`path`（`res://`）、`sha256`、`kind`。运行时读取并验证
   `content`；所有摘要必须为 64 位小写十六进制。`fixture` 仅供开发，导出不读测试资源。
-  版本三元组必须精确匹配 V1。
+  版本三元组按 V1/V2 表精确匹配；`prototype` 与 `qingmao14-v2` 互斥，未知组合拒绝。
 - `--pack prototype` 为默认；`qingmao14-v2` 加载 W6 手写 pack，`all` 同步/校验两包。
   V1 生成物逐字节不变；未知/重复/缺值选项失败。`--check` 不创建目录、不修复漂移；
   多余生成文件也报错。

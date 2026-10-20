@@ -21,18 +21,22 @@ var _last_action: Dictionary = {}
 ## so the documented command is unchanged.
 var _strategy: String = OS.get_environment("QINGMAO_FLOW_STRATEGY") \
 	if OS.get_environment("QINGMAO_FLOW_STRATEGY") in V1Policies.STRATEGIES else "war-ready"
+## W6: reuse the same scene-driven smoke run against the V2 pack. V2 has its own
+## policies/balance work in the next increment; this only proves integration.
+var _pack: String = OS.get_environment("QINGMAO_FLOW_PACK") \
+	if OS.get_environment("QINGMAO_FLOW_PACK") in ["prototype", "qingmao14-v2"] else "prototype"
 
 func _initialize() -> void:
 	_run()
 
 func _run() -> void:
-	var loaded: Dictionary = ContentLoaderScript.load_pack()
+	var loaded: Dictionary = ContentLoaderScript.load_pack(_pack)
 	if not loaded.ok:
 		_fail("content load failed: %s" % loaded.error)
 		_finish()
 		return
 	_catalog = loaded.catalog
-	var root_path: String = "user://w4-flow-%d" % Time.get_ticks_usec()
+	var root_path: String = "user://w4-flow-%s-%d" % [_pack, Time.get_ticks_usec()]
 	_session = GameSession.new()
 	root.add_child(_session)
 	_save = SaveService.new()
@@ -110,13 +114,14 @@ func _run() -> void:
 		_expect(int(_counts.get("COMBAT", 0)) > 0, "war-ready UI run fought")
 	if final_view.get("endingView", null) != null:
 		var ending: Dictionary = final_view.endingView
-		var expected_id: String = {"war-ready": "held-the-line", "network": "shelter-secured", "labor": "overrun"}[_strategy]
-		var expected_outcome: String = "death" if _strategy == "labor" else "survived"
-		_expect(String(ending.outcome) == expected_outcome,
-			"%s UI run outcome=%s (expected %s)" % [_strategy, ending.outcome, expected_outcome])
-		_expect(String(ending.id) == expected_id,
-			"%s UI run ending=%s (expected %s)" % [_strategy, ending.id, expected_id])
 		_expect(not (ending.reasons as Array).is_empty(), "%s ending explains reasons" % _strategy)
+		if _pack == "prototype":
+			var expected_id: String = {"war-ready": "held-the-line", "network": "shelter-secured", "labor": "overrun"}[_strategy]
+			var expected_outcome: String = "death" if _strategy == "labor" else "survived"
+			_expect(String(ending.outcome) == expected_outcome,
+				"%s UI run outcome=%s (expected %s)" % [_strategy, ending.outcome, expected_outcome])
+			_expect(String(ending.id) == expected_id,
+				"%s UI run ending=%s (expected %s)" % [_strategy, ending.id, expected_id])
 		_expect(_play.get_node("%EndingCenter").visible, "ending modal is shown")
 		_expect(String(_play.get_node("%EndingBody").text).contains("原因"), "ending modal explains reasons")
 	# The final state must be on disk and readable.
@@ -147,8 +152,8 @@ func _run() -> void:
 			_expect(int(reloaded_view.maxQi) == int(final_view.maxQi), "reloaded maxQi matches")
 			_expect(int(reloaded_view.upkeep) == int(final_view.upkeep), "reloaded upkeep matches")
 		resumed.queue_free()
-	print("W4 UI flow %s: %d UI actions, %d checks, %d failures" % [
-		_strategy, _steps, _checks, _failures.size()])
+	print("W4 UI flow %s/%s: %d UI actions, %d checks, %d failures" % [
+		_pack, _strategy, _steps, _checks, _failures.size()])
 	_finish()
 
 ## The explain panel belongs to the academy world view; leaving the academy

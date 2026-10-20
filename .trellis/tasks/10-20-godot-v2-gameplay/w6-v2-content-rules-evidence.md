@@ -69,11 +69,13 @@ node scripts/godot-sync-content.mjs --pack all --check
 | `combat_v2` | 43 checks；D1–D5 + V2 动作解码回归 |
 | Node 内容工具 | 9 tests：7 pass / 0 fail / 2 skipped（跳过需 GODOT_BIN 的进程级用例） |
 | `--pack all --check` | 7 文件一致；V1 生成物 `git diff` 为空 |
-| `w6_pack_switch` | 16 checks；`pack_id`/`—pack=` 载入 V2、独立槽位、继续恢复、V2 事件可打开 |
+| `w6_pack_switch` | 16 checks；`pack_id`/`--pack=` 载入 V2、独立槽位、继续恢复、V2 事件可打开 |
+| V2 场景控件流程 | `QINGMAO_FLOW_PACK=qingmao14-v2`：war-ready 90 动作/118 checks、network 95/116、labor 81/116，均 0 失败并到达结局；V1 策略只证明接线，不是 V2 平衡结论 |
 
 ## 6. 未做 / 风险
 
 - 未调平衡、未跑开发集 1–100、未登记/首跑留出集 20001–20100。
+- V2 场景流程复用 V1 策略，只能证明内容/规则/UI 接线；V2 策略与胜率属于下一增量。
 - 已提供开发启动参数 `--pack=qingmao14-v2`（无新增标题控件）；盘问/阶段二的
   专门展示仍属于下一增量。
 - V2 数值仍是设计假设；战斗难度、后段非劳作密度与两路线胜率需 W6 后半验证。

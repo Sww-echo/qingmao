@@ -25,9 +25,10 @@
 ## 4. 测试与证据
 
 - [x] `content_validation`：两 pack 正例 + V2 负例（91 checks）。
-- [x] `state_codec`：V2 阶段二/询问暴露往返；V1 拒绝（1760 checks）。
+- [x] `state_codec`：V2 阶段二/盘问暴露往返；V1 拒绝（1760 checks）。
 - [x] 新增 `combat_v2` 套件并加入 runner（43 checks，含 V2 动作解码回归）。
 - [x] V1 九套件、play_flow、event_coverage、reload_flow 全绿（6831 checks）。
+- [x] V2 场景控件流程（`QINGMAO_FLOW_PACK=qingmao14-v2`）三策略各跑到结局。
 - [x] `--pack all --check` 与 `git diff` 证明 V1 生成物未变。
 - [x] 证据 `w6-v2-content-rules-evidence.md`。
 
