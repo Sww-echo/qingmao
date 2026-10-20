@@ -86,6 +86,11 @@ npm run godot:sync-content -- --check
 npm run godot:validate-content
 npm run godot:test-tools
 
+# W6：V2 内容包（手写权威源）与同步/校验
+npm run godot:sync-content -- --pack qingmao14-v2
+npm run godot:sync-content -- --pack all --check
+npm run godot:validate-content -- --file shared/scenarios/qingmao14-v2/content.json
+
 # 同时执行隔离临时工程中的 runner 退出码 / loader 坏清单进程测试
 # 以及八个强制终止子进程后的存档恢复测试
 GODOT_BIN="$HOME/Applications/Godot.app/Contents/MacOS/Godot" npm run godot:test-tools

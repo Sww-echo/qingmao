@@ -67,7 +67,7 @@ node scripts/godot-sync-content.mjs --pack all --check
 | `state_codec` | 1760 checks；V2 阶段二/盘问暴露往返，V1 拒绝 |
 | `content_validation` | 91 checks；双 pack 正例 + V2 负例 |
 | `combat_v2` | 33 checks；D1–D5 |
-| Node 内容工具 | 9 tests / 0 fail（跳过需 GODOT_BIN 的 2 项） |
+| Node 内容工具 | 9 tests：7 pass / 0 fail / 2 skipped（跳过需 GODOT_BIN 的进程级用例） |
 | `--pack all --check` | 7 文件一致；V1 生成物 `git diff` 为空 |
 
 ## 6. 未做 / 风险

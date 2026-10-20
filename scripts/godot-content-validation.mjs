@@ -184,7 +184,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const path = resolve(ROOT, options['--file'] ?? 'shared/prototype/content.json');
     const errors = validateGodotContent(JSON.parse(await readFile(path, 'utf8')));
     if (errors.length) throw new Error(errors.join('\n'));
-    console.log('Godot V1 content validation passed.');
+    console.log('Godot content validation passed.');
   } catch (error) {
     fail(error);
   }

@@ -18,7 +18,9 @@
   "commit": "8251747",
   "pr_url": null,
   "subtasks": [],
-  "children": [],
+  "children": [
+    "10-20-godot-v2-gameplay"
+  ],
   "parent": "10-18-godot-strategy-overhaul",
   "relatedFiles": [
     ".trellis/tasks/10-18-godot-playable-slice/prd.md",
