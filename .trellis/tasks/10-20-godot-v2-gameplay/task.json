@@ -21,10 +21,10 @@
   "children": [],
   "parent": "10-18-godot-playable-slice",
   "relatedFiles": [],
-  "notes": "2026-10-20 W6 第一增量完成并推送：V2 内容（28事件/3敌人/40参数）、双端版本化校验、sync/loader/state_codec、D1–D5、combat_v2、pack 启动参数与 V2 场景控件流程。10 套件 6831 checks；pack_switch 16；V2 三策略 118/116/116 均 0 失败。Review 修复了 V2 动作解码硬编码 V1 的 bug。下一增量：V2 专用策略、开发集调参与消融、留出集首跑。",
+  "notes": "2026-10-21 W6 第二增量完成：V2 专用策略、开发集 100 局 × 3、消融与唯一一次留出集（20001–20100，运行前登记）。dev/holdout 均为 war-ready 100%、network 100%、labor 0%；后段非劳作均值 10/13/0 与 10/13/0。消融显示 drilled、safe-route、有效蛊均为真实因果。实现与 6831 套件、Node 内容工具、同步检查均已通过；待提交推送。",
   "meta": {
     "w6": {
-      "status": "first-increment-verified",
+      "status": "balance-and-holdout-verified",
       "evidence": ".trellis/tasks/10-20-godot-v2-gameplay/w6-v2-content-rules-evidence.md",
       "scenario": "qingmao-fourteen-day-v2",
       "events": 28,
@@ -35,8 +35,8 @@
       "combatV2Checks": 43,
       "nodeTests": "9/9",
       "v1ArtifactsUnchanged": true,
-      "balanceTuning": false,
-      "holdoutRun": false,
+      "balanceTuning": true,
+      "holdoutRun": true,
       "uiAdded": false,
       "packSwitchChecks": 16,
       "packStartup": true,
@@ -45,7 +45,49 @@
         "network": 116,
         "labor": 116
       },
-      "v1PoliciesOnV2": "integration-only"
+      "v1PoliciesOnV2": "integration-only",
+      "balance": {
+        "development": {
+          "war-ready": {
+            "survival": 1.0,
+            "lateAvg": 10,
+            "lateMin": 10
+          },
+          "network": {
+            "survival": 1.0,
+            "lateAvg": 13,
+            "lateMin": 13
+          },
+          "labor": {
+            "survival": 0.0,
+            "lateAvg": 0,
+            "lateMin": 0
+          }
+        },
+        "holdout": {
+          "war-ready": {
+            "survival": 1.0,
+            "lateAvg": 10,
+            "lateMin": 10
+          },
+          "network": {
+            "survival": 1.0,
+            "lateAvg": 13,
+            "lateMin": 13
+          },
+          "labor": {
+            "survival": 0.0,
+            "lateAvg": 0,
+            "lateMin": 0
+          }
+        },
+        "ablations": {
+          "drill": "war late 7, network 8",
+          "route": "network 0%",
+          "gu": "network 0%, war late 2"
+        }
+      },
+      "holdoutRegistration": ".trellis/tasks/10-20-godot-v2-gameplay/holdout-registration.md"
     }
   }
 }

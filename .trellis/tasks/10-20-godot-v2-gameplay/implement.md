@@ -30,6 +30,11 @@
 - [x] V1 九套件、play_flow、event_coverage、reload_flow 全绿（6831 checks）。
 - [x] V2 场景控件流程（`QINGMAO_FLOW_PACK=qingmao14-v2`）三策略各跑到结局。
 - [x] `--pack all --check` 与 `git diff` 证明 V1 生成物未变。
+- [x] V2 专用策略（`v2_policies.gd`）与平衡报告器（`v2_balance.gd`）。
+- [x] 开发集 1–100 × 3 达门槛：war-ready/network 100%、labor 0%、后段非劳作 10/13/0（≥9）。
+- [x] 消融：drilled（war 后段 10→7）、safe-route（network 100%→0%）、
+  有效蛊（network 100%→0%）。
+- [x] 留出集 20001–20100 运行前登记、首跑一次并记录（结果不修改策略）。
 - [x] 证据 `w6-v2-content-rules-evidence.md`。
 
 ## 5. 门槛与回退

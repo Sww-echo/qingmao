@@ -84,6 +84,10 @@ QINGMAO_FLOW_STRATEGY=network \
 QINGMAO_FLOW_PACK=qingmao14-v2 QINGMAO_FLOW_STRATEGY=war-ready \
   ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/play_flow.gd
 
+# W6：V2 平衡报告（开发集 1–100 或登记后的留出集 20001–20100）
+~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot \
+  --script res://tests/v2_balance.gd -- --set=development --out=artifacts/godot/w6/development.json
+
 # W4：标题/种子/暂停返回/继续的完整组合根流程
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/title_flow.gd
 
