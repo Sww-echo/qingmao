@@ -260,7 +260,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
 [node name="StatusLine" type="Label" parent="UI/Root/StatusBar"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "真实规则 · 可玩第 1 日（三地点场景属 W5）"
+text = "真实规则 · 十四日生存试玩"
 autowrap_mode = 3
 
 [node name="LogPanel" type="PanelContainer" parent="UI/Root"]

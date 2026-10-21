@@ -3,7 +3,7 @@
   "name": "godot-validation-release",
   "title": "Godot 验收：策略平衡与桌面试玩包",
   "description": "验证两类策略及重复刷钱对照、多种子平衡与存档恢复，产出本机桌面试玩包和Web可行性报告，为是否扩大至165日版本提供依据。",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": "validation-release",
   "package": null,
@@ -23,16 +23,59 @@
   "relatedFiles": [
     ".trellis/tasks/10-18-godot-validation-release/prd.md",
     ".trellis/tasks/10-18-godot-validation-release/design.md",
-    ".trellis/tasks/10-18-godot-validation-release/implement.md"
+    ".trellis/tasks/10-18-godot-validation-release/implement.md",
+    ".trellis/tasks/10-18-godot-validation-release/w8-acceptance-report.md"
   ],
-  "notes": "2026-10-18 最新用户要求先创建详细Godot架构/玩法计划；P1既有证据保留，P2–P4按本版评审后开工，当前未启动。",
+  "notes": "2026-10-21 W8 自动门槛与窗口证据完成：10 套件 6838 checks、Node 28/28、V1 600 局/53042 动作/53642 状态对照、V1 文档与 V2 场景流程、V2 开发/留出平衡、内容自检、Web/macOS PCK 导出与包内自检、Xvfb 720p/1080p 截图均通过。阻塞：无 Godot 导出模板，不能生成可启动 macOS/Web 正式包；无 Chromium，浏览器保存刷新未复跑；真人键鼠/失焦/高 DPI/输入法未测。任务保持 in_progress，不将自动/PCK 证据当发布验收。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
-    "planning_review": "awaiting-architecture-review",
-    "implementation_authorized": false,
+    "planning_review": "approved-2026-10-18",
+    "implementation_authorized": true,
     "architecture_plan": ".trellis/tasks/10-18-godot-architecture-plan",
-    "latest_review_status": "awaiting-review",
-    "prior_planning_review": "approved-2026-10-18"
+    "latest_review_status": "user-continue-2026-10-21",
+    "prior_planning_review": "approved-2026-10-18",
+    "w8": {
+      "status": "automated-verified-platform-blocked",
+      "evidence": ".trellis/tasks/10-18-godot-validation-release/w8-acceptance-report.md",
+      "suiteChecks": "6838/6838",
+      "nodeTests": "28/28",
+      "v1Compare": {
+        "runs": 600,
+        "actions": 53042,
+        "states": 53642
+      },
+      "v2Balance": {
+        "development": {
+          "war-ready": 1.0,
+          "network": 1.0,
+          "labor": 0.0
+        },
+        "holdout": {
+          "war-ready": 1.0,
+          "network": 1.0,
+          "labor": 0.0
+        },
+        "lateNonWork": {
+          "war-ready": 10,
+          "network": 13,
+          "labor": 0
+        }
+      },
+      "pckSha256": "6c8e0087e36b61af62df87be323d4c72156bee0afe87cbde67aabf94cfb0b8b5",
+      "pckBytes": 13546884,
+      "windowScreenshots": [
+        "1280x720",
+        "1920x1080"
+      ],
+      "exportTemplatesAvailable": false,
+      "macosPackage": false,
+      "webPackage": false,
+      "browserTested": false,
+      "humanPlaytest": false,
+      "focusLossTested": false,
+      "highDpiTested": false,
+      "imeTested": false
+    }
   }
 }

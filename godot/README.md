@@ -1,12 +1,14 @@
 # 青茅山 · Godot 4 工程
 
-本目录是与现有 React 版本**并行**的 Godot 4 工程。W1/W2 提供严格 V1 数据边界和规则，
-W3 接入唯一 GameSession、独立存档与恢复，W4 把标题、地点、事件、蛊、战斗与日结接到
-真实会话，形成可亲手玩通的第 1 日。
-**完整三地点/19 事件/三局试玩仍属 W5。**
+本目录是与现有 React 版本**并行**的 Godot 4 工程。
+W1–W3 已交付 V1 数据/规则、会话存档与恢复；W4–W7 已把学堂/客栈/竹林、19 个 V1 事件、
+V2 28 事件内容、蛊、战斗、日结、危机、暂停/继续与 720p/1080p 键盘焦点接到真实会话。
+当前是 **W8 候选**：自动门槛（6838 checks、V1 600 局对照、V2 开发/留出集、内容自检、
+PCK 包内自检）已通过；正式 macOS/Web 包、浏览器持久化和真人键鼠验收仍受当前环境阻塞。
 
 最新批准方案见 [实现重设计](../.trellis/tasks/10-18-godot-impl-redesign/README.md)，
-实施包见 [implement.md](../.trellis/tasks/10-18-godot-impl-redesign/implement.md)。
+实施包见 [implement.md](../.trellis/tasks/10-18-godot-impl-redesign/implement.md)，
+W8 证据与阻塞见 [w8-acceptance-report.md](../.trellis/tasks/10-18-godot-validation-release/w8-acceptance-report.md)。
 
 ## 1. 工具链（已锁定并实测）
 
@@ -41,7 +43,7 @@ npm run godot:sync-content
 # 打开真实窗口
 ~/Applications/Godot.app/Contents/MacOS/Godot --path godot
 
-# 全部九套件：基础、规则回放、session_semantics / save_faults
+# 全部十套件：基础、规则回放、session_semantics / save_faults / combat_v2
 ~/Applications/Godot.app/Contents/MacOS/Godot --headless --path godot --script res://tests/run_all.gd
 
 # W6：以 V2 pack 启动（默认仍是 prototype V1；无新增标题控件）
@@ -206,7 +208,9 @@ godot/
 
 ## 6. 当前边界（不要误读）
 
-**已做**：真实原生窗口、中文字体渲染、键鼠焦点与移动、目标交互、面板开合、窗口缩放、最小 macOS 与 Web 导出。
+**W0 已做**：真实原生窗口、中文字体渲染、键鼠焦点与移动、目标交互、面板开合、窗口缩放、
+最小 macOS 与 Web 导出（历史环境记录）。W8 在当前 Linux 环境用 Xvfb 重新生成了
+1280×720 与 1920×1080 窗口截图，见 `../artifacts/godot/w8/window/`。
 
 **W1 新增**：数据模型、uint32 Mulberry32、规范 JSON/SHA256、codec、严格 V1 内容校验、
 同步/漂移工具、包内内容自检。验证结果见 [W1 证据](../.trellis/tasks/10-18-godot-domain-foundation/w1-contracts-evidence.md)。
@@ -230,8 +234,15 @@ HUD 抢跑；离开学堂会关闭说明面板并隐藏学堂热点。自动化 
 组合根流程见 `tests/title_flow.gd`，证据见
 [W4 证据](../.trellis/tasks/10-18-godot-playable-slice/w4-day1-evidence.md)。
 
-**未做**：三地点场景化与全部 19 事件的真人完整三局（W5）、V2（W6）、体验验收和发行（W7/W8）。
-导入/导出控件仍在 W8 计划内，未在 W4 实现。
+**W8 自动证据**：10 套件 6838 checks / 0 failures；Node 工具 28/28；V1 对照 600 局、
+53042 动作、53642 状态全等；V2 开发集与留出集 war-ready/network 100%、labor 0%，
+后段非劳作 10/13/0；`--export-pack` 的 Web/macOS PCK 可做内容自检并排除测试夹具；
+Xvfb 720p/1080p 窗口几何与截图已复跑。详见
+[W8 报告](../.trellis/tasks/10-18-godot-validation-release/w8-acceptance-report.md)。
+
+**W8 阻塞**：当前环境没有 Godot 4.7.2 导出模板，不能生成可启动的 macOS/Web 正式包；
+没有可用 Chromium，浏览器保存/刷新/继续未复跑；没有真人键鼠、真实失焦、高 DPI 或输入法
+记录。`--export-pack` 只证明包内容，不是发行包验收。导入/导出控件仍不在当前范围。
 
 ## 7. 会话接口冻结（v1，W3）
 

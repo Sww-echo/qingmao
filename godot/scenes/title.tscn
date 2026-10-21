@@ -61,7 +61,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
 
 [node name="BannerText" type="Label" parent="Center/Column/Banner"]
 layout_mode = 2
-text = "十四日试玩 · 第 1 日"
+text = "十四日生存试玩"
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="Center/Column"]

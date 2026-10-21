@@ -114,5 +114,5 @@ func _check_play_scene() -> void:
 	var status := play.get_node_or_null("UI/Root/StatusBar/StatusLine")
 	_check.expect(status != null, "play scene is missing the status line")
 	if status != null:
-		_check.expect(status.text.contains("可玩第 1 日"), "status line must state the playable W4 scope")
+		_check.expect(status.text.contains("十四日生存试玩"), "status line must state the playable candidate scope")
 	play.queue_free()

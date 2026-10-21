@@ -8,7 +8,7 @@ signal save_and_return_requested()
 signal save_and_quit_requested()
 signal retry_save_requested()
 
-const SCOPE_NOTE := "真实规则 · 可玩第 1 日（三地点场景属 W5）"
+const SCOPE_NOTE := "真实规则 · 十四日生存试玩"
 const WORLD_SCENE_LOCATION := "academy"
 ## Safe spawn points per location; scenes never persist these (W5 design).
 const LOCATION_SPAWNS := {

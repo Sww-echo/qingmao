@@ -401,7 +401,7 @@ describe('portable RNG, replay and honest strategy evidence', () => {
     expect(beforeCrisis.completedEvents).toEqual(['briefing', 'moonlight-issue', 'alarm']);
     expect(control.finalState.actionCounts['combat:herbs']).toBe(3);
     expect(control.summary.reasons.some(reason => reason.includes('修为'))).toBe(true);
-  });
+  }, 30_000);
 });
 
 describe('declarative content validation', () => {

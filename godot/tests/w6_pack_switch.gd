@@ -34,7 +34,7 @@ func _run() -> void:
 	_expect(play.name == "Play", "V2 opens the play screen")
 	_expect(session.snapshot_view().state.scenarioId == "qingmao-fourteen-day-v2",
 		"the session runs the V2 scenario")
-	_expect(play.get_node("%StatusLine").text.contains("可玩第 1 日"), "V2 uses the same HUD")
+	_expect(play.get_node("%StatusLine").text.contains("十四日生存试玩"), "V2 uses the same HUD")
 	_expect(play.get_node("%RelationLine").text.contains("巡山队长"), "V2 keeps the relation readout")
 	# V2-only event must be reachable through the generic list once its window opens.
 	var v2_event_button: Button = _event_button(play, "十四日守望")
