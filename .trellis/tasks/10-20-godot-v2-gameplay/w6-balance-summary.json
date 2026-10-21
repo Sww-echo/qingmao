@@ -1,0 +1,823 @@
+{
+  "formatVersion": 1,
+  "engine": "4.7.2.stable.official.ed1daf0bf",
+  "scenarioId": "qingmao-fourteen-day-v2",
+  "rulesVersion": "qingmao-rules-2",
+  "contentVersion": "qingmao-content-2",
+  "contentSha256": "70c04afba159e88ae7848ec3ca4f972ba3789ddddb176f66e75f70efbc410b0a",
+  "policySha256": "abc88a39d23bc84b613f5f28a0c63cc6fa1e646e1ca929168001fdecf1573200",
+  "harnessSha256": "528992ffc9752cb792baa38a60fcc7212b7db127486ced94f407efcb072b9064",
+  "holdoutRegistration": ".trellis/tasks/10-20-godot-v2-gameplay/holdout-registration.md",
+  "generatedAt": "2026-10-21T09:54:42+08:00",
+  "sets": {
+    "development": {
+      "reportStartedAt": "2026-10-21T00:27:07",
+      "reportFinishedAt": "2026-10-21T00:27:57",
+      "seedCount": 100,
+      "seedSets": {
+        "development": [
+          1,
+          100
+        ]
+      },
+      "strategies": {
+        "development/war-ready": {
+          "runs": 100,
+          "survived": 100,
+          "deaths": 0,
+          "survivalRate": 1.0,
+          "averageLateNonWork": 10.0,
+          "minLateNonWork": 10,
+          "averageRemainingStones": 2.0,
+          "endings": {
+            "held-the-line": 100
+          },
+          "failureReasons": {},
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "academy-commission": 100,
+            "jade-offer": 100,
+            "patrol-rescue": 100,
+            "liquor-offer": 100,
+            "academy-drill": 100,
+            "alarm": 100,
+            "patrol-overtime": 100,
+            "watch-duty": 100,
+            "healer-herbs": 100,
+            "fortify": 100,
+            "final-march": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "academy-commission": true,
+            "jade-offer": true,
+            "patrol-rescue": true,
+            "liquor-offer": true,
+            "academy-drill": true,
+            "alarm": true,
+            "patrol-overtime": true,
+            "watch-duty": true,
+            "healer-herbs": true,
+            "fortify": true,
+            "final-march": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "development/network": {
+          "runs": 100,
+          "survived": 100,
+          "deaths": 0,
+          "survivalRate": 1.0,
+          "averageLateNonWork": 13.0,
+          "minLateNonWork": 13,
+          "averageRemainingStones": 14.0,
+          "endings": {
+            "shelter-secured": 100
+          },
+          "failureReasons": {},
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "inn-introduction": 100,
+            "supply-ledger": 100,
+            "bamboo-signs": 100,
+            "eargrass-offer": 100,
+            "guide-report": 100,
+            "alarm": 100,
+            "signal-markers": 100,
+            "shelter-pledge": 100,
+            "shelter-stock": 100,
+            "route-review": 100,
+            "academy-service": 100,
+            "watch-duty": 100,
+            "healer-herbs": 100,
+            "final-freight": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "inn-introduction": true,
+            "supply-ledger": true,
+            "bamboo-signs": true,
+            "eargrass-offer": true,
+            "guide-report": true,
+            "alarm": true,
+            "signal-markers": true,
+            "shelter-pledge": true,
+            "shelter-stock": true,
+            "route-review": true,
+            "academy-service": true,
+            "watch-duty": true,
+            "healer-herbs": true,
+            "final-freight": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "development/labor": {
+          "runs": 100,
+          "survived": 0,
+          "deaths": 100,
+          "survivalRate": 0.0,
+          "averageLateNonWork": 0.0,
+          "minLateNonWork": 0,
+          "averageRemainingStones": 70.0,
+          "endings": {
+            "overrun": 100
+          },
+          "failureReasons": {
+            "未能承受已展示的敌人意图，生命耗尽。": 100,
+            "修为不足12，月刃威力与真元容量没有形成战备优势。": 100,
+            "没有有效玉皮蛊，连续攻击缺少减伤。": 100,
+            "未落实庇护备粮，囤积的元石不能临时替代完整安排。": 100
+          },
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "alarm": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "alarm": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        }
+      },
+      "windows": {
+        "days5to13Covered": true,
+        "days7to13NewCovered": true
+      }
+    },
+    "holdout": {
+      "reportStartedAt": "2026-10-21T00:29:51",
+      "reportFinishedAt": "2026-10-21T00:31:11",
+      "seedCount": 100,
+      "seedSets": {
+        "holdout": [
+          20001,
+          20100
+        ]
+      },
+      "strategies": {
+        "holdout/war-ready": {
+          "runs": 100,
+          "survived": 100,
+          "deaths": 0,
+          "survivalRate": 1.0,
+          "averageLateNonWork": 10.0,
+          "minLateNonWork": 10,
+          "averageRemainingStones": 2.0,
+          "endings": {
+            "held-the-line": 100
+          },
+          "failureReasons": {},
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "academy-commission": 100,
+            "jade-offer": 100,
+            "patrol-rescue": 100,
+            "liquor-offer": 100,
+            "academy-drill": 100,
+            "alarm": 100,
+            "patrol-overtime": 100,
+            "watch-duty": 100,
+            "healer-herbs": 100,
+            "fortify": 100,
+            "final-march": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "academy-commission": true,
+            "jade-offer": true,
+            "patrol-rescue": true,
+            "liquor-offer": true,
+            "academy-drill": true,
+            "alarm": true,
+            "patrol-overtime": true,
+            "watch-duty": true,
+            "healer-herbs": true,
+            "fortify": true,
+            "final-march": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "holdout/network": {
+          "runs": 100,
+          "survived": 100,
+          "deaths": 0,
+          "survivalRate": 1.0,
+          "averageLateNonWork": 13.0,
+          "minLateNonWork": 13,
+          "averageRemainingStones": 14.0,
+          "endings": {
+            "shelter-secured": 100
+          },
+          "failureReasons": {},
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "inn-introduction": 100,
+            "supply-ledger": 100,
+            "bamboo-signs": 100,
+            "eargrass-offer": 100,
+            "guide-report": 100,
+            "alarm": 100,
+            "signal-markers": 100,
+            "shelter-pledge": 100,
+            "shelter-stock": 100,
+            "route-review": 100,
+            "academy-service": 100,
+            "watch-duty": 100,
+            "healer-herbs": 100,
+            "final-freight": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "inn-introduction": true,
+            "supply-ledger": true,
+            "bamboo-signs": true,
+            "eargrass-offer": true,
+            "guide-report": true,
+            "alarm": true,
+            "signal-markers": true,
+            "shelter-pledge": true,
+            "shelter-stock": true,
+            "route-review": true,
+            "academy-service": true,
+            "watch-duty": true,
+            "healer-herbs": true,
+            "final-freight": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "holdout/labor": {
+          "runs": 100,
+          "survived": 0,
+          "deaths": 100,
+          "survivalRate": 0.0,
+          "averageLateNonWork": 0.0,
+          "minLateNonWork": 0,
+          "averageRemainingStones": 70.0,
+          "endings": {
+            "overrun": 100
+          },
+          "failureReasons": {
+            "未能承受已展示的敌人意图，生命耗尽。": 100,
+            "修为不足12，月刃威力与真元容量没有形成战备优势。": 100,
+            "没有有效玉皮蛊，连续攻击缺少减伤。": 100,
+            "未落实庇护备粮，囤积的元石不能临时替代完整安排。": 100
+          },
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "alarm": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "alarm": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        }
+      },
+      "windows": {
+        "days5to13Covered": true,
+        "days7to13NewCovered": true
+      }
+    }
+  },
+  "ablations": {
+    "none": {
+      "ablation": "none",
+      "strategies": {
+        "development/war-ready": {
+          "runs": 100,
+          "survived": 100,
+          "deaths": 0,
+          "survivalRate": 1.0,
+          "averageLateNonWork": 10.0,
+          "minLateNonWork": 10,
+          "averageRemainingStones": 2.0,
+          "endings": {
+            "held-the-line": 100
+          },
+          "failureReasons": {},
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "academy-commission": 100,
+            "jade-offer": 100,
+            "patrol-rescue": 100,
+            "liquor-offer": 100,
+            "academy-drill": 100,
+            "alarm": 100,
+            "patrol-overtime": 100,
+            "watch-duty": 100,
+            "healer-herbs": 100,
+            "fortify": 100,
+            "final-march": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "academy-commission": true,
+            "jade-offer": true,
+            "patrol-rescue": true,
+            "liquor-offer": true,
+            "academy-drill": true,
+            "alarm": true,
+            "patrol-overtime": true,
+            "watch-duty": true,
+            "healer-herbs": true,
+            "fortify": true,
+            "final-march": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "development/network": {
+          "runs": 100,
+          "survived": 100,
+          "deaths": 0,
+          "survivalRate": 1.0,
+          "averageLateNonWork": 13.0,
+          "minLateNonWork": 13,
+          "averageRemainingStones": 14.0,
+          "endings": {
+            "shelter-secured": 100
+          },
+          "failureReasons": {},
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "inn-introduction": 100,
+            "supply-ledger": 100,
+            "bamboo-signs": 100,
+            "eargrass-offer": 100,
+            "guide-report": 100,
+            "alarm": 100,
+            "signal-markers": 100,
+            "shelter-pledge": 100,
+            "shelter-stock": 100,
+            "route-review": 100,
+            "academy-service": 100,
+            "watch-duty": 100,
+            "healer-herbs": 100,
+            "final-freight": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "inn-introduction": true,
+            "supply-ledger": true,
+            "bamboo-signs": true,
+            "eargrass-offer": true,
+            "guide-report": true,
+            "alarm": true,
+            "signal-markers": true,
+            "shelter-pledge": true,
+            "shelter-stock": true,
+            "route-review": true,
+            "academy-service": true,
+            "watch-duty": true,
+            "healer-herbs": true,
+            "final-freight": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "development/labor": {
+          "runs": 100,
+          "survived": 0,
+          "deaths": 100,
+          "survivalRate": 0.0,
+          "averageLateNonWork": 0.0,
+          "minLateNonWork": 0,
+          "averageRemainingStones": 70.0,
+          "endings": {
+            "overrun": 100
+          },
+          "failureReasons": {
+            "未能承受已展示的敌人意图，生命耗尽。": 100,
+            "修为不足12，月刃威力与真元容量没有形成战备优势。": 100,
+            "没有有效玉皮蛊，连续攻击缺少减伤。": 100,
+            "未落实庇护备粮，囤积的元石不能临时替代完整安排。": 100
+          },
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "alarm": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "alarm": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        }
+      }
+    },
+    "drill": {
+      "ablation": "drill",
+      "strategies": {
+        "development/war-ready": {
+          "runs": 100,
+          "survived": 100,
+          "deaths": 0,
+          "survivalRate": 1.0,
+          "averageLateNonWork": 7.0,
+          "minLateNonWork": 7,
+          "averageRemainingStones": 7.0,
+          "endings": {
+            "held-the-line": 100
+          },
+          "failureReasons": {},
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "academy-commission": 100,
+            "jade-offer": 100,
+            "patrol-rescue": 100,
+            "liquor-offer": 100,
+            "alarm": 100,
+            "patrol-overtime": 100,
+            "watch-duty": 100,
+            "healer-herbs": 100,
+            "fortify": 100,
+            "final-march": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "academy-commission": true,
+            "jade-offer": true,
+            "patrol-rescue": true,
+            "liquor-offer": true,
+            "alarm": true,
+            "patrol-overtime": true,
+            "watch-duty": true,
+            "healer-herbs": true,
+            "fortify": true,
+            "final-march": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "development/network": {
+          "runs": 100,
+          "survived": 100,
+          "deaths": 0,
+          "survivalRate": 1.0,
+          "averageLateNonWork": 13.0,
+          "minLateNonWork": 13,
+          "averageRemainingStones": 14.0,
+          "endings": {
+            "shelter-secured": 100
+          },
+          "failureReasons": {},
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "inn-introduction": 100,
+            "supply-ledger": 100,
+            "bamboo-signs": 100,
+            "eargrass-offer": 100,
+            "guide-report": 100,
+            "alarm": 100,
+            "signal-markers": 100,
+            "shelter-pledge": 100,
+            "shelter-stock": 100,
+            "route-review": 100,
+            "academy-service": 100,
+            "watch-duty": 100,
+            "healer-herbs": 100,
+            "final-freight": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "inn-introduction": true,
+            "supply-ledger": true,
+            "bamboo-signs": true,
+            "eargrass-offer": true,
+            "guide-report": true,
+            "alarm": true,
+            "signal-markers": true,
+            "shelter-pledge": true,
+            "shelter-stock": true,
+            "route-review": true,
+            "academy-service": true,
+            "watch-duty": true,
+            "healer-herbs": true,
+            "final-freight": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "development/labor": {
+          "runs": 100,
+          "survived": 0,
+          "deaths": 100,
+          "survivalRate": 0.0,
+          "averageLateNonWork": 0.0,
+          "minLateNonWork": 0,
+          "averageRemainingStones": 70.0,
+          "endings": {
+            "overrun": 100
+          },
+          "failureReasons": {
+            "未能承受已展示的敌人意图，生命耗尽。": 100,
+            "修为不足12，月刃威力与真元容量没有形成战备优势。": 100,
+            "没有有效玉皮蛊，连续攻击缺少减伤。": 100,
+            "未落实庇护备粮，囤积的元石不能临时替代完整安排。": 100
+          },
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "alarm": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "alarm": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        }
+      }
+    },
+    "route": {
+      "ablation": "route",
+      "strategies": {
+        "development/war-ready": {
+          "runs": 100,
+          "survived": 100,
+          "deaths": 0,
+          "survivalRate": 1.0,
+          "averageLateNonWork": 10.0,
+          "minLateNonWork": 10,
+          "averageRemainingStones": 2.0,
+          "endings": {
+            "held-the-line": 100
+          },
+          "failureReasons": {},
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "academy-commission": 100,
+            "jade-offer": 100,
+            "patrol-rescue": 100,
+            "liquor-offer": 100,
+            "academy-drill": 100,
+            "alarm": 100,
+            "patrol-overtime": 100,
+            "watch-duty": 100,
+            "healer-herbs": 100,
+            "fortify": 100,
+            "final-march": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "academy-commission": true,
+            "jade-offer": true,
+            "patrol-rescue": true,
+            "liquor-offer": true,
+            "academy-drill": true,
+            "alarm": true,
+            "patrol-overtime": true,
+            "watch-duty": true,
+            "healer-herbs": true,
+            "fortify": true,
+            "final-march": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "development/network": {
+          "runs": 100,
+          "survived": 0,
+          "deaths": 100,
+          "survivalRate": 0.0,
+          "averageLateNonWork": 10.0,
+          "minLateNonWork": 10,
+          "averageRemainingStones": 26.0,
+          "endings": {
+            "overrun": 100
+          },
+          "failureReasons": {
+            "未能承受已展示的敌人意图，生命耗尽。": 100,
+            "修为不足12，月刃威力与真元容量没有形成战备优势。": 100,
+            "没有有效玉皮蛊，连续攻击缺少减伤。": 100,
+            "未处理的越界痕迹增加了追击压力。": 100
+          },
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "inn-introduction": 100,
+            "supply-ledger": 100,
+            "bamboo-signs": 100,
+            "eargrass-offer": 100,
+            "guide-report": 100,
+            "alarm": 100,
+            "signal-markers": 100,
+            "shelter-pledge": 100,
+            "shelter-stock": 100,
+            "healer-herbs": 100,
+            "final-freight": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "inn-introduction": true,
+            "supply-ledger": true,
+            "bamboo-signs": true,
+            "eargrass-offer": true,
+            "guide-report": true,
+            "alarm": true,
+            "signal-markers": true,
+            "shelter-pledge": true,
+            "shelter-stock": true,
+            "healer-herbs": true,
+            "final-freight": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "development/labor": {
+          "runs": 100,
+          "survived": 0,
+          "deaths": 100,
+          "survivalRate": 0.0,
+          "averageLateNonWork": 0.0,
+          "minLateNonWork": 0,
+          "averageRemainingStones": 70.0,
+          "endings": {
+            "overrun": 100
+          },
+          "failureReasons": {
+            "未能承受已展示的敌人意图，生命耗尽。": 100,
+            "修为不足12，月刃威力与真元容量没有形成战备优势。": 100,
+            "没有有效玉皮蛊，连续攻击缺少减伤。": 100,
+            "未落实庇护备粮，囤积的元石不能临时替代完整安排。": 100
+          },
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "alarm": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "alarm": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        }
+      }
+    },
+    "gu": {
+      "ablation": "gu",
+      "strategies": {
+        "development/war-ready": {
+          "runs": 100,
+          "survived": 100,
+          "deaths": 0,
+          "survivalRate": 1.0,
+          "averageLateNonWork": 2.0,
+          "minLateNonWork": 2,
+          "averageRemainingStones": 7.0,
+          "endings": {
+            "held-the-line": 100
+          },
+          "failureReasons": {},
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "academy-commission": 100,
+            "liquor-offer": 100,
+            "academy-drill": 100,
+            "alarm": 100,
+            "healer-herbs": 100,
+            "fortify": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "academy-commission": true,
+            "liquor-offer": true,
+            "academy-drill": true,
+            "alarm": true,
+            "healer-herbs": true,
+            "fortify": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "development/network": {
+          "runs": 100,
+          "survived": 0,
+          "deaths": 100,
+          "survivalRate": 0.0,
+          "averageLateNonWork": 4.0,
+          "minLateNonWork": 4,
+          "averageRemainingStones": 56.0,
+          "endings": {
+            "overrun": 100
+          },
+          "failureReasons": {
+            "未能承受已展示的敌人意图，生命耗尽。": 100,
+            "修为不足12，月刃威力与真元容量没有形成战备优势。": 100,
+            "没有有效玉皮蛊，连续攻击缺少减伤。": 100,
+            "未处理的越界痕迹增加了追击压力。": 100
+          },
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "inn-introduction": 100,
+            "supply-ledger": 100,
+            "bamboo-signs": 100,
+            "guide-report": 100,
+            "alarm": 100,
+            "shelter-pledge": 100,
+            "shelter-stock": 100,
+            "healer-herbs": 100,
+            "final-freight": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "inn-introduction": true,
+            "supply-ledger": true,
+            "bamboo-signs": true,
+            "guide-report": true,
+            "alarm": true,
+            "shelter-pledge": true,
+            "shelter-stock": true,
+            "healer-herbs": true,
+            "final-freight": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        },
+        "development/labor": {
+          "runs": 100,
+          "survived": 0,
+          "deaths": 100,
+          "survivalRate": 0.0,
+          "averageLateNonWork": 0.0,
+          "minLateNonWork": 0,
+          "averageRemainingStones": 70.0,
+          "endings": {
+            "overrun": 100
+          },
+          "failureReasons": {
+            "未能承受已展示的敌人意图，生命耗尽。": 100,
+            "修为不足12，月刃威力与真元容量没有形成战备优势。": 100,
+            "没有有效玉皮蛊，连续攻击缺少减伤。": 100,
+            "未落实庇护备粮，囤积的元石不能临时替代完整安排。": 100
+          },
+          "openedEvents": {
+            "briefing": 100,
+            "moonlight-issue": 100,
+            "alarm": 100
+          },
+          "completedEvents": {
+            "briefing": true,
+            "moonlight-issue": true,
+            "alarm": true,
+            "crisis-arrival": true
+          },
+          "inquiryExposures": 0
+        }
+      }
+    }
+  },
+  "windows": {
+    "development": {
+      "days5to13Covered": true,
+      "days7to13NewCovered": true
+    },
+    "holdout": {
+      "days5to13Covered": true,
+      "days7to13NewCovered": true
+    }
+  },
+  "notes": [
+    "V2 policies are fixed balance-test instruments, not shipped player AI.",
+    "Holdout seeds 20001-20100 were registered before the single run and were not used for tuning.",
+    "Late non-work counts real day actions on days 8-14; WORK and END_DAY are excluded."
+  ]
+}

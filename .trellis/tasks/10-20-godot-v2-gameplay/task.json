@@ -15,16 +15,24 @@
   "branch": null,
   "base_branch": "initial-import",
   "worktree_path": null,
-  "commit": null,
+  "commit": "c23806d",
   "pr_url": null,
   "subtasks": [],
   "children": [],
   "parent": "10-18-godot-playable-slice",
-  "relatedFiles": [],
-  "notes": "2026-10-21 W6 第二增量完成并推送：V2 专用策略、开发集 100 局 × 3、消融与唯一一次留出集（20001–20100，运行前登记）。dev/holdout 均为 war-ready 100%、network 100%、labor 0%；后段非劳作均值 10/13/0。消融：drilled（war 10→7）、safe-route（network 0%）、有效蛊（network 0%、war 后段 2）均为真实因果。10 套件 6831 checks、Node 9/9、pack_switch 16、V2 三策略 118/116/116 均通过。",
+  "relatedFiles": [
+    ".trellis/tasks/10-20-godot-v2-gameplay/prd.md",
+    ".trellis/tasks/10-20-godot-v2-gameplay/design.md",
+    ".trellis/tasks/10-20-godot-v2-gameplay/implement.md",
+    ".trellis/tasks/10-20-godot-v2-gameplay/w6-v2-content-rules-evidence.md",
+    ".trellis/tasks/10-20-godot-v2-gameplay/w6-gameplay-balance-evidence.md",
+    ".trellis/tasks/10-20-godot-v2-gameplay/w6-balance-summary.json",
+    ".trellis/tasks/10-20-godot-v2-gameplay/holdout-registration.md"
+  ],
+  "notes": "2026-10-21 W6 代码门槛已就绪并推送：V2 内容（28事件/3敌人/40参数）、双端版本化校验、sync/loader/state_codec、D1–D5、combat_v2、pack 启动参数、V2 专用策略、开发集 100×3、消融、唯一一次留出集 20001–20100。dev/holdout 均 war 100%/late 10、network 100%/late 13、labor 0%；消融验证 drilled/safe-route/有效蛊的因果。10 套件 6831 checks、Node 9/9、pack_switch 16、V2 场景 118/116/116 均通过。W5 真人键鼠、W7/W8 未完成。",
   "meta": {
     "w6": {
-      "status": "balance-and-holdout-verified",
+      "status": "gate-ready-for-review",
       "evidence": ".trellis/tasks/10-20-godot-v2-gameplay/w6-v2-content-rules-evidence.md",
       "scenario": "qingmao-fourteen-day-v2",
       "events": 28,
@@ -110,7 +118,9 @@
           }
         }
       },
-      "holdoutRegistration": ".trellis/tasks/10-20-godot-v2-gameplay/holdout-registration.md"
+      "holdoutRegistration": ".trellis/tasks/10-20-godot-v2-gameplay/holdout-registration.md",
+      "balanceEvidence": ".trellis/tasks/10-20-godot-v2-gameplay/w6-gameplay-balance-evidence.md",
+      "balanceSummary": ".trellis/tasks/10-20-godot-v2-gameplay/w6-balance-summary.json"
     }
   }
 }
