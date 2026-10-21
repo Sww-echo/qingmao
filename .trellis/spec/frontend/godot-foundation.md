@@ -308,3 +308,24 @@ acceptance. The versioned UI handoff is documented in `godot/README.md` section 
   (`relations`, `suspicion`, `exposures`). Never recompute them in the scene.
 - `tests/play_flow.gd` accepts `QINGMAO_FLOW_STRATEGY=war-ready|network|labor`
   and asserts each location's geometry, spawn, hotspot count and readout.
+
+## 12. W7 save-failure and long-text handoff
+
+- `SaveService.flush_pending()` must keep the pending snapshot after a write
+  failure so the user can retry. Do not retain `stale-save`, `not-configured`
+  or `superseded`; those cannot be retried safely. Expose `has_pending()` for
+  tests and callers.
+- The composition root owns destructive navigation. "Save and return",
+  "save and quit", ending return and Esc-from-ending must flush first; on
+  failure stay in the current screen, open/keep the pause modal and show the
+  error. Title-screen quit on a failed save needs an explicit second click.
+- The play scene must not read disk or compute save status. It emits
+  `save_and_return_requested`, `save_and_quit_requested` and
+  `retry_save_requested`; `report_save_result(ok, code)` is display feedback.
+- Pause exposes a retry button only while `saveStatus.state == "failed"`.
+- Long event text lives in a `ScrollContainer`; choices and dismiss stay
+  outside it so 720p/1080p cannot push them off-screen.
+- W7 tests: `tests/w7_save_failure.gd` (failed save stays in game, retry,
+  continue), `tests/suites/save_faults_suite.gd` flush-retry contract,
+  `tests/w7_ux.gd` (Tab containment, event scroll, 720/1080 layout),
+  `tests/capture_w7.gd` (real-window screenshots).

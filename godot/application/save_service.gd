@@ -56,12 +56,21 @@ func enqueue(body: Variant) -> Dictionary:
 	save_status_changed.emit("saving", _saved_revision, "")
 	return {"ok": true}
 
+func has_pending() -> bool:
+	return _pending != null
+
 func flush_pending() -> Dictionary:
 	if _pending == null:
 		return {"ok": true, "revision": _saved_revision}
 	var body: Variant = _pending
 	_pending = null
-	return save_now(body)
+	var result: Dictionary = save_now(body)
+	# Keep a failed snapshot retryable. `busy` already re-queues in save_now;
+	# stale/not-configured/superseded snapshots must not be retried forever.
+	if not result.ok and _pending == null \
+			and not ["stale-save", "not-configured", "superseded"].has(String(result.get("errorCode", ""))):
+		_pending = body
+	return result
 
 func save_now(body: Variant) -> Dictionary:
 	if _catalog == null or _store == null:

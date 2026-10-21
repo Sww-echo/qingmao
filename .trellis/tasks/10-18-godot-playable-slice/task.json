@@ -19,7 +19,8 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "10-20-godot-v2-gameplay"
+    "10-20-godot-v2-gameplay",
+    "10-21-godot-w7-ux"
   ],
   "parent": "10-18-godot-strategy-overhaul",
   "relatedFiles": [
@@ -27,7 +28,7 @@
     ".trellis/tasks/10-18-godot-playable-slice/design.md",
     ".trellis/tasks/10-18-godot-playable-slice/implement.md"
   ],
-  "notes": "2026-10-20 W4/W5 已推送。W5 收尾完成：event/combat/day-end 三组窗口级两进程重开（54 checks）、输入韧性（10）、三策略真实窗口整局（120/118/118）、1280x720 与 1920x1080 窗口截图各 10 张。剩余：真人键鼠复看；W5 gate 可交评审。",
+  "notes": "2026-10-21 W5 自动门槛完成并推送：三地点、19 事件、四恢复点、输入韧性、720p/1080p 窗口截图、三组窗口级两进程重开。W6 已到 gate-ready；W7 单独开子任务处理长文/焦点/保存失败与结构化试玩。真人键鼠仍待补。",
   "meta": {
     "primary_platform": "desktop",
     "web_target": "feasibility",
@@ -110,16 +111,10 @@
       "window_screenshots": true,
       "window_screenshot_dir": "artifacts/godot/w5/",
       "window_reload": {
-        "event": {
-          "checks": 21
-        },
-        "combat": {
-          "checks": 17
-        },
-        "day-end": {
-          "checks": 16
-        },
-        "state": "windowed write/read processes, 0 failures"
+        "event": 21,
+        "combat": 17,
+        "day-end": 16,
+        "state": "windowed write/read processes"
       },
       "input_robustness_checks": 10,
       "window_screenshots_1080": true,
@@ -128,7 +123,8 @@
         "war-ready": 120,
         "network": 118,
         "labor": 118
-      }
+      },
+      "next": "human keyboard/mouse review; W7 UX task in progress"
     }
   }
 }

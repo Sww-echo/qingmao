@@ -622,7 +622,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="EventModal" type="PanelContainer" parent="UI/Root/ModalLayer/EventCenter"]
-custom_minimum_size = Vector2(760, 520)
+custom_minimum_size = Vector2(760, 560)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
 
@@ -643,10 +643,16 @@ theme_override_colors/font_color = Color(0.82, 0.72, 0.45, 1)
 theme_override_font_sizes/font_size = 15
 text = ""
 
-[node name="EventDesc" type="Label" parent="UI/Root/ModalLayer/EventCenter/EventModal/Body"]
-unique_name_in_owner = true
+[node name="EventScroll" type="ScrollContainer" parent="UI/Root/ModalLayer/EventCenter/EventModal/Body"]
+custom_minimum_size = Vector2(0, 170)
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="EventDesc" type="Label" parent="UI/Root/ModalLayer/EventCenter/EventModal/Body/EventScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 17
 autowrap_mode = 3
 text = ""
@@ -818,6 +824,13 @@ unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 44)
 text = "继续游戏"
+
+[node name="PauseRetrySave" type="Button" parent="UI/Root/ModalLayer/PauseCenter/PauseModal/Body"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 44)
+disabled = true
+text = "重试保存"
 
 [node name="PauseTitleReturn" type="Button" parent="UI/Root/ModalLayer/PauseCenter/PauseModal/Body"]
 unique_name_in_owner = true

@@ -4,6 +4,9 @@ extends Node2D
 
 signal exit_requested()
 signal quit_requested()
+signal save_and_return_requested()
+signal save_and_quit_requested()
+signal retry_save_requested()
 
 const SCOPE_NOTE := "真实规则 · 可玩第 1 日（三地点场景属 W5）"
 const WORLD_SCENE_LOCATION := "academy"
@@ -155,11 +158,12 @@ func _ready() -> void:
 	%ClearExposureButton.pressed.connect(_clear_exposure)
 	%PauseButton.pressed.connect(_open_pause)
 	%PauseResume.pressed.connect(_close_pause)
-	%PauseTitleReturn.pressed.connect(_return_to_title)
-	%PauseQuit.pressed.connect(func() -> void: quit_requested.emit())
+	%PauseTitleReturn.pressed.connect(func() -> void: save_and_return_requested.emit())
+	%PauseQuit.pressed.connect(func() -> void: save_and_quit_requested.emit())
+	%PauseRetrySave.pressed.connect(func() -> void: retry_save_requested.emit())
 	%EventDismissButton.pressed.connect(_dismiss_event)
 	%DayReviewContinue.pressed.connect(_dismiss_review)
-	%EndingReturn.pressed.connect(_return_to_title)
+	%EndingReturn.pressed.connect(func() -> void: save_and_return_requested.emit())
 	if _session != null:
 		_session.state_committed.connect(_on_state_committed)
 		_session.command_rejected.connect(_on_command_rejected)
@@ -181,7 +185,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _panel.visible:
 		_close_panel()
 	elif _ending_center.visible:
-		_return_to_title()
+		save_and_return_requested.emit()
 	elif _pause_center.visible:
 		_close_pause()
 	elif _review_center.visible:
@@ -285,6 +289,7 @@ func _on_save_status_changed(status: String, saved_revision: int, error_code: St
 	var label: String = _save_label(_view.saveStatus)
 	_save_status.text = label
 	%PauseStatus.text = "当前 revision %d · %s" % [int(_view.revision), label]
+	%PauseRetrySave.disabled = String(status) != "failed"
 
 func _set_notice(text: String) -> void:
 	_notice = text
@@ -333,6 +338,7 @@ func _render(view: Dictionary) -> void:
 	_render_utilities(view, state)
 	_render_log(state)
 	%PauseStatus.text = "当前 revision %d · %s" % [int(view.revision), _save_label(status)]
+	%PauseRetrySave.disabled = String(status.state) != "failed"
 	_sync_modals(view)
 	# The explain panel disables HUD focus as well; never grab focus on a
 	# control the current overlay has deliberately made unreachable.
@@ -744,6 +750,16 @@ func _dismiss_review() -> void:
 
 func _return_to_title() -> void:
 	exit_requested.emit()
+
+## Composition-root feedback for save-and-return / save-and-quit / retry.
+func report_save_result(ok: bool, error_code: String = "") -> void:
+	if ok:
+		_set_notice("已保存")
+	else:
+		var label: String = String(SAVE_ERROR_LABELS.get(error_code, error_code))
+		_set_notice("保存失败：%s。进度仍在内存中，可重试保存。" % label)
+		if not _any_modal_visible():
+			_open_pause()
 
 func _restore_modal_layer() -> void:
 	var any_modal: bool = _event_center.visible or _gu_center.visible or _combat_center.visible \

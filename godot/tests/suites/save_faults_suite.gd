@@ -85,6 +85,7 @@ func run(tree: SceneTree) -> Dictionary:
 	_recovery_matrix()
 	_real_disk_contract()
 	_generation_contract()
+	_flush_retry_contract()
 	_four_restore_points()
 	return _result()
 
@@ -276,6 +277,27 @@ func _recovery_matrix() -> void:
 	_expect(generation_cancel.flush_pending().ok, "generation change cancels pending work")
 	_expect(generation_cancel_store.write_count == 0, "canceled pending work performs no disk writes")
 	generation_cancel.queue_free()
+
+## W7: a failed flush must keep the pending snapshot so pause -> retry can
+## succeed without re-dispatching the action or losing progress.
+func _flush_retry_contract() -> void:
+	var root: String = ROOT + "/flush-retry"
+	var store := FaultStore.new()
+	var service := _service(store, root)
+	service.begin_generation()
+	_expect(service.save_now(_body(0)).ok, "flush retry has a committed base")
+	store.fail_write = "current.tmp"
+	service.enqueue(_body(1))
+	var failed: Dictionary = service.flush_pending()
+	_expect(not failed.ok, "failed flush reports the write error")
+	_expect(service.has_pending(), "failed flush keeps the snapshot pending")
+	_expect(_same(service.load().body, _body(0)), "failed flush leaves the previous save readable")
+	store.fail_write = ""
+	var retried: Dictionary = service.flush_pending()
+	_expect(retried.ok and int(retried.revision) == 1, "retry flush commits the pending snapshot")
+	_expect(not service.has_pending(), "successful retry clears pending")
+	_expect(_same(service.load().body, _body(1)), "retried snapshot is on disk")
+	service.queue_free()
 
 func _real_disk_contract() -> void:
 	var root: String = ROOT

@@ -27,6 +27,9 @@ var _storage_warning: String = ""
 ## Development-only pack selector. Default stays V1; `--pack=qingmao14-v2`
 ## selects the W6 pack without adding a title-screen control.
 var pack_id: String = "prototype"
+## Test seam: W7 injects a fault store to exercise the save-failure path.
+var save_store: Variant = null
+var _title_quit_confirmed: bool = false
 
 
 func _ready() -> void:
@@ -70,7 +73,8 @@ func _ready() -> void:
 	add_child(_session)
 	_save_service = SaveService.new()
 	add_child(_save_service)
-	var store: Variant = WebSaveStore.new() if OS.has_feature("web") else DesktopSaveStore.new()
+	var store: Variant = save_store if save_store != null else (
+		WebSaveStore.new() if OS.has_feature("web") else DesktopSaveStore.new())
 	_save_service.configure(_catalog, _content_sha256, store, save_root)
 	var capability: Dictionary = store.probe_capability()
 	if not capability.ok:
@@ -84,7 +88,8 @@ func _show_title() -> void:
 	var title := TITLE_SCENE.instantiate()
 	title.start_requested.connect(_show_play)
 	title.continue_requested.connect(_continue_run)
-	title.quit_requested.connect(_quit)
+	title.quit_requested.connect(_quit_from_title.bind(title))
+	_title_quit_confirmed = false
 	var flushed: Dictionary = _save_service.flush_pending()
 	var save_warning: String = "" if flushed.ok else "上次保存失败：%s" % SAFE_ERROR_LABELS.get(
 		String(flushed.get("errorCode", "unknown")), String(flushed.get("errorCode", "unknown")))
@@ -120,7 +125,10 @@ func _show_play(seed: int = 42) -> void:
 	var play := PLAY_SCENE.instantiate()
 	play.configure(_session)
 	play.exit_requested.connect(_show_title)
-	play.quit_requested.connect(_quit)
+	play.quit_requested.connect(_quit.bind(play))
+	play.save_and_return_requested.connect(_save_and_return.bind(play))
+	play.save_and_quit_requested.connect(_save_and_quit.bind(play))
+	play.retry_save_requested.connect(_retry_save.bind(play))
 	_swap(play)
 
 func _continue_run() -> void:
@@ -144,7 +152,10 @@ func _continue_run() -> void:
 			notice += "；恢复写盘失败：%s" % loaded.recoveryError
 	play.configure(_session, notice)
 	play.exit_requested.connect(_show_title)
-	play.quit_requested.connect(_quit)
+	play.quit_requested.connect(_quit.bind(play))
+	play.save_and_return_requested.connect(_save_and_return.bind(play))
+	play.save_and_quit_requested.connect(_save_and_quit.bind(play))
+	play.retry_save_requested.connect(_retry_save.bind(play))
 	_swap(play)
 
 
@@ -152,8 +163,47 @@ func _swap(screen: Node) -> void:
 	_router.show(screen)
 
 
-func _quit() -> void:
-	_save_service.flush_pending()
+func _flush_save(play: Node = null) -> Dictionary:
+	var flushed: Dictionary = _save_service.flush_pending()
+	var saved: int = int(_session.snapshot_view().get("saveStatus", {}).get("savedRevision", -1))
+	if flushed.ok:
+		_session.set_save_status("ok", int(flushed.get("revision", saved)))
+	else:
+		var code: String = String(flushed.get("errorCode", "unknown"))
+		_session.set_save_status("failed", saved, code)
+		if play != null:
+			play.report_save_result(false, code)
+	return flushed
+
+func _save_and_return(play: Node) -> void:
+	var flushed: Dictionary = _flush_save(play)
+	if flushed.ok:
+		_show_title()
+
+func _save_and_quit(play: Node) -> void:
+	var flushed: Dictionary = _flush_save(play)
+	if flushed.ok:
+		_quit()
+
+func _retry_save(play: Node) -> void:
+	var flushed: Dictionary = _flush_save(play)
+	if flushed.ok:
+		play.report_save_result(true)
+
+func _quit_from_title(title: Node) -> void:
+	var flushed: Dictionary = _save_service.flush_pending()
+	if flushed.ok or _title_quit_confirmed:
+		get_tree().quit()
+		return
+	_title_quit_confirmed = true
+	title.configure(not title.get_node("%ContinueButton").disabled,
+		"保存失败，进度尚未落盘；再次点击退出将不保存直接退出")
+
+func _quit(play: Node = null) -> void:
+	var flushed: Dictionary = _save_service.flush_pending()
+	if not flushed.ok and play != null:
+		play.report_save_result(false, String(flushed.get("errorCode", "unknown")))
+		return
 	get_tree().quit()
 
 func _on_save_status(status: String, saved_revision: int, error_code: String) -> void:

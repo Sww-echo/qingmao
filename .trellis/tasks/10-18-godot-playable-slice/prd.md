@@ -31,9 +31,9 @@ P2的V1完整规则对照、数据、存档与会话接口已通过，最新详�
 | 包 | 状态 | 证据 |
 | --- | --- | --- |
 | W4 可玩第 1 日 | 完成（自动验证 0 失败） | `w4-day1-evidence.md` |
-| W5 三地点完整 V1 | 进行中（第一增量完成） | `w5-playable-evidence.md` |
-| W6 有限 V2 | 未开始 | W6 证据（待建） |
-| W7 体验收敛 | 未开始 | W7 证据（待建） |
+| W5 三地点完整 V1 | 自动门槛完成，待真人复看 | `w5-playable-evidence.md` |
+| W6 有限 V2 | gate-ready（内容/规则/平衡/留出集） | `../10-20-godot-v2-gameplay/w6-v2-content-rules-evidence.md` |
+| W7 体验收敛 | 进行中 | `../10-21-godot-w7-ux/prd.md` |
 
 ## 验收
 

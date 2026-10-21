@@ -1,0 +1,41 @@
+{
+  "id": "godot-w7-ux",
+  "name": "godot-w7-ux",
+  "title": "Godot W7 体验收敛与保存失败路径",
+  "description": "收敛 720p/1080p、长文滚动、键盘焦点、模态顺序与保存失败/重试/未保存退出路径，形成结构化证据。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "codex",
+  "assignee": "codex",
+  "createdAt": "2026-10-21",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "initial-import",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "10-18-godot-playable-slice",
+  "relatedFiles": [],
+  "notes": "2026-10-21 W7 自动门槛完成：保存失败保留 pending、重试、保存并返回/退出门禁、标题退出二次确认；事件长文 ScrollContainer；6 类模态 Tab 闭环；720p/1080p 真实窗口截图与几何检查。10 套件 6838 checks、w7_save_failure 16、play_flow、title、event_coverage、reload、input、pack_switch 全部 0 失败。真人试玩与正常失焦/高 DPI/输入法未测，已在证据中明示。",
+  "meta": {
+    "w7": {
+      "status": "automated-verified-human-pending",
+      "evidence": ".trellis/tasks/10-21-godot-w7-ux/w7-ux-evidence.md",
+      "suiteChecks": "6838/6838",
+      "saveFailureChecks": 16,
+      "windowScreenshots": [
+        "1280x720",
+        "1920x1080"
+      ],
+      "keyboardModalChecks": true,
+      "humanPlaytest": false,
+      "focusLossTested": false,
+      "highDpiTested": false
+    }
+  }
+}

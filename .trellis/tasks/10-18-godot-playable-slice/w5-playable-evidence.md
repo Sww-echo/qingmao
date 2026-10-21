@@ -103,8 +103,8 @@ title 31 均 0 失败；`QINGMAO_FLOW_STRATEGY` 路径与 720p 布局回归通�
 
 仍保留的 review 备注（未在本轮改）：
 
-- `SaveService.flush_pending()` 失败后不恢复 `_pending`；当前会明确报错并在标题显示
-  “上次保存失败”，但内存中的待写快照会被丢弃。修复涉及存档重试语义与故障用例，
-  应在 W7/V2 前单独评审，不在 W5 静默改合同。
+- `SaveService.flush_pending()` 失败后不恢复 `_pending` 的问题已在 W7 修复：
+  失败快照保留、暂停页可重试；见
+  `../10-21-godot-w7-ux/w7-ux-evidence.md`。
 - `play_flow` 仍通过 `pressed.emit()` 驱动控件；这是自动化，不是真人键鼠验收。
 - 沙箱无法新建 X 套接字，修复后的窗口截图与真人三局仍待补。
